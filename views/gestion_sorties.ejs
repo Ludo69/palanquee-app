@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Sorties</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Gestion des Sorties</h1>
+
+        <form action="/ajouter-sortie" method="POST" class="form-container">
+            <input type="text" id="lieu" name="lieu" placeholder="Lieu" required>
+            <div class="date-container">
+                <label for="date_debut">Début :</label>
+                <input type="date" id="date_debut" name="date_debut" required>
+            </div>
+            <div class="date-container">
+                <label for="date_fin">Fin :</label>
+                <input type="date" id="date_fin" name="date_fin" required>
+            </div>
+            <button type="submit" class="add-button">Ajouter sortie</button>
+        </form>
+
+        <div class="sorties">
+            <% sorties.forEach(sortie => { %>
+                <div class="sortie">
+                    <span>
+                        <strong><%= sortie.lieu %></strong> - 
+                        <%= new Date(sortie.date_debut).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) %>
+                    </span>
+                    <span><%= sortie.plongeurs_count || 0 %> Plongeurs</span>
+
+                    <div class="action-buttons">
+                        <!-- Bouton Ajouter Plongeur -->
+                        <button class="ajouter-plongeur" data-id="<%= sortie.id %>">+</button>
+
+                        <!-- Bouton Supprimer Sortie -->
+                        <button class="supprimer-sortie" data-id="<%= sortie.id %>">&times;</button>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+
+    <!-- Formulaire pour ajouter des plongeurs à une sortie -->
+    <div id="plongeurs-section" style="display: none;">
+        <h2>Sélectionner les plongeurs</h2>
+        <form action="/ajouter-plongeurs-a-sortie" method="POST">
+            <input type="hidden" id="sortie_id_hidden" name="sortie_id">
+            <% plongeurs.forEach(plongeur => { %>
+                <label>
+                    <input type="checkbox" name="plongeurs[]" value="<%= plongeur.id %>">
+                    <%= plongeur.nom %>
+                </label>
+            <% }) %>
+            <button type="submit" class="add-button">Ajouter Plongeurs à la Sortie</button>
+        </form>
+    </div>
+
+    <script>
+        document.querySelectorAll('.ajouter-plongeur').forEach(button => {
+            button.addEventListener('click', function () {
+                const sortieId = this.dataset.id;
+                document.getElementById('sortie_id_hidden').value = sortieId;
+
+                // Récupérer les données des sorties pour obtenir les plongeurs associés
+                const sortieData = <%- JSON.stringify(sorties) %>;
+                const sortie = sortieData.find(s => s.id == sortieId);
+                const plongeursAssocies = sortie ? sortie.plongeurs_associes.map(id => parseInt(id)) : [];
+
+                // Mettre à jour les cases à cocher en fonction des plongeurs déjà associés
+                document.querySelectorAll('input[name="plongeurs[]"]').forEach(checkbox => {
+                    checkbox.checked = plongeursAssocies.includes(parseInt(checkbox.value));
+                });
+
+                // Afficher la section des plongeurs
+                document.getElementById('plongeurs-section').style.display = 'block';
+            });
+        });
+
+        // Gestion de la suppression des sorties
+        document.querySelectorAll('.supprimer-sortie').forEach(button => {
+            button.addEventListener('click', function () {
+                const sortieId = this.dataset.id;
+                if (confirm("Êtes-vous sûr de vouloir supprimer cette sortie ?")) {
+                    fetch(`/supprimer-sortie/${sortieId}`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            location.reload(); // Recharger la page après suppression
+                        } else {
+                            alert("Erreur lors de la suppression.");
+                        }
+                    })
+                    .catch(error => console.error("Erreur:", error));
+                }
+            });
+        });
+    </script>
+</body>
+</html>

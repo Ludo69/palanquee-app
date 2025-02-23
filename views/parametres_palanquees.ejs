@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paramètres des Palanquées</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="container">
+        <button class="btn-retour" onclick="history.back()">Retour</button>
+        <button class="btn-whatsapp" onclick="envoyerParWhatsApp()">📩 Envoyer par WhatsApp</button>
+
+        <h1 class="title">Listing des palanquées</h1>
+
+        <% if (palanquees && palanquees.length > 0) { %>
+            <% palanquees.forEach(function(palanquee) { %>
+                <div class="palanquee-container">
+                    <div class="palanquee-left">
+                        <h2 class="palanquee-nom"><%= palanquee.nom %></h2>
+                        <p><strong>Plongeurs :</strong></p>
+                        <ul class="plongeurs-list">
+                            <% if (palanquee.plongeurs && palanquee.plongeurs.length > 0) { %>
+                                <% palanquee.plongeurs.forEach(function(plongeur) { %>
+                                    <li class="plongeur-item"><%= plongeur.nom %> (<%= plongeur.niveau %>)</li>
+                                <% }); %>
+                            <% } else { %>
+                                <li>Aucun plongeur dans cette palanquée.</li>
+                            <% } %>
+                        </ul>
+                    </div>
+
+                    <div class="palanquee-right">
+                        <form id="form-<%= palanquee.id %>" class="palanquee-form">
+                            <input type="hidden" name="palanquee_id" value="<%= palanquee.id %>">
+                            <label>Profondeur (m) :</label>
+                            <input type="number" name="profondeur" class="profondeur" value="<%= palanquee.profondeur || '' %>" 
+                                <%= palanquee.profondeur ? 'disabled' : '' %> required>
+
+                            <label>Durée (min) :</label>
+                            <input type="number" name="duree" class="duree" value="<%= palanquee.duree || '' %>" 
+                                <%= palanquee.duree ? 'disabled' : '' %> required>                
+                        
+                            <label>Paliers :</label>
+                            <input type="text" name="paliers" class="paliers" value="<%= palanquee.paliers || '' %>" 
+                                <%= palanquee.paliers ? 'disabled' : '' %> required>
+                        
+                            <button type="submit" class="btn-enregistrer"
+                                <%= (palanquee.duree !== null && palanquee.duree !== '' &&
+                                     palanquee.profondeur !== null && palanquee.profondeur !== '' &&
+                                     palanquee.paliers !== null && palanquee.paliers !== '') ? 'disabled' : '' %>>
+                                Enregistrer
+                            </button>
+                            
+                        </form>
+                        
+                        
+                        
+                    </div>
+                </div>
+            <% }); %>
+        <% } else { %>
+            <p>Aucune palanquée disponible pour cette plongée.</p>
+        <% } %>
+    </div>
+    <script>
+        document.querySelectorAll(".btn-enregistrer").forEach(button => {
+            button.addEventListener("click", async function () {
+                const palanqueeId = this.dataset.id;
+                const form = document.querySelector(`#form-${palanqueeId}`);
+        
+                const duree = form.querySelector(".duree").value;
+                const profondeur = form.querySelector(".profondeur").value;
+                const paliers = form.querySelector(".paliers").value;
+        
+                const response = await fetch("/sauvegarder_parametres", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        id: palanqueeId,
+                        duree,
+                        profondeur,
+                        paliers
+                    })
+                });
+        
+                const result = await response.json();
+                if (result.success) {
+                    alert("✅ Paramètres enregistrés avec succès !");
+                } else {
+                    alert("❌ Erreur lors de l'enregistrement.");
+                }
+            });
+        });
+        </script>
+        <script>
+            async function envoyerParWhatsApp() {
+                const plongeeId = "<%= typeof plongeeId !== 'undefined' ? plongeeId : '' %>";
+        
+                try {
+                    const response = await fetch(`/plongee_info?id=${plongeeId}`);
+                    const data = await response.json();
+        
+                    if (data.error) {
+                        alert("Erreur : " + data.error);
+                        return;
+                    }
+        
+                    console.log("📅 Date brute récupérée :", data.date);
+        
+                    let datePlongee = data.date;
+                    if (!datePlongee || datePlongee.toLowerCase().includes("invalid")) {
+                        console.error("❌ Erreur : Date invalide ->", data.date);
+                        datePlongee = "Date inconnue";
+                    }
+        
+                    let nomSitePlongee = data.site || "Site inconnu"; 
+        
+                    let message = `🌊 *Compte-rendu Plongée* 🌊\n`;
+                    message += `📅 *Date* : ${datePlongee}\n`;
+                    message += `🤿 *Plongée n°1 - ${nomSitePlongee}*\n\n`;
+        
+                    <% palanquees.forEach(function(palanquee) { %>
+                        message += `🔹 *Palanquée <%= palanquee.nom %>*\n`;
+                        message += `⏳ *Durée* : <%= palanquee.duree || 'Non défini' %> min\n`;
+                        message += `📏 *Profondeur* : <%= palanquee.profondeur || 'Non défini' %> m\n`;
+                        message += `⚓ *Paliers* : <%= palanquee.paliers || 'Non définis' %>\n`;
+                        message += `👥 *Plongeurs* :\n`;
+        
+                        <% if (palanquee.plongeurs && palanquee.plongeurs.length > 0) { %>
+                            <% palanquee.plongeurs.forEach(function(plongeur) { %>
+                                message += `   - <%= plongeur.nom %> (<%= plongeur.niveau %>)\n`;
+                            <% }); %>
+                        <% } else { %>
+                            message += `   Aucun plongeur dans cette palanquée.\n`;
+                        <% } %>
+        
+                        message += "\n"; // Ligne vide pour séparer
+                    <% }); %>
+        
+                    let url = "https://wa.me/?text=" + encodeURIComponent(message);
+                    window.open(url, "_blank");
+                } catch (error) {
+                    console.error("❌ Erreur récupération plongée:", error);
+                    alert("Impossible de récupérer les informations de la plongée.");
+                }
+            }
+        </script>
+        
+        
+        
+        
+        
+                   
+            
+        
+</body>
+</html>
+
+<style>
+.palanquee-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background-color: #1b263b;
+    border-radius: 10px;
+    padding: 20px;
+    width: 90%;
+    max-width: 600px;
+    min-height: 140px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+    margin: 15px auto;
+}
+
+.palanquee-left {
+    width: 50%;
+    text-align: left;
+}
+
+.palanquee-right {
+    width: 50%;
+    text-align: right;
+}
+
+.palanquee-right label {
+    display: block;
+    font-size: 14px;
+    color: white;
+    margin-top: 5px;
+}
+
+.palanquee-right input {
+    width: 80%;
+    padding: 5px;
+    margin-top: 3px;
+    border-radius: 5px;
+    border: none;
+    font-size: 14px;
+}
+
+.btn-enregistrer {
+    background-color: #28a745;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    display: block;
+    margin: 10px auto 0;
+}
+
+.btn-enregistrer:hover {
+    background-color: #218838;
+}
+</style>

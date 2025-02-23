@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Plongées</title>
+    <link rel="stylesheet" href="/styles.css"> <!-- Vérifie que le fichier CSS est bien accessible -->
+</head>
+<body>
+    <div class="container">
+        <button class="btn-retour" onclick="history.back()">Retour</button>
+        <h1 class="title">Plongée du <span id="selected-date"><%= date %></span></h1>
+
+        <ul class="plongees-list" id="plongeesList">
+            <% if (plongees && plongees.length > 0) { %>
+                <% plongees.forEach(function(plongee) { %>
+                    <li class="plongee-item" data-id="<%= plongee.id %>">
+                        <span>Plongée <%= plongee.numero %> - <span class="site-name"><%= plongee.site || "Nom du site" %></span></span>
+                        <button class="edit-btn">Site</button>
+                        <a href="/parametres_palanquees?id=<%= plongee.id %>" class="parametres-link">
+                            <img src="/icons/liste.png" alt="Paramètres" class="parametres-icon">
+                        </a>
+                    </li>
+                    
+                                       
+                <% }); %>
+            <% } else { %>
+                <p id="no-plongees-message">Aucune plongée à afficher.</p>
+            <% } %>
+        </ul>
+
+        <!-- Bouton Ajouter Plongée en bas -->
+        <div class="form-container">
+            <button class="add-button" id="ajouter-plongee">Ajouter Plongée</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            console.log("✅ Script chargé");
+
+            // Redirection vers gestion_palanquees.ejs lorsqu'on clique sur une plongée
+            document.querySelectorAll(".plongee-item").forEach(item => {
+                item.addEventListener("click", function (event) {
+                    // Vérifie si l'utilisateur clique sur le bouton "Éditer", dans ce cas on ne redirige pas
+                    if (event.target.classList.contains("edit-btn")) return;
+
+                    const plongeeId = this.getAttribute("data-id");
+                    if (plongeeId) {
+                        window.location.href = `/gestion_palanquees?id=${plongeeId}`;
+                    }
+                });
+            });
+
+            document.querySelectorAll(".edit-btn").forEach(button => {
+                button.addEventListener("click", function () {
+                    console.log("✏️ Bouton 'Éditer' cliqué");
+
+                    const plongeeItem = this.closest(".plongee-item");
+                    if (!plongeeItem) {
+                        console.error("❌ Erreur : Impossible de trouver .plongee-item");
+                        return;
+                    }
+
+                    let siteNameSpan = plongeeItem.querySelector(".site-name");
+
+                    // Vérifier si le site existe déjà
+                    if (!siteNameSpan) {
+                        console.log("⚠️ Aucune donnée de site trouvée, création d'un élément vide.");
+                        siteNameSpan = document.createElement("span");
+                        siteNameSpan.classList.add("site-name");
+                        siteNameSpan.textContent = "Aucun site";
+                        plongeeItem.appendChild(siteNameSpan);
+                    }
+
+                    console.log("📌 Élément à modifier:", siteNameSpan.textContent);
+
+                    // Créer un champ input et un bouton de validation
+                    const input = document.createElement("input");
+                    input.type = "text";
+                    input.value = siteNameSpan.textContent !== "Aucun site" ? siteNameSpan.textContent : "";
+                    input.classList.add("edit-site-input");
+
+                    const saveButton = document.createElement("button");
+                    saveButton.textContent = "✅";
+                    saveButton.classList.add("save-btn");
+
+                    // Remplace le texte par l'input
+                    siteNameSpan.replaceWith(input);
+                    plongeeItem.appendChild(saveButton);
+
+                    // Ajouter l'événement click au bouton valider
+                    saveButton.addEventListener("click", async function () {
+                        console.log("🟢 Bouton 'Valider' cliqué");
+
+                        const newSiteName = input.value.trim();
+                        const plongeeId = plongeeItem.getAttribute("data-id");
+
+                        if (!newSiteName) {
+                            alert("Le nom du site ne peut pas être vide !");
+                            return;
+                        }
+
+                        console.log(`🔄 Mise à jour du site : ${newSiteName} (Plongée ID: ${plongeeId})`);
+
+                        try {
+                            const response = await fetch("/api/mettre-a-jour-site", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ id: plongeeId, site: newSiteName })
+                            });
+
+                            if (!response.ok) {
+                                throw new Error(`Erreur serveur (${response.status}): ${await response.text()}`);
+                            }
+
+                            console.log("✅ Mise à jour réussie");
+
+                            // Créer un nouveau span mis à jour
+                            const updatedSiteSpan = document.createElement("span");
+                            updatedSiteSpan.classList.add("site-name");
+                            updatedSiteSpan.textContent = newSiteName;
+
+                            input.replaceWith(updatedSiteSpan);
+                            saveButton.remove();
+
+                        } catch (error) {
+                            console.error("🚨 Erreur lors de la mise à jour :", error);
+                            alert("Erreur lors de la mise à jour du site.");
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sélection des Sorties</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Sélectionnez une Sortie</h1>
+
+        <div class="sorties">
+            <% sorties.forEach(sortie => { %>
+                <div class="sortie" onclick="selectSortie('<%= sortie.id %>')">
+                    <span><%= sortie.lieu %></span>
+                    <span><%= new Date(sortie.date_debut).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }) %></span>
+                </div>
+            <% }) %>
+        </div>
+
+        <div id="calendar"></div>
+        <input type="hidden" id="dateInput">
+        <button class="ajouter-sortie" id="continuer-btn" onclick="validerSelection()">Continuer</button>
+    </div>
+
+    <script>
+        let selectedSortieId = null;
+        let selectedDate = null;
+
+        function selectSortie(sortieId) {
+            selectedSortieId = sortieId;
+            const sorties = document.querySelectorAll('.sortie');
+            sorties.forEach(sortie => {
+                sortie.classList.remove('selected');
+            });
+            document.querySelector(`.sortie[onclick*="${sortieId}"]`).classList.add('selected');
+        }
+
+        function validerSelection() {
+            const selectedDateValue = $('#dateInput').val();
+            if (selectedSortieId && selectedDateValue) {
+                console.log("Sortie sélectionnée :", selectedSortieId);
+                console.log("Date de plongée sélectionnée :", selectedDateValue);
+
+                // Rediriger vers la route pour gérer les plongées
+                window.location.href = `/plongees/${selectedSortieId}/${selectedDateValue}`; // Vérifiez que l'URL est correcte
+            } else {
+                alert("Veuillez sélectionner une sortie et une date.");
+            }
+        }
+
+
+
+        $(document).ready(function() {
+            // Charger les événements de la base de données
+            const events = []; // Remplacez ceci par vos événements récupérés depuis la base de données
+            <% sorties.forEach(sortie => { %>
+                events.push({
+                    title: '<%= sortie.lieu %>', // Nom de la sortie
+                    start: '<%= sortie.date_debut %>', // Date de début
+                    end: '<%= sortie.date_fin %>', // Date de fin
+                    allDay: true
+                });
+            <% }) %>
+
+            $('#calendar').fullCalendar({
+                header: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'month,agendaWeek,agendaDay'
+                },
+                events: events, // Ajouter les événements ici
+                dayClick: function(date, jsEvent, view) {
+                    // Vérifiez si la date est déjà sélectionnée
+                    if (selectedDate && selectedDate.isSame(date, 'day')) {
+                        // Désélectionner la date si elle a été cliquée à nouveau
+                        $('#calendar').fullCalendar('removeEvents', function(event) {
+                            return event.start.isSame(selectedDate, 'day'); // Retire l'événement de la date sélectionnée
+                        });
+                        selectedDate = null; // Réinitialiser la date sélectionnée
+                        $('#dateInput').val(''); // Réinitialiser le champ de date
+                    } else {
+                        // Si une date est déjà sélectionnée, la désélectionner
+                        if (selectedDate) {
+                            $('#calendar').fullCalendar('removeEvents', function(event) {
+                                return event.start.isSame(selectedDate, 'day'); // Retire l'événement de la date sélectionnée
+                            });
+                        }
+
+                        // Met à jour la date sélectionnée
+                        selectedDate = date;
+
+                        // Ajoute une classe à la date sélectionnée pour la surbrillance
+                        $('#calendar').fullCalendar('renderEvent', {
+                            title: '', // Pas de titre pour un événement de sélection
+                            start: date,
+                            allDay: true,
+                            className: ['selected-date'] // Classe pour changer l'apparence de la date sélectionnée
+                        }, true);
+
+                        // Met à jour le champ caché avec la date sélectionnée
+                        $('#dateInput').val(date.format('YYYY-MM-DD'));
+                    }
+                },
+                editable: true, // Permet d'éditer les événements
+                eventLimit: true, // Limite le nombre d'événements affichés
+            });
+        });
+
+    </script>
+
+</body>
+</html>

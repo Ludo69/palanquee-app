@@ -1,0 +1,621 @@
+body {
+  background-color: #0d1b2a;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.title {
+  color: #64dfdf;
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.main-image {
+  width: 80%;
+  max-width: 400px;
+  border-radius: 15px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.buttons {
+  margin-top: 20px;
+}
+
+.button {
+  display: block;
+  width: 80%;
+  max-width: 300px;
+  margin: 10px auto;
+  padding: 15px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 18px;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+}
+
+.blue { background-color: #007bff; }
+.green { background-color: #28a745; }
+.orange { background-color: #fd7e14; }
+
+/* Gestion des Plongeurs */
+.form-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-container input {
+  width: 80%;
+  max-width: 300px;
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  font-size: 16px;
+}
+
+.niveau-buttons {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.niveau-btn {
+  background-color: #1b263b;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.niveau-btn.selected {
+  background-color: #64dfdf;
+  color: #0d1b2a;
+}
+
+.add-button {
+  background-color: #64dfdf;
+  color: #0d1b2a;
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.plongeurs-list {
+  margin-top: 20px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 10px;
+  border-radius: 10px;
+  background-color: #1b263b;
+}
+
+.plongeur-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #0d1b2a;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.edit-btn, .delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+/* Gestion des Sorties */
+.sorties {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 300px; /* Limite la hauteur du conteneur */
+    overflow-y: auto; /* Permet le défilement vertical */
+    margin-top: 20px;
+    align-items: center;
+}
+
+.sortie {
+  display: flex;
+  justify-content: space-between;
+  background: #0E2A4E;
+  padding: 12px;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 500px;
+  cursor: pointer; /* Change le curseur pour indiquer que c'est cliquable */
+  transition: background 0.3s; /* Ajoute une transition pour l'effet de survol */
+}
+
+.sortie:hover {
+  background: #4ac2b4; /* Change la couleur au survol */
+}
+
+.sortie span {
+  font-size: 16px;
+  color: white;
+}
+
+.sortie.selected {
+  background: #64dfdf; /* Couleur pour la sortie sélectionnée */
+}
+
+.date-selection {
+  margin-top: 20px;
+}
+
+.ajouter-sortie {
+  margin-top: 20px; /* Ajuste cette valeur selon tes besoins */
+  background-color: #59E2D1;
+  color: black;
+  font-weight: bold;
+  width: 80%; /* Ajustez la largeur si nécessaire */
+  max-width: 200px; /* Limitez la largeur maximum pour éviter le dépassement */
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  white-space: nowrap; /* Empêche le texte de passer à la ligne */
+  overflow: hidden; /* Masque le texte qui dépasse */
+  text-overflow: ellipsis; /* Affiche "..." si le texte dépasse */
+}
+
+.ajouter-sortie:hover {
+  background-color: #4ac2b4;
+}
+
+.ajouter-plongeur {
+  background: #0085ff;
+  color: white;
+  border: none;
+  font-size: 18px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ajouter-plongeur:hover {
+  background: #006ecc;
+}
+
+.supprimer {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #ff4a4a;
+}
+
+.supprimer:hover {
+  color: #cc0000;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 5px; /* Espacement entre les boutons */
+}
+
+.ajouter-plongeur {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  font-size: 18px;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.supprimer-sortie {
+  background: none;
+  border: none;
+  color: red;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-retour {
+  background-color: #f44336; /* Couleur rouge */
+  color: white; /* Couleur du texte */
+  border: none; /* Pas de bordure */
+  padding: 10px 15px; /* Espacement interne */
+  font-size: 16px; /* Taille du texte */
+  cursor: pointer; /* Curseur pointeur */
+  border-radius: 5px; /* Coins arrondis */
+  position: absolute; /* Permet de positionner le bouton */
+  left: 20px; /* Distance du bord gauche */
+  top: 20px; /* Distance du bord supérieur */
+  z-index: 1000; /* Pour s'assurer qu'il est au-dessus d'autres éléments */
+}
+
+/* Media query pour les écrans plus petits */
+@media (max-width: 600px) {
+  .btn-retour {
+      font-size: 14px; /* Réduire la taille du texte */
+      padding: 8px 12px; /* Ajuster l'espacement interne */
+      left: 10px; /* Réduire l'espace du bord gauche */
+      top: 10px; /* Réduire l'espace du bord supérieur */
+  }
+}
+
+
+#calendar {
+    margin-top: 20px;
+    max-width: 800px; /* Ajustez la largeur du calendrier */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.selected-date {
+    background-color: #64dfdf !important; /* Couleur de fond pour la date sélectionnée */
+    color: #0d1b2a !important; /* Couleur du texte pour la date sélectionnée */
+    border: 1px solid #007bff !important; /* Bordure pour la date sélectionnée */
+}
+
+/* Styles pour la liste des plongées */
+
+.plongees-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Espacement entre les plongées */
+  max-height: 300px; /* Pour éviter une liste trop longue */
+  overflow-y: auto; /* Défilement si trop d'éléments */
+  margin-top: 20px;
+  align-items: center;
+  padding: 0;
+}
+
+.plongee-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #0E2A4E;
+  padding: 12px;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 500px;
+  cursor: pointer;
+  transition: background 0.3s ease; /* Ajoute une transition fluide */
+}
+
+.plongee-item:hover {
+  background: #4ac2b4; /* Change la couleur au survol */
+}
+
+.plongee-item span {
+  font-size: 16px;
+  color: white;
+}
+
+.plongee-item button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.plongee-item button:hover {
+  background-color: #0056b3;
+}
+
+.edit-site-input {
+  width: 60%;
+  padding: 5px;
+  margin-right: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.save-btn {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.save-btn:hover {
+  background-color: #218838;
+}
+
+/* Grille de palanquées en 2 colonnes */
+.palanquees-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  padding: 20px;
+  justify-content: center;
+}
+
+/* Carte palanquée */
+.palanquee-card {
+  background-color: #1b263b;
+  border-radius: 10px;
+  padding: 10px;
+  width: 150px;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.palanquee-header {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-weight: bold;
+  color: #64dfdf;
+}
+
+.palanquee-body {
+    min-height: 50px; /* Taille minimale pour être visible */
+    border: 2px dashed #ccc; /* Pour visualiser la zone */
+    padding: 10px; /* Espace intérieur */
+}
+
+/* Liste des plongeurs scrollable horizontalement */
+.scroll-horizontal {
+  display: flex;
+  overflow-x: auto;
+  padding: 10px;
+  gap: 10px;
+}
+
+.plongeur {
+  background-color: #007bff;
+  color: white;
+  padding: 8px;
+  border-radius: 5px;
+  cursor: grab;
+  font-size: 14px;
+}
+
+.plongeur:hover {
+  background-color: #0056b3;
+}
+
+/* Boutons */
+.add-button {
+  padding: 10px 15px;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+}
+.niveau-vert {
+  background-color: #4CAF50; /* Vert */
+  color: white;
+}
+
+.niveau-bleu {
+  background-color: #007BFF; /* Bleu */
+  color: white;
+}
+
+.palanquee-body .plongeur {
+    margin: 5px 0; /* Ajoute un espace vertical entre les plongeurs */
+    padding: 8px; /* Optionnel : ajoute un peu de padding pour l'apparence */
+    display: block; /* S'assure que chaque plongeur est sur une ligne séparée */
+}
+
+.parametres-btn {
+  background-color: #00ff99;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  margin-left: 10px;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.parametres-link {
+  margin-left: 10px;
+  display: inline-block;
+}
+
+.parametres-icon {
+  width: 24px; /* Taille de l'icône */
+  height: 24px;
+  cursor: pointer;
+}
+
+.palanquee-card {
+  display: flex;
+  justify-content: space-between; /* Sépare en deux colonnes */
+  align-items: center;
+  background-color: #1b263b;
+  border-radius: 10px;
+  padding: 20px;
+  width: 90%;
+  max-width: 600px;
+  min-height: 140px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease, background 0.3s ease;
+  margin: 15px auto;
+}
+
+.palanquee-card:hover {
+  background: #4ac2b4;
+}
+
+/* Colonne gauche : Nom + Liste des plongeurs */
+.palanquee-left {
+  width: 50%;
+  text-align: left;
+}
+
+.palanquee-nom {
+  color: #64dfdf;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.plongeurs-list {
+  list-style: none;
+  padding: 0;
+}
+
+.plongeur-item {
+  background-color: #007bff;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  margin-top: 5px;
+  display: inline-block;
+}
+
+/* Colonne droite : Formulaire */
+.palanquee-right {
+  width: 50%;
+  text-align: right;
+}
+
+.palanquee-right label {
+  display: block;
+  font-size: 14px;
+  color: white;
+  margin-top: 5px;
+}
+
+.palanquee-right input {
+  width: 80%;
+  padding: 5px;
+  margin-top: 3px;
+  border-radius: 5px;
+  border: none;
+  font-size: 14px;
+}
+
+.btn-enregistrer {
+  background-color: #28a745;
+  color: white;
+  padding: 8px 15px;
+  border-radius: 5px;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  display: block;
+  margin: 10px auto 0;
+}
+
+.btn-enregistrer:hover {
+  background-color: #218838;
+}
+
+input:disabled {
+  color: white;
+  background-color: #555; /* Pour améliorer la lisibilité */
+  opacity: 1; /* Empêcher le grisé par défaut */
+}
+
+.btn-whatsapp {
+  background-color: #25D366;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 5px;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  display: block;
+  margin: 20px auto;
+}
+
+.btn-whatsapp:hover {
+  background-color: #1EBE5D;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #1b263b;
+  color: white;
+  text-align: center;
+}
+
+.container {
+  width: 90%;
+  max-width: 500px;
+  margin: auto;
+}
+
+.buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  text-decoration: none;
+  color: white;
+  width: 100%;
+  max-width: 300px;
+  margin: auto;
+}
+
+.blue { background-color: #007bff; }
+.green { background-color: #28a745; }
+.orange { background-color: #ff9800; }
+
+.main-image {
+  width: 100%;
+  max-width: 250px;
+  height: auto;
+  margin-top: 20px;
+}
+
+
+
+
+.blue { background-color: #007bff; color: white; }
+.green { background-color: #28a745; color: white; }
