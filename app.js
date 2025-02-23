@@ -282,17 +282,27 @@ app.get("/plongees/:sortieId/:date", async (req, res) => {
 
 app.post("/api/ajouter-plongee", async (req, res) => {
     try {
-        const { numero, sortie_id, date } = req.body;
+        const { sortie_id, date } = req.body;
         console.log("Données reçues pour ajout de plongée:", req.body);
 
-        // 🔍 Vérification des données
-        if (!numero || !sortie_id || !date) {
-            return res
-                .status(400)
-                .json({ error: "Données manquantes pour créer la plongée" });
+        if (!sortie_id || !date) {
+            return res.status(400).json({ error: "Données manquantes pour créer la plongée" });
         }
 
-        // 🔽 Insertion dans la base de données
+        // 🔍 Récupérer le nombre actuel de plongées pour cette sortie
+        const { data: existingPlongees, error: countError } = await supabase
+            .from("plongees")
+            .select("id", { count: "exact" }) // On compte le nombre de plongées
+            .eq("sortie_id", sortie_id);
+
+        if (countError) {
+            console.error("Erreur lors de la récupération des plongées :", countError);
+            return res.status(500).json({ error: "Erreur lors de la récupération des plongées" });
+        }
+
+        const numero = (existingPlongees.length || 0) + 1; // Numéro = total existant + 1
+
+        // 🔽 Insérer la nouvelle plongée avec le bon numéro
         const { data, error } = await supabase
             .from("plongees")
             .insert([{ numero, sortie_id, date }])
@@ -300,21 +310,17 @@ app.post("/api/ajouter-plongee", async (req, res) => {
 
         if (error) {
             console.error("Erreur lors de l'insertion :", error);
-            return res
-                .status(500)
-                .json({ error: "Erreur lors de l'insertion" });
+            return res.status(500).json({ error: "Erreur lors de l'insertion" });
         }
 
-        // ✅ Retourner l'objet ajouté
         console.log("✅ Plongée ajoutée :", data[0]);
         return res.json(data[0]);
     } catch (error) {
         console.error("🚨 Erreur serveur :", error);
-        return res
-            .status(500)
-            .json({ error: "Erreur serveur lors de l'ajout de la plongée" });
+        return res.status(500).json({ error: "Erreur serveur lors de l'ajout de la plongée" });
     }
 });
+
 
 app.post("/api/mettre-a-jour-site", async (req, res) => {
     try {

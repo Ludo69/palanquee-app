@@ -132,6 +132,45 @@
                 });
             });
         });
+        document.getElementById("ajouter-plongee").addEventListener("click", async function () {
+    console.log("🟢 Bouton 'Ajouter Plongée' cliqué");
+
+    //const selectedDate = document.getElementById("selected-date").textContent.trim();
+    
+    // 💡 Génére un numéro aléatoire pour la plongée (temporaire)
+    const numero = Math.floor(Math.random() * 1000); 
+    
+    // 💡 Récupère l'ID de sortie depuis l'URL (ou autre source)
+    //const urlParams = new URLSearchParams(window.location.search);
+    //const sortie_id = urlParams.get("sortie_id") || 1; // Remplace 1 par une valeur par défaut si nécessaire
+    const urlParts = window.location.pathname.split("/");
+    const sortie_id = urlParts[2]; // UUID de la sortie (3e segment de l'URL)
+    const selectedDate = urlParts[3]; // Date (4e segment de l'URL)
+
+    console.log("🔍 sortie_id extrait de l'URL :", sortie_id);
+    console.log("📅 Date sélectionnée :", selectedDate);
+
+    try {
+        const response = await fetch("/api/ajouter-plongee", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ numero, sortie_id, date: selectedDate }) 
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erreur serveur (${response.status}): ${await response.text()}`);
+        }
+
+        const newPlongee = await response.json();
+        console.log("✅ Plongée ajoutée avec succès :", newPlongee);
+        location.reload(); // Recharge la page pour voir la nouvelle plongée
+    } catch (error) {
+        console.error("🚨 Erreur lors de l'ajout :", error);
+        alert("Erreur lors de l'ajout de la plongée.");
+    }
+});
+
+
     </script>
 
 </body>
