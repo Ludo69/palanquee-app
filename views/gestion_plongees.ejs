@@ -81,9 +81,18 @@
                     input.value = siteNameSpan.textContent !== "Aucun site" ? siteNameSpan.textContent : "";
                     input.classList.add("edit-site-input");
 
+                    // ⛔ Empêche la redirection quand on clique dans l'input
+                    input.addEventListener("click", function(event) {
+                        event.stopPropagation();
+                    });
                     const saveButton = document.createElement("button");
                     saveButton.textContent = "✅";
                     saveButton.classList.add("save-btn");
+
+                    // ⛔ Empêche la redirection quand on clique sur "Valider"
+                    saveButton.addEventListener("click", function(event) {
+                        event.stopPropagation();
+                    });
 
                     // Remplace le texte par l'input
                     siteNameSpan.replaceWith(input);

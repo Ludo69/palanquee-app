@@ -64,36 +64,75 @@
         <% } %>
     </div>
     <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const plongeeId = urlParams.get("id"); // Récupère l'ID de la plongée depuis l'URL
+        console.log("🔍 ID de la plongée récupéré :", plongeeId);
+
         document.querySelectorAll(".btn-enregistrer").forEach(button => {
-            button.addEventListener("click", async function () {
-                const palanqueeId = this.dataset.id;
-                const form = document.querySelector(`#form-${palanqueeId}`);
-        
-                const duree = form.querySelector(".duree").value;
-                const profondeur = form.querySelector(".profondeur").value;
-                const paliers = form.querySelector(".paliers").value;
-        
-                const response = await fetch("/sauvegarder_parametres", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        id: palanqueeId,
-                        duree,
-                        profondeur,
-                        paliers
-                    })
-                });
-        
-                const result = await response.json();
-                if (result.success) {
-                    alert("✅ Paramètres enregistrés avec succès !");
-                } else {
-                    alert("❌ Erreur lors de l'enregistrement.");
-                }
+    button.addEventListener("click", async function (event) {
+        event.preventDefault(); // Empêche le rechargement de la page
+        this.disabled = true; // 🔹 Désactive immédiatement le bouton pour éviter un double clic
+
+        const palanqueeId = this.closest("form").querySelector("[name='palanquee_id']").value;
+        if (!palanqueeId) {
+            console.error("❌ Erreur : ID de palanquée manquant !");
+            alert("❌ Impossible d'enregistrer : ID de la palanquée manquant.");
+            this.disabled = false;
+            return;
+        }
+
+        const form = document.querySelector(`#form-${palanqueeId}`);
+        if (!form) {
+            console.error("❌ Erreur : Formulaire introuvable !");
+            alert("❌ Erreur interne : formulaire non trouvé.");
+            this.disabled = false;
+            return;
+        }
+
+        // Récupération sécurisée des champs
+        const dureeInput = form.querySelector(".duree");
+        const profondeurInput = form.querySelector(".profondeur");
+        const paliersInput = form.querySelector(".paliers");
+
+        if (!dureeInput || !profondeurInput || !paliersInput) {
+            console.error("❌ Erreur : Un ou plusieurs champs sont introuvables !");
+            alert("❌ Erreur interne : champs de saisie non trouvés.");
+            this.disabled = false;
+            return;
+        }
+
+        const duree = dureeInput.value;
+        const profondeur = profondeurInput.value;
+        const paliers = paliersInput.value;
+
+        try {
+            const response = await fetch("/sauvegarder_parametres", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: palanqueeId, duree, profondeur, paliers })
             });
-        });
+
+            if (!response.ok) throw new Error("Erreur serveur");
+
+            const result = await response.json();
+            if (result.success) {
+                alert("✅ Paramètres enregistrés avec succès !");
+                dureeInput.disabled = true;
+                profondeurInput.disabled = true;
+                paliersInput.disabled = true;
+            } else {
+                alert("❌ Erreur lors de l'enregistrement.");
+                this.disabled = false;
+            }
+        } catch (error) {
+            console.error("🚨 Erreur lors de la requête :", error);
+            alert("❌ Erreur de communication avec le serveur.");
+            this.disabled = false;
+        }
+    });
+});
+
+
         </script>
         <script>
             async function envoyerParWhatsApp() {
