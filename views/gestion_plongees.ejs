@@ -4,183 +4,172 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des Plongées</title>
-    <link rel="stylesheet" href="/styles.css"> <!-- Vérifie que le fichier CSS est bien accessible -->
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <div class="container">
-        <button class="btn-retour" onclick="history.back()">Retour</button>
-        <h1 class="title">Plongée du <span id="selected-date"><%= date %></span></h1>
+<body class="bg-gray-900 text-white flex flex-col min-h-screen">
 
-        <ul class="plongees-list" id="plongeesList">
+    <div class="container mx-auto p-4 flex-grow">
+        <h1 class="text-2xl font-bold text-center mb-4">Plongée du <span id="selected-date"><%= date %></span></h1>
+
+        <ul class="space-y-3" id="plongeesList">
             <% if (plongees && plongees.length > 0) { %>
                 <% plongees.forEach(function(plongee) { %>
-                    <li class="plongee-item" data-id="<%= plongee.id %>">
-                        <span>Plongée <%= plongee.numero %> - <span class="site-name"><%= plongee.site || "Nom du site" %></span></span>
-                        <button class="edit-btn">Site</button>
-                        <a href="/parametres_palanquees?id=<%= plongee.id %>" class="parametres-link">
-                            <img src="/icons/liste.png" alt="Paramètres" class="parametres-icon">
+                    <li class="flex items-center justify-between bg-gray-800 p-3 rounded-lg shadow-md w-full max-w-3xl mx-auto cursor-pointer" 
+                        data-id="<%= plongee.id %>">
+                        
+                        <span>Plongée <%= plongee.numero %> - 
+                            <span class="site-name"><%= plongee.site || "Nom du site" %></span>
+                        </span>
+        
+                        <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded">Site</button>
+        
+                        <a href="/parametres_palanquees?id=<%= plongee.id %>">
+                            <img src="/icons/liste.png" alt="Paramètres" class="w-6 h-6">
                         </a>
                     </li>
-                    
-                                       
                 <% }); %>
             <% } else { %>
-                <p id="no-plongees-message">Aucune plongée à afficher.</p>
+                <p class="text-center text-gray-400">Aucune plongée à afficher.</p>
             <% } %>
         </ul>
+        
 
-        <!-- Bouton Ajouter Plongée en bas -->
-        <div class="form-container">
-            <button class="add-button" id="ajouter-plongee">Ajouter Plongée</button>
+        <div class="mt-6 flex justify-center">
+            <button id="ajouter-plongee" class="bg-green-500 text-white px-4 py-2 rounded-lg shadow-md">Ajouter Plongée</button>
         </div>
     </div>
 
+    <!-- Bottom Navigation -->
+    <div class="fixed bottom-0 left-0 w-full bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl">
+        <a href="/" class="text-gray-400 hover:text-blue-400 flex flex-col items-center">
+            <i class="fas fa-home text-xl"></i>
+            <span class="text-xs">🏠 Accueil</span>
+        </a>
+        <a href="/gestion-plongeurs" class="text-gray-400 hover:text-green-400 flex flex-col items-center">
+            <i class="fas fa-users text-xl"></i>
+            <span class="text-xs">👤 Plongeurs</span>
+        </a>
+        <a href="/gestion-sorties" class="text-gray-400 hover:text-yellow-400 flex flex-col items-center">
+            <i class="far fa-calendar-alt text-xl"></i>
+            <span class="text-xs">🤿 Sorties</span>
+        </a>
+        <a href="/selection-sorties" class="text-gray-400 hover:text-orange-400 flex flex-col items-center">
+            <i class="fas fa-mask text-xl"></i>
+            <span class="text-xs">📋 Palanquées</span>
+        </a>
+    </div>
+
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            console.log("✅ Script chargé");
-
-            // Redirection vers gestion_palanquees.ejs lorsqu'on clique sur une plongée
-            document.querySelectorAll(".plongee-item").forEach(item => {
-                item.addEventListener("click", function (event) {
-                    // Vérifie si l'utilisateur clique sur le bouton "Éditer", dans ce cas on ne redirige pas
-                    if (event.target.classList.contains("edit-btn")) return;
-
-                    const plongeeId = this.getAttribute("data-id");
-                    if (plongeeId) {
-                        window.location.href = `/gestion_palanquees?id=${plongeeId}`;
-                    }
-                });
-            });
-
-            document.querySelectorAll(".edit-btn").forEach(button => {
-                button.addEventListener("click", function () {
-                    console.log("✏️ Bouton 'Éditer' cliqué");
-
-                    const plongeeItem = this.closest(".plongee-item");
-                    if (!plongeeItem) {
-                        console.error("❌ Erreur : Impossible de trouver .plongee-item");
-                        return;
-                    }
-
-                    let siteNameSpan = plongeeItem.querySelector(".site-name");
-
-                    // Vérifier si le site existe déjà
-                    if (!siteNameSpan) {
-                        console.log("⚠️ Aucune donnée de site trouvée, création d'un élément vide.");
-                        siteNameSpan = document.createElement("span");
-                        siteNameSpan.classList.add("site-name");
-                        siteNameSpan.textContent = "Aucun site";
-                        plongeeItem.appendChild(siteNameSpan);
-                    }
-
-                    console.log("📌 Élément à modifier:", siteNameSpan.textContent);
-
-                    // Créer un champ input et un bouton de validation
-                    const input = document.createElement("input");
-                    input.type = "text";
-                    input.value = siteNameSpan.textContent !== "Aucun site" ? siteNameSpan.textContent : "";
-                    input.classList.add("edit-site-input");
-
-                    // ⛔ Empêche la redirection quand on clique dans l'input
-                    input.addEventListener("click", function(event) {
-                        event.stopPropagation();
-                    });
-                    const saveButton = document.createElement("button");
-                    saveButton.textContent = "✅";
-                    saveButton.classList.add("save-btn");
-
-                    // ⛔ Empêche la redirection quand on clique sur "Valider"
-                    saveButton.addEventListener("click", function(event) {
-                        event.stopPropagation();
-                    });
-
-                    // Remplace le texte par l'input
-                    siteNameSpan.replaceWith(input);
-                    plongeeItem.appendChild(saveButton);
-
-                    // Ajouter l'événement click au bouton valider
-                    saveButton.addEventListener("click", async function () {
-                        console.log("🟢 Bouton 'Valider' cliqué");
-
-                        const newSiteName = input.value.trim();
-                        const plongeeId = plongeeItem.getAttribute("data-id");
-
-                        if (!newSiteName) {
-                            alert("Le nom du site ne peut pas être vide !");
-                            return;
-                        }
-
-                        console.log(`🔄 Mise à jour du site : ${newSiteName} (Plongée ID: ${plongeeId})`);
-
-                        try {
-                            const response = await fetch("/api/mettre-a-jour-site", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ id: plongeeId, site: newSiteName })
-                            });
-
-                            if (!response.ok) {
-                                throw new Error(`Erreur serveur (${response.status}): ${await response.text()}`);
-                            }
-
-                            console.log("✅ Mise à jour réussie");
-
-                            // Créer un nouveau span mis à jour
-                            const updatedSiteSpan = document.createElement("span");
-                            updatedSiteSpan.classList.add("site-name");
-                            updatedSiteSpan.textContent = newSiteName;
-
-                            input.replaceWith(updatedSiteSpan);
-                            saveButton.remove();
-
-                        } catch (error) {
-                            console.error("🚨 Erreur lors de la mise à jour :", error);
-                            alert("Erreur lors de la mise à jour du site.");
-                        }
-                    });
-                });
-            });
-        });
-        document.getElementById("ajouter-plongee").addEventListener("click", async function () {
-    console.log("🟢 Bouton 'Ajouter Plongée' cliqué");
-
-    //const selectedDate = document.getElementById("selected-date").textContent.trim();
-    
-    // 💡 Génére un numéro aléatoire pour la plongée (temporaire)
-    const numero = Math.floor(Math.random() * 1000); 
-    
-    // 💡 Récupère l'ID de sortie depuis l'URL (ou autre source)
-    //const urlParams = new URLSearchParams(window.location.search);
-    //const sortie_id = urlParams.get("sortie_id") || 1; // Remplace 1 par une valeur par défaut si nécessaire
-    const urlParts = window.location.pathname.split("/");
-    const sortie_id = urlParts[2]; // UUID de la sortie (3e segment de l'URL)
-    const selectedDate = urlParts[3]; // Date (4e segment de l'URL)
-
-    console.log("🔍 sortie_id extrait de l'URL :", sortie_id);
-    console.log("📅 Date sélectionnée :", selectedDate);
+        async function chargerPlongees() {
+    const pathSegments = window.location.pathname.split("/");
+    const sortieId = pathSegments[2];
 
     try {
-        const response = await fetch("/api/ajouter-plongee", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ numero, sortie_id, date: selectedDate }) 
-        });
-
+        const response = await fetch(`/api/plongees/${sortieId}`);
         if (!response.ok) {
-            throw new Error(`Erreur serveur (${response.status}): ${await response.text()}`);
+            throw new Error(`Erreur serveur (${response.status})`);
         }
+        const plongees = await response.json();
 
-        const newPlongee = await response.json();
-        console.log("✅ Plongée ajoutée avec succès :", newPlongee);
-        location.reload(); // Recharge la page pour voir la nouvelle plongée
+        console.log("✅ Plongées récupérées :", plongees);
+
+        // Mise à jour de l'affichage
+        const plongeesList = document.getElementById("plongeesList");
+        plongeesList.innerHTML = ""; // Vide la liste
+
+        if (plongees.length > 0) {
+            plongees.forEach(plongee => {
+                const li = document.createElement("li");
+                li.classList.add("flex", "items-center", "justify-between", "bg-gray-800", "p-3", "rounded-lg", "shadow-md", "w-full", "max-w-3xl", "mx-auto", "cursor-pointer");
+                li.setAttribute("data-id", plongee.id);
+
+                li.innerHTML = `
+                    <span>Plongée ${plongee.numero} - 
+                        <span class="site-name">${plongee.site || "Nom du site"}</span>
+                    </span>
+
+                    <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded">Site</button>
+
+                    <a href="/parametres_palanquees?id=${plongee.id}">
+                        <img src="/icons/liste.png" alt="Paramètres" class="w-6 h-6">
+                    </a>
+                `;
+
+                plongeesList.appendChild(li);
+            });
+        } else {
+            plongeesList.innerHTML = `<p class="text-center text-gray-400">Aucune plongée à afficher.</p>`;
+        }
     } catch (error) {
-        console.error("🚨 Erreur lors de l'ajout :", error);
-        alert("Erreur lors de l'ajout de la plongée.");
+        console.error("❌ Erreur lors du chargement des plongées :", error);
+        alert("Erreur lors du chargement des plongées.");
     }
-});
+}
 
+        document.addEventListener("DOMContentLoaded", function () {
+            // Gestion de la redirection quand on clique sur une ligne
+            document.querySelectorAll("#plongeesList li").forEach(item => {
+                item.addEventListener("click", function (e) {
+                    if (e.target.tagName === "INPUT" || e.target.classList.contains("edit-btn")) {
+                        e.stopPropagation(); // Empêche la navigation
+                        return;
+                    }
+                    const plongeeId = this.getAttribute("data-id");
+                    window.location.href = `/gestion_palanquees?id=${plongeeId}`;
+                });
+            });
+    
+            // 🔥 Extraire `sortie_id` depuis l'URL
+            const pathSegments = window.location.pathname.split("/"); // Divise l'URL en segments
+            const sortieId = pathSegments[2]; // Récupère le deuxième élément après `/plongees/`
+    
+            console.log("🔹 sortie_id détecté :", sortieId);
+    
+            if (!sortieId || sortieId.length !== 36) {
+                console.error("❌ Erreur : sortie_id invalide !");
+                alert("Erreur : Aucun ID de sortie valide trouvé.");
+                return;
+            }
+    
+            // Récupérer le bouton "Ajouter Plongée"
+            const ajouterPlongeeBtn = document.getElementById("ajouter-plongee");
+    
+            if (ajouterPlongeeBtn) {
+                ajouterPlongeeBtn.addEventListener("click", async () => {
+                    console.log("🟢 Bouton Ajouter Plongée cliqué !");
+    
+                    try {
+                        const response = await fetch("http://localhost:3000/ajouter-plongee", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                sortie_id: sortieId, // 🟢 UUID détecté depuis l'URL
+                                date: new Date().toISOString().split("T")[0] // Date du jour
+                            })
+                        });
+    
+                        if (!response.ok) {
+                            throw new Error(`Erreur serveur (${response.status})`);
+                        }
+    
+                        const data = await response.json();
+                        console.log("✅ Réponse serveur :", data);
+                        chargerPlongees(); // Recharge uniquement la liste des plongées
+ // Recharge la page pour voir les nouvelles plongées
+                    } catch (error) {
+                        console.error("❌ Erreur lors de l'ajout :", error);
+                        alert("Erreur lors de l'ajout de la plongée");
+                    }
+                });
+            } else {
+                console.error("⚠️ Bouton Ajouter Plongée non trouvé !");
+            }
+        });
+        chargerPlongees();
 
     </script>
-
+    
+    
+        
 </body>
 </html>

@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Paramètres des Palanquées</title>
     <link rel="stylesheet" href="/styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
     <div class="container">
-        <button class="btn-retour" onclick="history.back()">Retour</button>
-        <button class="btn-whatsapp" onclick="envoyerParWhatsApp()">📩 Envoyer par WhatsApp</button>
+        <!-- Bouton WhatsApp stylisé -->
+        <button class="btn-whatsapp" onclick="envoyerParWhatsApp()">📩 Partager sur WhatsApp</button>
 
         <h1 class="title">Listing des palanquées</h1>
 
@@ -33,36 +34,64 @@
                     <div class="palanquee-right">
                         <form id="form-<%= palanquee.id %>" class="palanquee-form">
                             <input type="hidden" name="palanquee_id" value="<%= palanquee.id %>">
+                            
                             <label>Profondeur (m) :</label>
                             <input type="number" name="profondeur" class="profondeur" value="<%= palanquee.profondeur || '' %>" 
                                 <%= palanquee.profondeur ? 'disabled' : '' %> required>
-
+                    
                             <label>Durée (min) :</label>
                             <input type="number" name="duree" class="duree" value="<%= palanquee.duree || '' %>" 
                                 <%= palanquee.duree ? 'disabled' : '' %> required>                
-                        
+                    
                             <label>Paliers :</label>
                             <input type="text" name="paliers" class="paliers" value="<%= palanquee.paliers || '' %>" 
                                 <%= palanquee.paliers ? 'disabled' : '' %> required>
-                        
-                            <button type="submit" class="btn-enregistrer"
-                                <%= (palanquee.duree !== null && palanquee.duree !== '' &&
-                                     palanquee.profondeur !== null && palanquee.profondeur !== '' &&
-                                     palanquee.paliers !== null && palanquee.paliers !== '') ? 'disabled' : '' %>>
-                                Enregistrer
-                            </button>
-                            
+                    
+                            <!-- 🔹 Boutons alignés sur la même ligne -->
+                            <div class="btn-group">
+                                <button type="submit" class="btn-enregistrer"
+                                    <%= (palanquee.duree !== null && palanquee.duree !== '' &&
+                                         palanquee.profondeur !== null && palanquee.profondeur !== '' &&
+                                         palanquee.paliers !== null && palanquee.paliers !== '') ? 'disabled' : '' %>>
+                                    Enregistrer
+                                </button>
+                    
+                                <button type="button" class="btn-modifier" onclick="window.location.href='/modif_palanquee/<%= palanquee.id %>'">
+                                    ✏️ Modifier
+                                </button>
+                                    
+                            </div>
                         </form>
-                        
-                        
-                        
                     </div>
+                    
+                    
                 </div>
             <% }); %>
         <% } else { %>
             <p>Aucune palanquée disponible pour cette plongée.</p>
         <% } %>
     </div>
+
+        <!-- Bottom Navigation -->
+        <div class="fixed bottom-0 left-0 w-full bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl">
+            <a href="/" class="text-gray-400 hover:text-blue-400 flex flex-col items-center">
+                <i class="fas fa-home text-xl"></i>
+                <span class="text-xs">🏠 Accueil</span>
+            </a>
+            <a href="/gestion-plongeurs" class="text-gray-400 hover:text-green-400 flex flex-col items-center">
+                <i class="fas fa-users text-xl"></i>
+                <span class="text-xs">👤 Plongeurs</span>
+            </a>
+            <a href="/gestion-sorties" class="text-gray-400 hover:text-yellow-400 flex flex-col items-center">
+                <i class="far fa-calendar-alt text-xl"></i>
+                <span class="text-xs">🤿 Sorties</span>
+            </a>
+            <a href="/selection-sorties" class="text-gray-400 hover:text-orange-400 flex flex-col items-center">
+                <i class="fas fa-mask text-xl"></i>
+                <span class="text-xs">📋 Palanquées</span>
+            </a>
+        </div>
+
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const plongeeId = urlParams.get("id"); // Récupère l'ID de la plongée depuis l'URL
@@ -187,6 +216,16 @@
                 }
             }
         </script>
+        <script>
+            function modifierPalanquee(palanqueeId) {
+                if (!palanqueeId) {
+                    alert("❌ Erreur : ID de la palanquée manquant.");
+                    return;
+                }
+                window.location.href = `/modif_palanquee?id=` + palanqueeId;
+            }
+        </script>
+        
         
         
         
@@ -219,8 +258,10 @@
 }
 
 .palanquee-right {
-    width: 50%;
-    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* 🔹 Assure un alignement parfait des éléments */
+    gap: 10px; /* 🔹 Espacement uniforme entre les éléments */
 }
 
 .palanquee-right label {
@@ -237,21 +278,5 @@
     border-radius: 5px;
     border: none;
     font-size: 14px;
-}
-
-.btn-enregistrer {
-    background-color: #28a745;
-    color: white;
-    padding: 8px 15px;
-    border-radius: 5px;
-    border: none;
-    font-size: 16px;
-    cursor: pointer;
-    display: block;
-    margin: 10px auto 0;
-}
-
-.btn-enregistrer:hover {
-    background-color: #218838;
 }
 </style>

@@ -2,30 +2,71 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Sélection des Sorties</title>
-    <link rel="stylesheet" href="/styles.css">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- FullCalendar -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
 </head>
-<body>
-    <div class="container">
-        <h1 class="title">Sélectionnez une Sortie</h1>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen px-4">
 
-        <div class="sorties">
+    <div class="w-full max-w-md p-6">
+        <!-- Titre -->
+        <h1 class="text-3xl font-bold mb-4 text-center text-white">Sélectionnez une Sortie</h1>
+
+        <!-- Liste des sorties -->
+        <div class="space-y-4">
             <% sorties.forEach(sortie => { %>
-                <div class="sortie" onclick="selectSortie('<%= sortie.id %>')">
-                    <span><%= sortie.lieu %></span>
-                    <span><%= new Date(sortie.date_debut).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }) %></span>
+                <div class="bg-gray-800 p-4 rounded-lg shadow-md flex justify-between items-center cursor-pointer hover:bg-gray-700 transition duration-300" onclick="selectSortie('<%= sortie.id %>')">
+                    <div class="flex items-center space-x-4 w-full">
+                        <span class="font-bold text-lg truncate"><%= sortie.lieu %></span>
+                        <span class="text-gray-400 text-sm whitespace-nowrap">
+                            <%= new Date(sortie.date_debut).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) %>
+                        </span>
+                    </div>
+                    <div class="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-white opacity-50" id="checkmark-<%= sortie.id %>">
+                        ✔
+                    </div>
                 </div>
             <% }) %>
         </div>
+        
 
-        <div id="calendar"></div>
+        <!-- Calendrier -->
+        <div id="calendar" class="mt-6 bg-gray-800 p-4 rounded-lg shadow-md"></div>
+
         <input type="hidden" id="dateInput">
-        <button class="ajouter-sortie" id="continuer-btn" onclick="validerSelection()">Continuer</button>
+
+        <!-- Bouton Continuer -->
+        <button id="continuer-btn" onclick="validerSelection()" class="mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white text-lg font-semibold py-3 rounded-lg shadow-md transition duration-300">
+            Continuer
+        </button>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="fixed bottom-0 left-0 w-full bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl">
+        <a href="/" class="text-gray-400 hover:text-blue-400 flex flex-col items-center">
+            <i class="fas fa-home text-xl"></i>
+            <span class="text-xs">🏠 Accueil</span>
+        </a>
+        <a href="/gestion-plongeurs" class="text-gray-400 hover:text-green-400 flex flex-col items-center">
+            <i class="fas fa-users text-xl"></i>
+            <span class="text-xs">👤 Plongeurs</span>
+        </a>
+        <a href="/gestion-sorties" class="text-gray-400 hover:text-yellow-400 flex flex-col items-center">
+            <i class="far fa-calendar-alt text-xl"></i>
+            <span class="text-xs">🤿 Sorties</span>
+        </a>
+        <a href="/selection-sorties" class="text-gray-400 hover:text-orange-400 flex flex-col items-center">
+            <i class="fas fa-mask text-xl"></i>
+            <span class="text-xs">📋 Palanquées</span>
+        </a>
     </div>
 
     <script>
@@ -34,36 +75,28 @@
 
         function selectSortie(sortieId) {
             selectedSortieId = sortieId;
-            const sorties = document.querySelectorAll('.sortie');
-            sorties.forEach(sortie => {
-                sortie.classList.remove('selected');
-            });
-            document.querySelector(`.sortie[onclick*="${sortieId}"]`).classList.add('selected');
+
+            // Réinitialiser les checkmarks
+            document.querySelectorAll('.w-6.h-6').forEach(el => el.classList.remove('opacity-100'));
+            document.getElementById(`checkmark-${sortieId}`).classList.add('opacity-100');
         }
 
         function validerSelection() {
             const selectedDateValue = $('#dateInput').val();
             if (selectedSortieId && selectedDateValue) {
-                console.log("Sortie sélectionnée :", selectedSortieId);
-                console.log("Date de plongée sélectionnée :", selectedDateValue);
-
-                // Rediriger vers la route pour gérer les plongées
-                window.location.href = `/plongees/${selectedSortieId}/${selectedDateValue}`; // Vérifiez que l'URL est correcte
+                window.location.href = `/plongees/${selectedSortieId}/${selectedDateValue}`;
             } else {
                 alert("Veuillez sélectionner une sortie et une date.");
             }
         }
 
-
-
         $(document).ready(function() {
-            // Charger les événements de la base de données
-            const events = []; // Remplacez ceci par vos événements récupérés depuis la base de données
+            const events = [];
             <% sorties.forEach(sortie => { %>
                 events.push({
-                    title: '<%= sortie.lieu %>', // Nom de la sortie
-                    start: '<%= sortie.date_debut %>', // Date de début
-                    end: '<%= sortie.date_fin %>', // Date de fin
+                    title: '<%= sortie.lieu %>',
+                    start: '<%= sortie.date_debut %>',
+                    end: '<%= sortie.date_fin %>',
                     allDay: true
                 });
             <% }) %>
@@ -74,44 +107,30 @@
                     center: 'title',
                     right: 'month,agendaWeek,agendaDay'
                 },
-                events: events, // Ajouter les événements ici
-                dayClick: function(date, jsEvent, view) {
-                    // Vérifiez si la date est déjà sélectionnée
+                events: events,
+                dayClick: function(date) {
                     if (selectedDate && selectedDate.isSame(date, 'day')) {
-                        // Désélectionner la date si elle a été cliquée à nouveau
-                        $('#calendar').fullCalendar('removeEvents', function(event) {
-                            return event.start.isSame(selectedDate, 'day'); // Retire l'événement de la date sélectionnée
-                        });
-                        selectedDate = null; // Réinitialiser la date sélectionnée
-                        $('#dateInput').val(''); // Réinitialiser le champ de date
+                        $('#calendar').fullCalendar('removeEvents', event => event.start.isSame(selectedDate, 'day'));
+                        selectedDate = null;
+                        $('#dateInput').val('');
                     } else {
-                        // Si une date est déjà sélectionnée, la désélectionner
                         if (selectedDate) {
-                            $('#calendar').fullCalendar('removeEvents', function(event) {
-                                return event.start.isSame(selectedDate, 'day'); // Retire l'événement de la date sélectionnée
-                            });
+                            $('#calendar').fullCalendar('removeEvents', event => event.start.isSame(selectedDate, 'day'));
                         }
-
-                        // Met à jour la date sélectionnée
                         selectedDate = date;
-
-                        // Ajoute une classe à la date sélectionnée pour la surbrillance
                         $('#calendar').fullCalendar('renderEvent', {
-                            title: '', // Pas de titre pour un événement de sélection
+                            title: '',
                             start: date,
                             allDay: true,
-                            className: ['selected-date'] // Classe pour changer l'apparence de la date sélectionnée
+                            className: ['selected-date']
                         }, true);
-
-                        // Met à jour le champ caché avec la date sélectionnée
                         $('#dateInput').val(date.format('YYYY-MM-DD'));
                     }
                 },
-                editable: true, // Permet d'éditer les événements
-                eventLimit: true, // Limite le nombre d'événements affichés
+                editable: true,
+                eventLimit: true,
             });
         });
-
     </script>
 
 </body>

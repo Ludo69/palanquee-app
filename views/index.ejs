@@ -2,36 +2,78 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Palanquee</title>
-    <link rel="stylesheet" href="/styles.css">
+    
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Manifest & Service Worker -->
     <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1b263b">
+    
+    <!-- FontAwesome -->
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+    <!-- Service Worker -->
     <script>
         if ("serviceWorker" in navigator) {
-          window.addEventListener("load", () => {
-            navigator.serviceWorker
-              .register("/sw.js")
-              .then(() => console.log("✅ Service Worker enregistré"))
-              .catch((err) => console.error("❌ Service Worker erreur:", err));
-          });
+            window.addEventListener("load", () => {
+                navigator.serviceWorker.register("/sw.js")
+                    .then(() => console.log("✅ Service Worker enregistré"))
+                    .catch((err) => console.error("❌ Service Worker erreur:", err));
+            });
         }
-        </script>
-        
-        <link rel="manifest" href="/manifest.json">
-        <meta name="theme-color" content="#1b263b">
-        
+    </script>
 </head>
-<body>
-    <div class="container">
-        <h1 class="title">Gestion des Palanquées</h1>
-        <img src="/images/plongeur.avif" alt="Plongée" class="main-image">
-        <div class="buttons">
-            <a href="/gestion-plongeurs" class="button blue"><i class="fas fa-user"></i> Annuaire Plongeurs</a>
-            <a href="/gestion-sorties" class="button green"><i class="far fa-calendar-alt"></i> Gestion des Sorties</a>
-        <a href="/selection-sorties" class="button orange"><i class="fas fa-mask">
-</i> Gestion des Palanquées</a>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen">
+    
+
+    <div class="w-full max-w-md p-6 text-center">
+        <!-- Titre -->
+        <h1 class="text-3xl font-bold mb-4 text-white">Gestion des Palanquées</h1>
+        
+        <!-- Image avec effet arrondi -->
+        <div class="rounded-2xl overflow-hidden shadow-lg">
+            <img src="/images/plongeur.avif" alt="Plongée" class="w-full object-cover">
+        </div>
+
+        <!-- Boutons -->
+        <div class="mt-6 space-y-4">
+            <a href="/gestion-plongeurs" class="w-full block text-lg font-semibold bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
+                <i class="fas fa-user mr-2"></i> Annuaire Plongeurs
+            </a>
+            <a href="/gestion-sorties" class="w-full block text-lg font-semibold bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
+                <i class="far fa-calendar-alt mr-2"></i> Gestion des Sorties
+            </a>
+            <a href="/selection-sorties" class="w-full block text-lg font-semibold bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
+                <i class="fas fa-mask mr-2"></i> Gestion des Palanquées
+            </a>
         </div>
     </div>
+
+    <!-- Bottom Navigation -->
+    <div class="fixed bottom-0 left-0 w-full bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl">
+        <a href="/" class="text-gray-400 hover:text-blue-400 flex flex-col items-center">
+            <i class="fas fa-home text-xl"></i>
+            <span class="text-xs">🏠 Accueil</span>
+        </a>
+        <a href="/gestion-plongeurs" class="text-gray-400 hover:text-green-400 flex flex-col items-center">
+            <i class="fas fa-users text-xl"></i>
+            <span class="text-xs">👤 Plongeurs</span>
+        </a>
+        <a href="/gestion-sorties" class="text-gray-400 hover:text-yellow-400 flex flex-col items-center">
+            <i class="far fa-calendar-alt text-xl"></i>
+            <span class="text-xs">🤿 Sorties</span>
+        </a>
+        <a href="/selection-sorties" class="text-gray-400 hover:text-orange-400 flex flex-col items-center">
+            <i class="fas fa-mask text-xl"></i>
+            <span class="text-xs">📋 Palanquées</span>
+        </a>
+    </div>
+
+    
+    
+       
 </body>
 </html>

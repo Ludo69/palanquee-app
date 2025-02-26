@@ -4,40 +4,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des Plongeurs</title>
-    <link rel="stylesheet" href="/styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <div class="container">
-        <h1 class="title">Gestion des Plongeurs</h1>
+<body class="bg-gray-900 text-white flex flex-col items-center min-h-screen">
+
+    <div class="w-full max-w-md p-6 text-center flex flex-col flex-grow">
+        <h1 class="text-3xl font-bold mb-4">Gestion des Plongeurs</h1>
 
         <!-- Formulaire d'ajout de plongeur -->
-        <form action="/ajouter-plongeur" method="POST" class="form-container">
-            <input type="text" id="nom" name="nom" placeholder="Nom du plongeur" required>
-            <div class="niveau-buttons">
+        <form action="/ajouter-plongeur" method="POST" class="bg-gray-800 p-4 rounded-lg shadow-md space-y-4">
+            <input type="text" id="nom" name="nom" placeholder="Nom du plongeur" required class="w-full p-2 bg-gray-700 text-white rounded-md border border-gray-600 focus:outline-none">
+            <div class="grid grid-cols-4 gap-2">
                 <% ["N1", "N2", "N3", "GP", "E2", "E3", "E4"].forEach(niveau => { %>
-                    <button type="button" class="niveau-btn" data-value="<%= niveau %>"><%= niveau %></button>
+                    <button type="button" class="niveau-btn bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition" data-value="<%= niveau %>"><%= niveau %></button>
                 <% }) %>
             </div>
             <input type="hidden" id="niveau" name="niveau" value="">
-            <button type="submit" class="add-button">Ajouter Plongeur</button>
+            <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-md transition">Ajouter Plongeur</button>
         </form>
 
-        <h2 class="list-title">Liste des Plongeurs</h2>
-        <div class="plongeurs-list">
+        <h2 class="text-xl font-semibold mt-6 mb-2">Liste des Plongeurs</h2>
+        
+        <!-- Liste des plongeurs scrollable -->
+        <div class="overflow-y-auto max-h-80 w-full p-2 space-y-2 no-scrollbar">
             <% plongeurs.forEach(plongeur => { %>
-                <div class="plongeur-item" data-id="<%= plongeur.id %>">
-                    <span class="plongeur-info"><%= plongeur.nom %> - <%= plongeur.niveau %></span>
-                    <div class="actions">
-                        <button class="edit-btn" onclick="editPlongeur('<%= plongeur.id %>', '<%= plongeur.niveau %>')">✏️</button>
-                        <button class="delete-btn" onclick="deletePlongeur('<%= plongeur.id %>')">❌</button>
+                <div class="bg-gray-800 p-3 rounded-lg flex justify-between items-center shadow-md">
+                    <span><%= plongeur.nom %> - <%= plongeur.niveau %></span>
+                    <div class="space-x-2">
+                        <button class="text-yellow-400 hover:text-yellow-300" onclick="editPlongeur('<%= plongeur.id %>', '<%= plongeur.niveau %>')">✏️</button>
+                        <button class="text-red-500 hover:text-red-400" onclick="deletePlongeur('<%= plongeur.id %>')">❌</button>
                     </div>
                 </div>
             <% }) %>
         </div>
     </div>
 
+    <!-- Bottom Navigation -->
+    <div class="fixed bottom-0 left-0 w-full bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl">
+        <a href="/" class="text-gray-400 hover:text-blue-400 flex flex-col items-center">
+            <i class="fas fa-home text-xl"></i>
+            <span class="text-xs">🏠 Accueil</span>
+        </a>
+        <a href="/gestion-plongeurs" class="text-gray-400 hover:text-green-400 flex flex-col items-center">
+            <i class="fas fa-users text-xl"></i>
+            <span class="text-xs">👤 Plongeurs</span>
+        </a>
+        <a href="/gestion-sorties" class="text-gray-400 hover:text-yellow-400 flex flex-col items-center">
+            <i class="far fa-calendar-alt text-xl"></i>
+            <span class="text-xs">🤿 Sorties</span>
+        </a>
+        <a href="/selection-sorties" class="text-gray-400 hover:text-orange-400 flex flex-col items-center">
+            <i class="fas fa-mask text-xl"></i>
+            <span class="text-xs">📋 Palanquées</span>
+        </a>
+    </div>
+
     <script>
-        // Gestion de la sélection du niveau
+        // Sélection du niveau avec effet visuel amélioré
         document.querySelectorAll('.niveau-btn').forEach(button => {
             button.addEventListener('click', function() {
                 document.getElementById('niveau').value = this.getAttribute("data-value");
@@ -46,52 +69,37 @@
             });
         });
 
-        // Fonction pour modifier un plongeur
         function editPlongeur(id, currentNiveau) {
             const newNiveau = prompt("Nouveau niveau pour ce plongeur :", currentNiveau);
-
-            // Vérification que l'utilisateur a bien entré un niveau
             if (newNiveau && newNiveau.trim() !== "") {
-                console.log(`📝 Modification ID: ${id}, Nouveau Niveau: ${newNiveau}`);
-
                 fetch(`/modifier-plongeur/${id}`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ niveau: newNiveau })
                 })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error("Erreur lors de la modification");
-                    }
-                    return response.text();
-                })
-                .then(data => {
-                    console.log("✅ Modification réussie :", data);
-                    location.reload();
-                })
+                .then(response => response.ok ? location.reload() : alert("Erreur lors de la modification"))
                 .catch(error => console.error("❌ Erreur :", error));
             }
         }
 
-        // Fonction pour supprimer un plongeur
         function deletePlongeur(id) {
             if (confirm("Voulez-vous vraiment supprimer ce plongeur ?")) {
-                console.log(`🚮 Suppression ID: ${id}`);
-
                 fetch(`/supprimer-plongeur/${id}`, { method: "DELETE" })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error("Erreur lors de la suppression");
-                    }
-                    return response.text();
-                })
-                .then(data => {
-                    console.log("✅ Suppression réussie :", data);
-                    location.reload();
-                })
+                .then(response => response.ok ? location.reload() : alert("Erreur lors de la suppression"))
                 .catch(error => console.error("❌ Erreur :", error));
             }
         }
     </script>
+
+    <style>
+        /* Cache la barre de défilement mais permet de scroller */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
 </body>
 </html>
