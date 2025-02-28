@@ -9,7 +9,11 @@
 <body class="bg-gray-900 text-white flex flex-col min-h-screen">
 
     <div class="container mx-auto p-4 flex-grow">
-        <h1 class="text-2xl font-bold text-center mb-4">Plongée du <span id="selected-date"><%= date %></span></h1>
+        <h1 class="text-2xl font-bold text-center mb-4">
+            Plongée du <span id="selected-date" data-date="<%= date %>">
+            <%= new Date(date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) %>
+            </span>
+        </h1>
 
         <ul class="space-y-3" id="plongeesList">
             <% if (plongees && plongees.length > 0) { %>
@@ -35,7 +39,7 @@
         
 
         <div class="mt-6 flex justify-center">
-            <button id="ajouter-plongee" class="bg-green-500 text-white px-4 py-2 rounded-lg shadow-md">Ajouter Plongée</button>
+            <button id="ajouter-plongee" class="bg-green-500 text-white px-4 py-2 rounded-lg shadow-md" data-date="<%= date %>">Ajouter Plongée</button>
         </div>
     </div>
 
@@ -61,52 +65,59 @@
 
     <script>
         async function chargerPlongees() {
-    const pathSegments = window.location.pathname.split("/");
-    const sortieId = pathSegments[2];
+            const pathSegments = window.location.pathname.split("/");
+            const sortieId = pathSegments[2];
+            const sortieDate = document.getElementById("selected-date").getAttribute("data-date");
 
-    try {
-        const response = await fetch(`/api/plongees/${sortieId}`);
-        if (!response.ok) {
-            throw new Error(`Erreur serveur (${response.status})`);
+            try {
+                console.log("🔍 ID de la sortie :", sortieId, "| Date :", sortieDate); // Debug
+
+                const response = await fetch(`/api/plongees/${sortieId}/${sortieDate}`);
+
+                if (!response.ok) {
+                    throw new Error(`Erreur serveur (${response.status})`);
+                }
+                const plongees = await response.json();
+
+                console.log("✅ Plongées récupérées :", plongees);
+
+                // Mise à jour de l'affichage
+                const plongeesList = document.getElementById("plongeesList");
+                plongeesList.innerHTML = ""; // Vide la liste
+
+                if (plongees.length > 0) {
+                    plongees.forEach(plongee => {
+                        const li = document.createElement("li");
+                        li.classList.add("flex", "items-center", "justify-between", "bg-gray-800", "p-3", "rounded-lg", "shadow-md", "w-full", "max-w-3xl", "mx-auto", "cursor-pointer");
+                        li.setAttribute("data-id", plongee.id);
+
+                        li.innerHTML = `
+                            <span>Plongée ${plongee.numero} - 
+                                <span class="site-name">${plongee.site || "Nom du site"}</span>
+                            </span>
+
+                            <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded">Site</button>
+
+                            <a href="/parametres_palanquees?id=${plongee.id}">
+                                <img src="/icons/liste.png" alt="Paramètres" class="w-6 h-6">
+                            </a>
+                        `;
+
+                        plongeesList.appendChild(li);
+                    });
+                } else {
+                    plongeesList.innerHTML = `<p class="text-center text-gray-400">Aucune plongée à afficher.</p>`;
+                }
+
+                // Ajout des gestionnaires d'événements après avoir ajouté les éléments à la liste
+                ajouterGestionnaireEvenements();
+            } catch (error) {
+                console.error("❌ Erreur lors du chargement des plongées :", error);
+                alert("Erreur lors du chargement des plongées.");
+            }
         }
-        const plongees = await response.json();
 
-        console.log("✅ Plongées récupérées :", plongees);
-
-        // Mise à jour de l'affichage
-        const plongeesList = document.getElementById("plongeesList");
-        plongeesList.innerHTML = ""; // Vide la liste
-
-        if (plongees.length > 0) {
-            plongees.forEach(plongee => {
-                const li = document.createElement("li");
-                li.classList.add("flex", "items-center", "justify-between", "bg-gray-800", "p-3", "rounded-lg", "shadow-md", "w-full", "max-w-3xl", "mx-auto", "cursor-pointer");
-                li.setAttribute("data-id", plongee.id);
-
-                li.innerHTML = `
-                    <span>Plongée ${plongee.numero} - 
-                        <span class="site-name">${plongee.site || "Nom du site"}</span>
-                    </span>
-
-                    <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded">Site</button>
-
-                    <a href="/parametres_palanquees?id=${plongee.id}">
-                        <img src="/icons/liste.png" alt="Paramètres" class="w-6 h-6">
-                    </a>
-                `;
-
-                plongeesList.appendChild(li);
-            });
-        } else {
-            plongeesList.innerHTML = `<p class="text-center text-gray-400">Aucune plongée à afficher.</p>`;
-        }
-    } catch (error) {
-        console.error("❌ Erreur lors du chargement des plongées :", error);
-        alert("Erreur lors du chargement des plongées.");
-    }
-}
-
-        document.addEventListener("DOMContentLoaded", function () {
+        function ajouterGestionnaireEvenements() {
             // Gestion de la redirection quand on clique sur une ligne
             document.querySelectorAll("#plongeesList li").forEach(item => {
                 item.addEventListener("click", function (e) {
@@ -118,10 +129,56 @@
                     window.location.href = `/gestion_palanquees?id=${plongeeId}`;
                 });
             });
-    
+
+            // Gestion du bouton "Site"
+            document.querySelectorAll(".edit-btn").forEach(button => {
+                button.addEventListener("click", function (e) {
+                    e.stopPropagation(); // Empêche la navigation
+                    const li = this.closest("li");
+                    const siteNameSpan = li.querySelector(".site-name");
+                    const currentSiteName = siteNameSpan.textContent;
+
+                    // Remplacer le texte par un formulaire
+                    siteNameSpan.innerHTML = `
+                        <input type="text" value="${currentSiteName}" class="site-input bg-gray-700 text-white p-1 rounded"/>
+                        <button class="save-btn bg-green-500 text-white px-2 py-1 rounded ml-2">Valider</button>
+                    `;
+
+                    // Gestion du bouton "Valider"
+                    li.querySelector(".save-btn").addEventListener("click", async function (e) {
+                        e.preventDefault(); // Empêche la redirection par défaut
+                        e.stopPropagation(); // Empêche la propagation de l'événement
+                        const newSiteName = li.querySelector(".site-input").value;
+                        const plongeeId = li.getAttribute("data-id");
+
+                        try {
+                            const response = await fetch("/api/update-site", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ plongeeId: plongeeId, site: newSiteName })
+                            });
+
+                            if (!response.ok) {
+                                throw new Error(`Erreur serveur (${response.status})`);
+                            }
+
+                            const data = await response.json();
+                            console.log("✅ Site mis à jour :", data);
+                            siteNameSpan.textContent = newSiteName; // Mettre à jour le texte avec le nouveau nom du site
+                        } catch (error) {
+                            console.error("❌ Erreur lors de la mise à jour du site :", error);
+                            alert("Erreur lors de la mise à jour du site");
+                        }
+                    });
+                });
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
             // 🔥 Extraire `sortie_id` depuis l'URL
             const pathSegments = window.location.pathname.split("/"); // Divise l'URL en segments
             const sortieId = pathSegments[2]; // Récupère le deuxième élément après `/plongees/`
+            const sortieDate = document.getElementById("selected-date").getAttribute("data-date");
     
             console.log("🔹 sortie_id détecté :", sortieId);
     
@@ -139,12 +196,12 @@
                     console.log("🟢 Bouton Ajouter Plongée cliqué !");
     
                     try {
-                        const response = await fetch("http://localhost:3000/ajouter-plongee", {
+                        const response = await fetch("/api/ajouter-plongee", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
                                 sortie_id: sortieId, // 🟢 UUID détecté depuis l'URL
-                                date: new Date().toISOString().split("T")[0] // Date du jour
+                                date: sortieDate // Date de la sortie prévue
                             })
                         });
     
@@ -155,7 +212,6 @@
                         const data = await response.json();
                         console.log("✅ Réponse serveur :", data);
                         chargerPlongees(); // Recharge uniquement la liste des plongées
- // Recharge la page pour voir les nouvelles plongées
                     } catch (error) {
                         console.error("❌ Erreur lors de l'ajout :", error);
                         alert("Erreur lors de l'ajout de la plongée");
@@ -165,11 +221,9 @@
                 console.error("⚠️ Bouton Ajouter Plongée non trouvé !");
             }
         });
-        chargerPlongees();
 
+        // Charger les plongées et ajouter les gestionnaires d'événements
+        chargerPlongees();
     </script>
-    
-    
-        
 </body>
 </html>

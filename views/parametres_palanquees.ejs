@@ -54,12 +54,7 @@
                                          palanquee.profondeur !== null && palanquee.profondeur !== '' &&
                                          palanquee.paliers !== null && palanquee.paliers !== '') ? 'disabled' : '' %>>
                                     Enregistrer
-                                </button>
-                    
-                                <button type="button" class="btn-modifier" onclick="window.location.href='/modif_palanquee/<%= palanquee.id %>'">
-                                    ✏️ Modifier
-                                </button>
-                                    
+                                </button>                                    
                             </div>
                         </form>
                     </div>
@@ -238,6 +233,7 @@
 </html>
 
 <style>
+    /* Conteneur principal */
 .palanquee-container {
     display: flex;
     justify-content: space-between;
@@ -247,23 +243,29 @@
     padding: 20px;
     width: 90%;
     max-width: 600px;
-    min-height: 140px;
+    min-height: 180px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
     margin: 15px auto;
+    flex-wrap: wrap;
+    position: relative; /* Permet un centrage absolu du bouton */
 }
 
+/* Colonne gauche */
 .palanquee-left {
     width: 50%;
     text-align: left;
 }
 
+/* Colonne droite */
 .palanquee-right {
     display: flex;
     flex-direction: column;
-    align-items: flex-start; /* 🔹 Assure un alignement parfait des éléments */
-    gap: 10px; /* 🔹 Espacement uniforme entre les éléments */
+    align-items: flex-start;
+    gap: 10px;
+    width: 50%;
 }
 
+/* Labels */
 .palanquee-right label {
     display: block;
     font-size: 14px;
@@ -271,6 +273,7 @@
     margin-top: 5px;
 }
 
+/* Champs de saisie */
 .palanquee-right input {
     width: 80%;
     padding: 5px;
@@ -278,5 +281,37 @@
     border-radius: 5px;
     border: none;
     font-size: 14px;
+    background-color: white;
+    color: black;
 }
-</style>
+
+/* Conteneur du bouton pour le centrer */
+.btn-container {
+    width: 100%;
+    display: flex;
+    justify-content: center; /* 🔹 Centre le bouton */
+    position: absolute;
+    bottom: 20px; /* 🔹 Ajuste la position en bas */
+}
+
+/* Bouton Enregistrer */
+.btn-enregistrer {
+    padding: 10px 20px;
+    background-color: #28a745; /* ✅ Vert */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.btn-enregistrer:disabled {
+    background-color: gray;
+    cursor: not-allowed;
+}
+
+    </style>
+    
+    
