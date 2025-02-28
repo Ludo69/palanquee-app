@@ -156,10 +156,7 @@
     });
 });
 
-
-        </script>
-        <script>
-            async function envoyerParWhatsApp() {
+async function envoyerParWhatsApp() {
                 const plongeeId = "<%= typeof plongeeId !== 'undefined' ? plongeeId : '' %>";
         
                 try {
@@ -204,13 +201,15 @@
                     <% }); %>
         
                     let url = "https://wa.me/?text=" + encodeURIComponent(message);
-                    window.open(url, "_blank");
+                    window.location.href = url; // Redirection directe au lieu d'une pop-up
                 } catch (error) {
                     console.error("❌ Erreur récupération plongée:", error);
                     alert("Impossible de récupérer les informations de la plongée.");
                 }
             }
+
         </script>
+
         <script>
             function modifierPalanquee(palanqueeId) {
                 if (!palanqueeId) {
