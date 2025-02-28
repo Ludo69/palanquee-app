@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paramètres des Palanquées</title>
+    <h1 class="text-3xl font-bold mb-4 text-center text-white">Paramètres des Palanquées</h1>
     <link rel="stylesheet" href="/styles.css">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
     <div class="container">
-        <!-- Bouton WhatsApp stylisé -->
-    <button class="btn-whatsapp" onclick="envoyerParWhatsApp()">📩 Partager sur WhatsApp</button>
-
-        <h1 class="title">Listing des palanquées</h1>
+        <!-- Icône WhatsApp stylisée -->
+        <a href="javascript:void(0);" class="btn-whatsapp" onclick="envoyerParWhatsApp()">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/WhatsApp_icon.png" alt="Partager sur WhatsApp">
+        </a>
 
         <% if (palanquees && palanquees.length > 0) { %>
             <% palanquees.forEach(function(palanquee) { %>
