@@ -8,6 +8,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
+    <!-- Bouton Retour -->
+    <button onclick="retour()" class="fixed top-4 left-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600 transition duration-300">
+        Retour
+    </button>
     <div class="container">
         <!-- Icône WhatsApp stylisée -->
         <a href="javascript:void(0);" class="btn-whatsapp" onclick="envoyerParWhatsApp()">
@@ -88,6 +92,10 @@
         </div>
 
     <script>
+        // Fonction pour revenir à l'écran précédent
+            function retour() {
+            history.back(); // Revenir à la page précédente
+        }
         const urlParams = new URLSearchParams(window.location.search);
         const plongeeId = urlParams.get("id"); // Récupère l'ID de la plongée depuis l'URL
         console.log("🔍 ID de la plongée récupéré :", plongeeId);
