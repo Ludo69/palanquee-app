@@ -10,6 +10,7 @@ const urlsToCache = [
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
+      console.log('Service Worker installé, mise en cache des ressources');
       return cache.addAll(urlsToCache);
     })
   );
@@ -18,7 +19,12 @@ self.addEventListener("install", (event) => {
 self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+      if (response) {
+        console.log('Ressource trouvée dans le cache:', event.request.url);
+        return response;
+      }
+      console.log('Ressource non trouvée dans le cache, récupération via le réseau:', event.request.url);
+      return fetch(event.request);
     })
   );
 });
@@ -29,10 +35,37 @@ self.addEventListener("activate", (event) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
+            console.log('Service Worker supprimé, suppression du cache:', cache);
             return caches.delete(cache);
           }
         })
       );
     })
   );
+  console.log('Service Worker activé');
 });
+
+self.addEventListener('sync', event => {
+  if (event.tag === 'sync-settings') {
+    event.waitUntil(syncSettings());
+  }
+});
+
+function syncSettings() {
+  return openDatabase().then(db => {
+    const transaction = db.transaction(['settings'], 'readonly');
+    const store = transaction.objectStore('settings');
+
+    return store.getAll().then(settings => {
+      return Promise.all(settings.map(setting => {
+        return fetch('/api/settings', {
+          method: 'POST',
+          body: JSON.stringify(setting),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+      }));
+    });
+  });
+}

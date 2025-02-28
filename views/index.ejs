@@ -12,19 +12,6 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1b263b">
     
-    <!-- FontAwesome -->
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-
-    <!-- Service Worker -->
-    <script>
-        if ("serviceWorker" in navigator) {
-            window.addEventListener("load", () => {
-                navigator.serviceWorker.register("/sw.js")
-                    .then(() => console.log("✅ Service Worker enregistré"))
-                    .catch((err) => console.error("❌ Service Worker erreur:", err));
-            });
-        }
-    </script>
 </head>
 <body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen">
     
@@ -41,13 +28,13 @@
         <!-- Boutons -->
         <div class="mt-6 space-y-4">
             <a href="/gestion-plongeurs" class="w-full block text-lg font-semibold bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
-                <i class="fas fa-user mr-2"></i> Annuaire Plongeurs
+                <i class="fas fa-user mr-2"></i>👤 Gestion des Plongeurs
             </a>
             <a href="/gestion-sorties" class="w-full block text-lg font-semibold bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
-                <i class="far fa-calendar-alt mr-2"></i> Gestion des Sorties
+                <i class="far fa-calendar-alt mr-2"></i>🤿 Gestion des Sorties
             </a>
             <a href="/selection-sorties" class="w-full block text-lg font-semibold bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
-                <i class="fas fa-mask mr-2"></i> Gestion des Palanquées
+                <i class="fas fa-mask mr-2"></i>📋 Gestion des Palanquées
             </a>
         </div>
     </div>
@@ -71,9 +58,8 @@
             <span class="text-xs">📋 Palanquées</span>
         </a>
     </div>
-
-    
-    
-       
+    <!-- IndexedDB and App Scripts -->
+    <script src="/js/indexeddb.js"></script>
+    <script src="/js/client.js"></script>
 </body>
 </html>

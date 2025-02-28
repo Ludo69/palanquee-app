@@ -1047,14 +1047,6 @@ app.post("/ajouter-plongee", async (req, res) => {
     }
 });
 
-
-app.get("/test", (req, res) => {
-console.log("✅ Route de test appelée !");
-res.send("Test OK");
-});
-
-
-
 // Démarrage du serveur
 app.listen(port, () => {
 console.log(`✅ Serveur démarré sur http://localhost:${port}`);
