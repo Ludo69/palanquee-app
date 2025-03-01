@@ -62,8 +62,8 @@
 
     <script>
         // Sélectionner tous les boutons de niveau
-            const niveauButtons = document.querySelectorAll('.niveau-btn');
-
+        const niveauButtons = document.querySelectorAll('.niveau-btn');
+    
         niveauButtons.forEach(button => {
             // Ajouter un écouteur d'événement sur chaque bouton
             button.addEventListener('click', function() {
@@ -77,20 +77,64 @@
                 document.getElementById('niveau').value = button.dataset.value;
             });
         });
-
-        function editPlongeur(id, currentNiveau) {
-            const newNiveau = prompt("Nouveau niveau pour ce plongeur :", currentNiveau);
-            if (newNiveau && newNiveau.trim() !== "") {
-                fetch(`/modifier-plongeur/${id}`, {
+    
+        // Fonction pour ouvrir la popup d'édition
+        function openEditPopup(plongeurId, currentNiveau) {
+            // Mettre l'ID du plongeur et le niveau actuel dans les champs cachés du formulaire
+            document.getElementById('edit-plongeur-id').value = plongeurId;
+            document.getElementById('edit-niveau').value = currentNiveau;
+    
+            // Mettre à jour les boutons de niveau pour indiquer le niveau actuel
+            document.querySelectorAll('.niveau-btn').forEach(button => {
+                if (button.getAttribute('data-value') === currentNiveau) {
+                    button.classList.add('bg-green-500', 'text-white');
+                } else {
+                    button.classList.remove('bg-green-500', 'text-white');
+                }
+            });
+    
+            // Afficher la popup
+            document.getElementById('edit-popup').classList.remove('hidden');
+        }
+    
+        // Fonction pour fermer la popup
+        function closePopup() {
+            document.getElementById('edit-popup').classList.add('hidden');
+        }
+    
+        // Sélectionner tous les boutons de niveau dans la popup et ajouter un événement de clic pour enregistrer automatiquement
+        document.querySelectorAll('.niveau-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                // Mettre à jour la valeur cachée du niveau
+                const niveau = this.getAttribute('data-value');
+                document.getElementById('edit-niveau').value = niveau;
+    
+                // Ajouter la classe de sélection (couleur verte) pour le bouton cliqué
+                document.querySelectorAll('.niveau-btn').forEach(btn => btn.classList.remove('bg-green-500', 'text-white'));
+                this.classList.add('bg-green-500', 'text-white');
+    
+                // Effectuer la requête pour mettre à jour le niveau du plongeur immédiatement
+                const plongeurId = document.getElementById('edit-plongeur-id').value;
+    
+                fetch(`/modifier-plongeur/${plongeurId}`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ niveau: newNiveau })
+                    body: JSON.stringify({ niveau: niveau })
                 })
-                .then(response => response.ok ? location.reload() : alert("Erreur lors de la modification"))
+                .then(response => {
+                    if (response.ok) {
+                        location.reload(); // Recharger la page pour afficher les changements
+                    } else {
+                        alert("Erreur lors de la modification");
+                    }
+                })
                 .catch(error => console.error("❌ Erreur :", error));
-            }
-        }
-
+    
+                // Fermer la popup après l'enregistrement
+                closePopup();
+            });
+        });
+    
         function deletePlongeur(id) {
             if (confirm("Voulez-vous vraiment supprimer ce plongeur ?")) {
                 fetch(`/supprimer-plongeur/${id}`, { method: "DELETE" })
@@ -99,6 +143,7 @@
             }
         }
     </script>
+    
 
     <style>
         /* Cache la barre de défilement mais permet de scroller */
@@ -114,7 +159,7 @@
     <script src="/js/indexeddb.js"></script>
     <script src="/js/client.js"></script>
     <!-- Popup d'édition du niveau -->
-<div id="edit-popup" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center">
+<<div id="edit-popup" class="hidden fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
     <div class="bg-gray-800 p-6 rounded-lg shadow-md w-80">
         <h2 class="text-2xl text-white mb-4">Modifier le niveau du plongeur</h2>
         <form id="edit-form" method="POST">
@@ -128,57 +173,50 @@
                 <% }) %>
             </div>
 
-            <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-md transition">Enregistrer</button>
         </form>
         <button onclick="closePopup()" class="mt-4 text-red-500 hover:text-red-400">Fermer</button>
     </div>
 </div>
+
 <script>
     // Fonction pour ouvrir la popup d'édition
-    function openEditPopup(plongeurId, currentNiveau) {
-        // Mettre l'ID du plongeur et le niveau actuel dans les champs cachés du formulaire
-        document.getElementById('edit-plongeur-id').value = plongeurId;
-        document.getElementById('edit-niveau').value = currentNiveau;
+function openEditPopup(plongeurId, currentNiveau) {
+    // Mettre l'ID du plongeur et le niveau actuel dans les champs cachés du formulaire
+    document.getElementById('edit-plongeur-id').value = plongeurId;
+    document.getElementById('edit-niveau').value = currentNiveau;
 
-        // Mettre à jour les boutons de niveau pour indiquer le niveau actuel
-        document.querySelectorAll('.niveau-btn').forEach(button => {
-            if (button.getAttribute('data-value') === currentNiveau) {
-                button.classList.add('bg-green-500', 'text-white');
-            } else {
-                button.classList.remove('bg-green-500', 'text-white');
-            }
-        });
-
-        // Afficher la popup
-        document.getElementById('edit-popup').classList.remove('hidden');
-    }
-
-    // Fonction pour fermer la popup
-    function closePopup() {
-        document.getElementById('edit-popup').classList.add('hidden');
-    }
-
-    // Sélectionner tous les boutons de niveau dans la popup
+    // Mettre à jour les boutons de niveau pour indiquer le niveau actuel
     document.querySelectorAll('.niveau-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            // Mettre à jour la valeur cachée du niveau
-            const niveau = this.getAttribute('data-value');
-            document.getElementById('edit-niveau').value = niveau;
-
-            // Ajouter la classe de sélection (couleur verte) pour le bouton cliqué
-            document.querySelectorAll('.niveau-btn').forEach(btn => btn.classList.remove('bg-green-500', 'text-white'));
-            this.classList.add('bg-green-500', 'text-white');
-        });
+        if (button.getAttribute('data-value') === currentNiveau) {
+            button.classList.add('bg-green-500', 'text-white');
+        } else {
+            button.classList.remove('bg-green-500', 'text-white');
+        }
     });
 
-    // Fonction pour envoyer la modification du niveau
-    document.getElementById('edit-form').addEventListener('submit', function(event) {
-        event.preventDefault(); // Empêcher la soumission du formulaire
+    // Afficher la popup
+    document.getElementById('edit-popup').classList.remove('hidden');
+}
 
+// Fonction pour fermer la popup
+function closePopup() {
+    document.getElementById('edit-popup').classList.add('hidden');
+}
+
+// Sélectionner tous les boutons de niveau dans la popup et ajouter un événement de clic pour enregistrer automatiquement
+document.querySelectorAll('.niveau-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        // Mettre à jour la valeur cachée du niveau
+        const niveau = this.getAttribute('data-value');
+        document.getElementById('edit-niveau').value = niveau;
+
+        // Ajouter la classe de sélection (couleur verte) pour le bouton cliqué
+        document.querySelectorAll('.niveau-btn').forEach(btn => btn.classList.remove('bg-green-500', 'text-white'));
+        this.classList.add('bg-green-500', 'text-white');
+
+        // Effectuer la requête pour mettre à jour le niveau du plongeur immédiatement
         const plongeurId = document.getElementById('edit-plongeur-id').value;
-        const niveau = document.getElementById('edit-niveau').value;
 
-        // Effectuer la requête pour mettre à jour le niveau du plongeur
         fetch(`/modifier-plongeur/${plongeurId}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -186,24 +224,27 @@
         })
         .then(response => {
             if (response.ok) {
-                location.reload(); // Recharger la page pour afficher les changements
+                // Recharger la page pour afficher les changements
+                location.reload();
             } else {
                 alert("Erreur lors de la modification");
             }
         })
         .catch(error => console.error("❌ Erreur :", error));
 
-        closePopup(); // Fermer la popup après la soumission
+        // Fermer la popup après l'enregistrement
+        closePopup();
     });
+});
 
-    // Fonction pour supprimer un plongeur
-    function deletePlongeur(id) {
-        if (confirm("Voulez-vous vraiment supprimer ce plongeur ?")) {
-            fetch(`/supprimer-plongeur/${id}`, { method: "DELETE" })
-            .then(response => response.ok ? location.reload() : alert("Erreur lors de la suppression"))
-            .catch(error => console.error("❌ Erreur :", error));
-        }
+function deletePlongeur(id) {
+    if (confirm("Voulez-vous vraiment supprimer ce plongeur ?")) {
+        fetch(`/supprimer-plongeur/${id}`, { method: "DELETE" })
+        .then(response => response.ok ? location.reload() : alert("Erreur lors de la suppression"))
+        .catch(error => console.error("❌ Erreur :", error));
     }
+}
+
 </script>
 
 
