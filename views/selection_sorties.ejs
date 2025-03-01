@@ -19,9 +19,9 @@
     <div class="w-full max-w-md p-6">
         <!-- Titre -->
         <h1 class="text-3xl font-bold mb-4 text-center text-white">Sélectionnez une Sortie</h1>
-
-        <!-- Liste des sorties -->
-        <div class="space-y-4">
+    
+        <!-- Liste des sorties scrollable -->
+        <div class="overflow-y-auto max-h-64 space-y-4">
             <% sorties.forEach(sortie => { %>
                 <div class="bg-gray-800 p-4 rounded-lg shadow-md flex justify-between items-center cursor-pointer hover:bg-gray-700 transition duration-300" onclick="selectSortie('<%= sortie.id %>')">
                     <div class="flex items-center space-x-4 w-full">
@@ -36,18 +36,20 @@
                 </div>
             <% }) %>
         </div>
-        
-
-        <!-- Calendrier -->
-        <div id="calendar" class="mt-6 bg-gray-800 p-4 rounded-lg shadow-md"></div>
-
+            
+        <!-- Calendrier (fixe) -->
+        <div id="calendar" class="mt-6 bg-gray-800 p-4 rounded-lg shadow-md">
+            <!-- Contenu du calendrier -->
+        </div>
+    
         <input type="hidden" id="dateInput">
-
+    
         <!-- Bouton Continuer -->
         <button id="continuer-btn" onclick="validerSelection()" class="mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white text-lg font-semibold py-3 rounded-lg shadow-md transition duration-300">
             Continuer
         </button>
     </div>
+    
 
     <!-- Bottom Navigation -->
     <div class="fixed bottom-0 left-0 w-full bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl">
@@ -72,15 +74,15 @@
     <script>
         let selectedSortieId = null;
         let selectedDate = null;
-
+    
         function selectSortie(sortieId) {
             selectedSortieId = sortieId;
-
+    
             // Réinitialiser les checkmarks
             document.querySelectorAll('.w-6.h-6').forEach(el => el.classList.remove('opacity-100'));
             document.getElementById(`checkmark-${sortieId}`).classList.add('opacity-100');
         }
-
+    
         function validerSelection() {
             const selectedDateValue = $('#dateInput').val();
             if (selectedSortieId && selectedDateValue) {
@@ -89,49 +91,57 @@
                 alert("Veuillez sélectionner une sortie et une date.");
             }
         }
-
+    
         $(document).ready(function() {
-            const events = [];
-            <% sorties.forEach(sortie => { %>
-                events.push({
-                    title: '<%= sortie.lieu %>',
-                    start: '<%= sortie.date_debut %>',
-                    end: '<%= sortie.date_fin %>',
-                    allDay: true
-                });
-            <% }) %>
-
+            const sorties = [
+                <% sorties.forEach(sortie => { %>
+                    {
+                        lieu: '<%= sortie.lieu %>',
+                        start: '<%= sortie.date_debut %>',
+                        end: '<%= sortie.date_fin %>'
+                    },
+                <% }) %>
+            ];
+    
             $('#calendar').fullCalendar({
-                header: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'month,agendaWeek,agendaDay'
-                },
-                events: events,
-                dayClick: function(date) {
-                    if (selectedDate && selectedDate.isSame(date, 'day')) {
-                        $('#calendar').fullCalendar('removeEvents', event => event.start.isSame(selectedDate, 'day'));
-                        selectedDate = null;
-                        $('#dateInput').val('');
-                    } else {
-                        if (selectedDate) {
-                            $('#calendar').fullCalendar('removeEvents', event => event.start.isSame(selectedDate, 'day'));
-                        }
-                        selectedDate = date;
-                        $('#calendar').fullCalendar('renderEvent', {
-                            title: '',
-                            start: date,
-                            allDay: true,
-                            className: ['selected-date']
-                        }, true);
-                        $('#dateInput').val(date.format('YYYY-MM-DD'));
-                    }
-                },
-                editable: true,
-                eventLimit: true,
-            });
+    header: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'month,agendaWeek,agendaDay'
+    },
+    events: sorties.map(sortie => ({
+        title: sortie.lieu,
+        start: sortie.start,
+        end: sortie.end,
+        backgroundColor: '#3B82F6',
+        textColor: 'white'
+    })),
+    eventRender: function(event, element) {
+        element.attr('title', event.title);
+    },
+    dayClick: function(date, jsEvent, view) {
+    // Supprime la classe "selected-date" de toutes les cellules avant d'ajouter la nouvelle
+    $('#calendar').find('.fc-day, .fc-day-top').removeClass('selected-date');
+
+    // Ajouter la classe à la cellule cliquée
+    $(`td[data-date="${date.format('YYYY-MM-DD')}"], .fc-day-top[data-date="${date.format('YYYY-MM-DD')}"]`).addClass('selected-date');
+
+    // Mettre à jour l'input caché avec la date sélectionnée
+    $('#dateInput').val(date.format('YYYY-MM-DD'));
+}
+
+});
+
+    
+            // Style pour la sélection de date
+            $("<style>")
+                .prop("type", "text/css")
+                .html(".selected-date { background-color: #FBBF24 !important; color: black !important; }") // Jaune Tailwind pour la sélection
+                .appendTo("head");
         });
     </script>
+    
+    
     <!-- IndexedDB and App Scripts -->
     <script src="/js/indexeddb.js"></script>
     <script src="/js/client.js"></script>

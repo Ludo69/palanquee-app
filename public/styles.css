@@ -414,3 +414,20 @@ body {
   height: 24px;
 }
 
+.selected-date {
+  background-color: #FBBF24 !important;
+  color: black !important;
+  font-weight: bold;
+  border-radius: 5px;
+}
+
+#calendar {
+  overflow: hidden !important;
+  position: relative;
+  z-index: 1; /* Plus bas que le menu */
+}
+
+.fixed.bottom-0 {
+  z-index: 1000; /* Plus élevé que le calendrier */
+}
+

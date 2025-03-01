@@ -16,14 +16,14 @@
             <input type="text" id="nom" name="nom" placeholder="Nom du plongeur" required class="w-full p-2 bg-gray-700 text-white rounded-md border border-gray-600 focus:outline-none">
             <div class="grid grid-cols-4 gap-2">
                 <% ["N1", "N2", "N3", "GP", "E2", "E3", "E4"].forEach(niveau => { %>
-                    <button type="button" class="niveau-btn bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition" data-value="<%= niveau %>"><%= niveau %></button>
+                    <button type="button" class="niveau-btn-create bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition" data-value="<%= niveau %>"><%= niveau %></button>
                 <% }) %>
             </div>
-            <input type="hidden" id="niveau" name="niveau" value="">
+            <input type="hidden" id="niveau-create" name="niveau" value="">
             <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-md transition">Ajouter Plongeur</button>
         </form>
 
-        <h2 class="text-xl font-semibold mt-6 mb-2">Liste des Plongeurs</h2>
+         <h2 class="text-xl font-semibold mt-6 mb-2">Liste des Plongeurs</h2>
         
         <!-- Liste des plongeurs scrollable -->
         <div class="overflow-y-auto max-h-80 w-full p-2 space-y-2 no-scrollbar">
@@ -61,11 +61,26 @@
     </div>
 
     <script>
+        // Sélectionner tous les boutons de niveau pour la création
+        const niveauButtonsCreate = document.querySelectorAll('.niveau-btn-create');
+
+        niveauButtonsCreate.forEach(button => {
+            button.addEventListener('click', function() {
+                // Réinitialiser la classe "bg-green-500" pour tous les boutons
+                niveauButtonsCreate.forEach(btn => btn.classList.remove('bg-green-500'));
+
+                // Ajouter la classe "bg-green-500" au bouton cliqué
+                button.classList.add('bg-green-500');
+
+                // Mettre à jour l'input caché avec la valeur du niveau sélectionné
+                document.getElementById('niveau-create').value = button.dataset.value;
+            });
+        });
         // Sélectionner tous les boutons de niveau
+        // Lors de l'ajout d'un plongeur, on ne doit pas déclencher immédiatement une requête, juste mettre à jour l'input caché.
         const niveauButtons = document.querySelectorAll('.niveau-btn');
-    
+
         niveauButtons.forEach(button => {
-            // Ajouter un écouteur d'événement sur chaque bouton
             button.addEventListener('click', function() {
                 // Réinitialiser la classe "bg-green-500" pour tous les boutons
                 niveauButtons.forEach(btn => btn.classList.remove('bg-green-500'));
@@ -77,13 +92,14 @@
                 document.getElementById('niveau').value = button.dataset.value;
             });
         });
+
     
-        // Fonction pour ouvrir la popup d'édition
+       // Fonction pour ouvrir la popup d'édition
         function openEditPopup(plongeurId, currentNiveau) {
             // Mettre l'ID du plongeur et le niveau actuel dans les champs cachés du formulaire
             document.getElementById('edit-plongeur-id').value = plongeurId;
             document.getElementById('edit-niveau').value = currentNiveau;
-    
+
             // Mettre à jour les boutons de niveau pour indiquer le niveau actuel
             document.querySelectorAll('.niveau-btn').forEach(button => {
                 if (button.getAttribute('data-value') === currentNiveau) {
@@ -92,7 +108,7 @@
                     button.classList.remove('bg-green-500', 'text-white');
                 }
             });
-    
+
             // Afficher la popup
             document.getElementById('edit-popup').classList.remove('hidden');
         }
@@ -186,13 +202,39 @@ function openEditPopup(plongeurId, currentNiveau) {
     document.getElementById('edit-niveau').value = currentNiveau;
 
     // Mettre à jour les boutons de niveau pour indiquer le niveau actuel
+    // Lors de la modification, on met à jour immédiatement le niveau et effectue une requête pour l'enregistrer.
     document.querySelectorAll('.niveau-btn').forEach(button => {
-        if (button.getAttribute('data-value') === currentNiveau) {
-            button.classList.add('bg-green-500', 'text-white');
-        } else {
-            button.classList.remove('bg-green-500', 'text-white');
-        }
+        button.addEventListener('click', function() {
+            // Mettre à jour la valeur cachée du niveau
+            const niveau = this.getAttribute('data-value');
+            document.getElementById('edit-niveau').value = niveau;
+
+            // Ajouter la classe de sélection (couleur verte) pour le bouton cliqué
+            document.querySelectorAll('.niveau-btn').forEach(btn => btn.classList.remove('bg-green-500', 'text-white'));
+            this.classList.add('bg-green-500', 'text-white');
+
+            // Effectuer la requête pour mettre à jour le niveau du plongeur immédiatement
+            const plongeurId = document.getElementById('edit-plongeur-id').value;
+
+            fetch(`/modifier-plongeur/${plongeurId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ niveau: niveau })
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload(); // Recharger la page pour afficher les changements
+                } else {
+                    alert("Erreur lors de la modification");
+                }
+            })
+            .catch(error => console.error("❌ Erreur :", error));
+
+            // Fermer la popup après l'enregistrement
+            closePopup();
+        });
     });
+
 
     // Afficher la popup
     document.getElementById('edit-popup').classList.remove('hidden');
