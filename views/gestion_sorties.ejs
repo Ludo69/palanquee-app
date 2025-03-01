@@ -10,9 +10,9 @@
 
     <div class="w-full max-w-md p-6 text-center flex flex-col flex-grow">
         <h1 class="text-3xl font-bold mb-4">Gestion des Sorties</h1>
-
-        <!-- Formulaire d'ajout de sortie -->
-        <form action="/ajouter-sortie" method="POST" class="bg-gray-800 p-4 rounded-lg shadow-md space-y-4">
+    
+        <!-- Formulaire d'ajout de sortie (fixe en haut de la page) -->
+        <form action="/ajouter-sortie" method="POST" class="bg-gray-800 p-4 rounded-lg shadow-md space-y-4 sticky top-0 z-10 bg-gray-800">
             <input type="text" id="lieu" name="lieu" placeholder="Lieu" required class="w-full p-2 bg-gray-700 text-white rounded-md border border-gray-600 focus:outline-none">
             <div class="grid grid-cols-2 gap-2">
                 <div>
@@ -26,11 +26,11 @@
             </div>
             <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-md transition">Ajouter Sortie</button>
         </form>
-
+    
         <h2 class="text-xl font-semibold mt-6 mb-2">Sorties</h2>
-
+    
         <!-- Liste des sorties scrollable -->
-        <div class="overflow-y-auto max-h-120 w-full p-2 space-y-2 no-scrollbar">
+        <div class="overflow-y-auto max-h-[calc(100vh-250px)] w-full p-2 space-y-2 no-scrollbar">
             <% sorties.forEach(sortie => { %>
                 <div class="sortie bg-gray-800 p-3 rounded-lg flex justify-between items-center shadow-md flex-wrap md:flex-nowrap">
                     <div>
@@ -45,7 +45,7 @@
                 </div>
             <% }) %>
         </div>
-
+    
         <!-- Liste des plongeurs (cachée par défaut) -->
         <div id="plongeurs-section" style="display: none;">
             <h2>Sélectionner les plongeurs</h2>
@@ -66,6 +66,7 @@
             </form>
         </div>        
     </div>
+    
 
     <!-- Bottom Navigation -->
     <div class="fixed bottom-0 left-0 w-full bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl">
