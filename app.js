@@ -24,9 +24,25 @@ app.get("/", (req, res) => {
 
 // Gestion des plongeurs
 app.get("/gestion-plongeurs", async (req, res) => {
-    const { data, error } = await supabase.from("plongeurs").select("*");
-    res.render("gestion_plongeurs", { plongeurs: data });
+    try {
+        const { data, error } = await supabase.from("plongeurs").select("*");
+
+        if (error) {
+            console.error("Erreur lors de la récupération des plongeurs:", error);
+            return res.status(500).send("Erreur serveur");
+        }
+
+        // Trier les plongeurs par ordre alphabétique sur le nom
+        data.sort((a, b) => a.nom.localeCompare(b.nom));
+
+        // Passer la liste triée à la vue
+        res.render("gestion_plongeurs", { plongeurs: data });
+    } catch (error) {
+        console.error("Erreur lors de la récupération des plongeurs:", error);
+        res.status(500).send("Erreur serveur");
+    }
 });
+
 
 app.post("/ajouter-plongeur", async (req, res) => {
     const { nom, niveau } = req.body;

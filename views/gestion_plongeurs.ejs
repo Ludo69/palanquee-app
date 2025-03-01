@@ -31,7 +31,8 @@
                 <div class="bg-gray-800 p-3 rounded-lg flex justify-between items-center shadow-md">
                     <span><%= plongeur.nom %> - <%= plongeur.niveau %></span>
                     <div class="space-x-2">
-                        <button class="text-yellow-400 hover:text-yellow-300" onclick="editPlongeur('<%= plongeur.id %>', '<%= plongeur.niveau %>')">✏️</button>
+                        <button class="text-yellow-400 hover:text-yellow-300" onclick="openEditPopup('<%= plongeur.id %>', '<%= plongeur.niveau %>')">✏️</button>
+
                         <button class="text-red-500 hover:text-red-400" onclick="deletePlongeur('<%= plongeur.id %>')">❌</button>
                     </div>
                 </div>
@@ -60,12 +61,20 @@
     </div>
 
     <script>
-        // Sélection du niveau avec effet visuel amélioré
-        document.querySelectorAll('.niveau-btn').forEach(button => {
+        // Sélectionner tous les boutons de niveau
+            const niveauButtons = document.querySelectorAll('.niveau-btn');
+
+        niveauButtons.forEach(button => {
+            // Ajouter un écouteur d'événement sur chaque bouton
             button.addEventListener('click', function() {
-                document.getElementById('niveau').value = this.getAttribute("data-value");
-                document.querySelectorAll('.niveau-btn').forEach(btn => btn.classList.remove('selected'));
-                this.classList.add('selected');
+                // Réinitialiser la classe "bg-green-500" pour tous les boutons
+                niveauButtons.forEach(btn => btn.classList.remove('bg-green-500'));
+                
+                // Ajouter la classe "bg-green-500" au bouton cliqué
+                button.classList.add('bg-green-500');
+                
+                // Mettre à jour l'input caché avec la valeur du niveau sélectionné
+                document.getElementById('niveau').value = button.dataset.value;
             });
         });
 
@@ -104,5 +113,99 @@
     <!-- IndexedDB and App Scripts -->
     <script src="/js/indexeddb.js"></script>
     <script src="/js/client.js"></script>
+    <!-- Popup d'édition du niveau -->
+<div id="edit-popup" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center">
+    <div class="bg-gray-800 p-6 rounded-lg shadow-md w-80">
+        <h2 class="text-2xl text-white mb-4">Modifier le niveau du plongeur</h2>
+        <form id="edit-form" method="POST">
+            <input type="hidden" id="edit-plongeur-id" name="plongeur-id">
+            <input type="hidden" id="edit-niveau" name="niveau">
+
+            <!-- Choix du niveau -->
+            <div class="grid grid-cols-4 gap-2 mb-4">
+                <% ["N1", "N2", "N3", "GP", "E2", "E3", "E4"].forEach(niveau => { %>
+                    <button type="button" class="niveau-btn bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition" data-value="<%= niveau %>"><%= niveau %></button>
+                <% }) %>
+            </div>
+
+            <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-md transition">Enregistrer</button>
+        </form>
+        <button onclick="closePopup()" class="mt-4 text-red-500 hover:text-red-400">Fermer</button>
+    </div>
+</div>
+<script>
+    // Fonction pour ouvrir la popup d'édition
+    function openEditPopup(plongeurId, currentNiveau) {
+        // Mettre l'ID du plongeur et le niveau actuel dans les champs cachés du formulaire
+        document.getElementById('edit-plongeur-id').value = plongeurId;
+        document.getElementById('edit-niveau').value = currentNiveau;
+
+        // Mettre à jour les boutons de niveau pour indiquer le niveau actuel
+        document.querySelectorAll('.niveau-btn').forEach(button => {
+            if (button.getAttribute('data-value') === currentNiveau) {
+                button.classList.add('bg-green-500', 'text-white');
+            } else {
+                button.classList.remove('bg-green-500', 'text-white');
+            }
+        });
+
+        // Afficher la popup
+        document.getElementById('edit-popup').classList.remove('hidden');
+    }
+
+    // Fonction pour fermer la popup
+    function closePopup() {
+        document.getElementById('edit-popup').classList.add('hidden');
+    }
+
+    // Sélectionner tous les boutons de niveau dans la popup
+    document.querySelectorAll('.niveau-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            // Mettre à jour la valeur cachée du niveau
+            const niveau = this.getAttribute('data-value');
+            document.getElementById('edit-niveau').value = niveau;
+
+            // Ajouter la classe de sélection (couleur verte) pour le bouton cliqué
+            document.querySelectorAll('.niveau-btn').forEach(btn => btn.classList.remove('bg-green-500', 'text-white'));
+            this.classList.add('bg-green-500', 'text-white');
+        });
+    });
+
+    // Fonction pour envoyer la modification du niveau
+    document.getElementById('edit-form').addEventListener('submit', function(event) {
+        event.preventDefault(); // Empêcher la soumission du formulaire
+
+        const plongeurId = document.getElementById('edit-plongeur-id').value;
+        const niveau = document.getElementById('edit-niveau').value;
+
+        // Effectuer la requête pour mettre à jour le niveau du plongeur
+        fetch(`/modifier-plongeur/${plongeurId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ niveau: niveau })
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload(); // Recharger la page pour afficher les changements
+            } else {
+                alert("Erreur lors de la modification");
+            }
+        })
+        .catch(error => console.error("❌ Erreur :", error));
+
+        closePopup(); // Fermer la popup après la soumission
+    });
+
+    // Fonction pour supprimer un plongeur
+    function deletePlongeur(id) {
+        if (confirm("Voulez-vous vraiment supprimer ce plongeur ?")) {
+            fetch(`/supprimer-plongeur/${id}`, { method: "DELETE" })
+            .then(response => response.ok ? location.reload() : alert("Erreur lors de la suppression"))
+            .catch(error => console.error("❌ Erreur :", error));
+        }
+    }
+</script>
+
+
 </body>
 </html>
