@@ -576,9 +576,10 @@ app.get("/get_palanquees/:plongee_id", async (req, res) => {
         .from("palanquees")
         .select(`
             id, nom, profondeur, duree, paliers,
-            palanquees_plongeurs (plongeur_id, niveau_plongeur_historique, plongeurs (id, nom, niveau))
+            palanquees_plongeurs (plongeur_id, plongeurs (id, nom, niveau))
         `)
         .eq("plongee_id", plongee_id);
+    
 
         if (palanqueesError) throw new Error(palanqueesError.message);
 
@@ -730,50 +731,27 @@ app.post("/enregistrer_palanquee", async (req, res) => {
                 .from("palanquees_plongeurs")
                 .delete()
                 .eq("palanquee_id", id);
-        
+
             if (deleteError) {
                 erreurs.push({ palanquee: palanquee.nom, message: deleteError.message });
                 continue;
             }
-        
+
             if (plongeurs.length > 0) {
-                const plongeursData = await Promise.all(plongeurs.map(async (plongeur_id) => {
-                    // Récupérer les informations du plongeur (nom, niveau, et niveau historique)
-                    const { data: plongeur, error: plongeurError } = await supabase
-                        .from("plongeurs")
-                        .select("nom, niveau")
-                        .eq("id", plongeur_id)
-                        .single();
-        
-                    if (plongeurError) {
-                        erreurs.push({ plongeur: plongeur_id, message: plongeurError.message });
-                        return null; // On saute ce plongeur si une erreur se produit
-                    }
-        
-                    // Retourner les données pour l'insertion dans palanquees_plongeurs
-                    return {
-                        palanquee_id: id,
-                        plongeur_id,
-                        nom_plongeur: plongeur.nom,   // Ajouter le nom du plongeur
-                        niveau_plongeur: plongeur.niveau, // Ajouter le niveau actuel du plongeur
-                        niveau_plongeur_historique: plongeur.niveau // Conserver l'historique du niveau
-                    };
+                const plongeursData = plongeurs.map(plongeur_id => ({
+                    palanquee_id: id,
+                    plongeur_id
                 }));
-        
-                // Filtrer les valeurs nulles si une erreur s'est produite
-                const plongeursDataValid = plongeursData.filter(data => data !== null);
-        
-                // Insérer les plongeurs dans la table palanquees_plongeurs
+
                 const { error: plongeursError } = await supabase
                     .from("palanquees_plongeurs")
-                    .insert(plongeursDataValid);
-        
+                    .insert(plongeursData);
+
                 if (plongeursError) {
                     erreurs.push({ palanquee: palanquee.nom, message: plongeursError.message });
                 }
             }
         }
-        
 
         if (erreurs.length > 0) {
             console.log("Certaines palanquées ont rencontré des erreurs : ", erreurs);
@@ -853,85 +831,77 @@ try {
 
 // Récupérer les paramètres des palanquées
 app.get("/parametres_palanquees", async (req, res) => {
-    console.log("📢 Route /parametres_palanquees appelée avec query:", req.query);
+console.log("📢 Route /parametres_palanquees appelée avec query:", req.query);
 
-    const plongeeId = req.query.id;
+const plongeeId = req.query.id;
 
-    if (!plongeeId) {
-        console.error("❌ Erreur: Aucun ID de plongée fourni dans l'URL.");
-        return res.status(400).send("ID de plongée manquant.");
+if (!plongeeId) {
+    console.error("❌ Erreur: Aucun ID de plongée fourni dans l'URL.");
+    return res.status(400).send("ID de plongée manquant.");
+}
+
+try {
+    let { data: palanquees, error: errorPalanquees } = await supabase
+        .from("palanquees")
+        .select("*")
+        .eq("plongee_id", plongeeId); // On filtre par plongeeId
+
+    if (errorPalanquees) throw errorPalanquees;
+
+    if (!palanquees || palanquees.length === 0) {
+        console.log("⚠️ Aucune palanquée trouvée pour cette plongée !");
+        return res.render("parametres_palanquees", { palanquees: [] });
     }
 
-    try {
-        let { data: palanquees, error: errorPalanquees } = await supabase
-            .from("palanquees")
+    for (let palanquee of palanquees) {
+        if (!palanquee.id || typeof palanquee.id !== "string") {
+            console.error(`❌ Erreur: palanquee.id est invalide (${palanquee.id})`);
+            continue;
+        }
+
+        console.log(`🔎 ID de la palanquée récupérée: ${palanquee.id}`);
+
+        let { data: palanqueesPlongeurs, error: errorLien } = await supabase
+            .from("palanquees_plongeurs")
+            .select("plongeur_id")
+            .eq("palanquee_id", palanquee.id);
+
+        if (errorLien) {
+            console.error(`❌ Erreur récupération plongeurs pour ${palanquee.id}:`, errorLien);
+            continue;
+        }
+
+        console.log(`📝 Liens palanquée-plongeurs:`, JSON.stringify(palanqueesPlongeurs, null, 2));
+
+        const plongeurIds = palanqueesPlongeurs.map(p => p.plongeur_id);
+
+        if (plongeurIds.length === 0) {
+            console.log(`⚠️ Aucun plongeur trouvé pour ${palanquee.id}`);
+            palanquee.plongeurs = [];
+            continue;
+        }
+
+        let { data: plongeurs, error: errorPlongeurs } = await supabase
+            .from("plongeurs")
             .select("*")
-            .eq("plongee_id", plongeeId); // On filtre par plongeeId
+            .in("id", plongeurIds);
 
-        if (errorPalanquees) throw errorPalanquees;
-
-        if (!palanquees || palanquees.length === 0) {
-            console.log("⚠️ Aucune palanquée trouvée pour cette plongée !");
-            return res.render("parametres_palanquees", { palanquees: [] });
+        if (errorPlongeurs) {
+            console.error(`❌ Erreur récupération détails plongeurs pour ${palanquee.id}:`, errorPlongeurs);
+            continue;
         }
 
-        for (let palanquee of palanquees) {
-            if (!palanquee.id || typeof palanquee.id !== "string") {
-                console.error(`❌ Erreur: palanquee.id est invalide (${palanquee.id})`);
-                continue;
-            }
+        console.log(`👨‍👩‍👧‍👦 Plongeurs trouvés pour ${palanquee.id}:`, JSON.stringify(plongeurs, null, 2));
 
-            console.log(`🔎 ID de la palanquée récupérée: ${palanquee.id}`);
-
-            let { data: palanqueesPlongeurs, error: errorLien } = await supabase
-                .from("palanquees_plongeurs")
-                .select("plongeur_id, niveau_plongeur_historique")
-                .eq("palanquee_id", palanquee.id);
-
-            if (errorLien) {
-                console.error(`❌ Erreur récupération plongeurs pour ${palanquee.id}:`, errorLien);
-                continue;
-            }
-
-            console.log(`📝 Liens palanquée-plongeurs:`, JSON.stringify(palanqueesPlongeurs, null, 2));
-
-            const plongeurIds = palanqueesPlongeurs.map(p => p.plongeur_id);
-
-            if (plongeurIds.length === 0) {
-                console.log(`⚠️ Aucun plongeur trouvé pour ${palanquee.id}`);
-                palanquee.plongeurs = [];
-                continue;
-            }
-
-            let { data: plongeurs, error: errorPlongeurs } = await supabase
-                .from("plongeurs")
-                .select("*")
-                .in("id", plongeurIds);
-
-            if (errorPlongeurs) {
-                console.error(`❌ Erreur récupération détails plongeurs pour ${palanquee.id}:`, errorPlongeurs);
-                continue;
-            }
-
-            console.log(`👨‍👩‍👧‍👦 Plongeurs trouvés pour ${palanquee.id}:`, JSON.stringify(plongeurs, null, 2));
-
-            // Ajouter le niveau historique pour chaque plongeur
-            palanquee.plongeurs = plongeurs.map(plongeur => {
-                let palanqueesPlongeur = palanqueesPlongeurs.find(p => p.plongeur_id === plongeur.id);
-                if (palanqueesPlongeur) {
-                    plongeur.niveau_plongeur_historique = palanqueesPlongeur.niveau_plongeur_historique;
-                }
-                return plongeur;
-            });
-        }
-
-        res.render("parametres_palanquees", { palanquees, plongeeId });
-    } catch (error) {
-        console.error("❌ Erreur lors de la récupération des palanquées:", error);
-        res.status(500).send("Erreur serveur");
+        palanquee.plongeurs = plongeurs;
     }
-});
 
+    res.render("parametres_palanquees", { palanquees, plongeeId });
+} catch (error) {
+    console.error("❌ Erreur lors de la récupération des palanquées:", error);
+    res.status(500).send("Erreur serveur");
+}
+});
 
 app.post("/sauvegarder_parametres", async (req, res) => {
 console.log("📩 Données reçues pour sauvegarde :", req.body);

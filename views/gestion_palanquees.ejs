@@ -75,34 +75,53 @@
 
             // Fonction pour charger les palanquées et les plongeurs depuis Supabase
             async function chargerDonnees() {
-    try {
-        const response = await fetch(`/get_palanquees/${PLONGEE_ID}`);
-        const result = await response.json();
+                try {
+                    const response = await fetch(`/get_palanquees/${PLONGEE_ID}`);
+                    const result = await response.json();
 
-        if (response.ok) {
-            palanquees = result.palanquees;
-            plongeursRestants = result.plongeurs;
+                    if (response.ok) {
+                        palanquees = result.palanquees;
+                        plongeursRestants = result.plongeurs;
 
-            afficherPalanquees();
-            afficherPlongeursDisponibles();
+                        afficherPalanquees();
+                        afficherPlongeursDisponibles();
+                        
 
-            // 🔥 Ajout : afficher les plongeurs pour chaque palanquée
-            palanquees.forEach(palanquee => {
-                if (palanquee.palanquees_plongeurs) {
-                    palanquee.palanquees_plongeurs.forEach(pp => {
-                    });
-                } else {
-                    console.log("⚠️ Aucune donnée sur les plongeurs.");
+                        // 🔥 Ajout : afficher les plongeurs pour chaque palanquée
+                        palanquees.forEach(palanquee => {
+                            if (palanquee.palanquees_plongeurs) {
+                                palanquee.palanquees_plongeurs.forEach(pp => {
+                                    // On récupère les plongeurs associés à la palanquée
+                                    const plongeur = result.plongeurs.find(p => p.id === pp.plongeur_id);
+                                    
+                                    if (plongeur) {
+                                        // Logique pour déterminer quel niveau afficher
+                                        let niveauAffiche = plongeur.niveau;  // Par défaut, on prend le niveau actuel
+
+                                        // Si un niveau historique existe et que la date de la palanquée est avant la date du changement de niveau
+                                        if (plongeur.niveau_plongeur_historique && palanquee.date_creation < plongeur.date_changement_niveau) {
+                                            niveauAffiche = plongeur.niveau_plongeur_historique;
+                                        }
+
+                                        console.log(`Plongeur ${plongeur.nom} - Niveau affiché : ${niveauAffiche}`);
+                                        
+                                        // Afficher ou traiter ce plongeur et son niveau
+                                        // À adapter selon ton code d'affichage des plongeurs
+                                    }
+                                });
+                            } else {
+                                console.log("⚠️ Aucune donnée sur les plongeurs.");
+                            }
+                        });
+
+                    } else {
+                        console.error("Erreur lors du chargement des données :", result.error);
+                    }
+                } catch (error) {
+                    console.error("Erreur lors du chargement des données :", error);
                 }
-            });
+            }
 
-        } else {
-            console.error("Erreur lors du chargement des données :", result.error);
-        }
-    } catch (error) {
-        console.error("Erreur lors du chargement des données :", error);
-    }
-}
 
 
             function genererNomPalanquee() {
@@ -140,66 +159,70 @@
             }
 
             function afficherPalanquee(id, nom, plongeurs = []) {
-                const div = document.createElement("div");
-                div.classList.add("bg-gray-800", "p-4", "rounded-lg", "shadow-md", "space-y-2");
-                div.dataset.id = id;
-                div.innerHTML = `
-                <div class="flex justify-between items-center">
-                    <span class="text-lg font-semibold text-white">${nom}</span>
-                    <button class="delete-palanquee text-red-500 hover:text-red-700 text-lg">❌</button>
-                </div>
-                <div class="palanquee-body bg-gray-700 p-3 rounded-md min-h-[60px]" data-id="${id}"></div>
-                `;
+    const div = document.createElement("div");
+    div.classList.add("bg-gray-800", "p-4", "rounded-lg", "shadow-md", "space-y-2");
+    div.dataset.id = id;
+    div.innerHTML = `
+    <div class="flex justify-between items-center">
+        <span class="text-lg font-semibold text-white">${nom}</span>
+        <button class="delete-palanquee text-red-500 hover:text-red-700 text-lg">❌</button>
+    </div>
+    <div class="palanquee-body bg-gray-700 p-3 rounded-md min-h-[60px]" data-id="${id}"></div>
+    `;
 
-                const palanqueeBody = div.querySelector(".palanquee-body");
+    const palanqueeBody = div.querySelector(".palanquee-body");
 
-                // Ajout des plongeurs déjà assignés
-                plongeurs.forEach(pp => {
-                    const plongeurElement = document.createElement("div");
-                    plongeurElement.classList.add("plongeur", "px-4", "py-2", "bg-gray-700", "rounded-lg", "shadow", "text-sm", "font-semibold", "whitespace-nowrap", "cursor-pointer");
-                    plongeurElement.classList.add((pp.plongeurs.niveau === 'N1' || pp.plongeurs.niveau === 'N2' || pp.plongeurs.niveau === 'N3') ? 'text-green-400' : 'text-blue-400');
-                    plongeurElement.dataset.id = pp.plongeur_id;
-                    plongeurElement.setAttribute("draggable", "true");
-                    plongeurElement.textContent = `${pp.plongeurs.nom} (${pp.plongeurs.niveau})`;
+    // Ajout des plongeurs déjà assignés
+    plongeurs.forEach(pp => {
+        const niveauAffiche = pp.niveau_plongeur_historique || pp.plongeurs.niveau; // 🔥 Toujours afficher le niveau historique s'il existe
+        
+        console.log(`Plongeur ${pp.plongeurs.nom} - Niveau affiché : ${niveauAffiche}`);
+
+        const plongeurElement = document.createElement("div");
+        plongeurElement.classList.add("plongeur", "px-4", "py-2", "bg-gray-700", "rounded-lg", "shadow", "text-sm", "font-semibold", "whitespace-nowrap", "cursor-pointer");
+        plongeurElement.classList.add((niveauAffiche === 'N1' || niveauAffiche === 'N2' || niveauAffiche === 'N3') ? 'text-green-400' : 'text-blue-400');
+        plongeurElement.dataset.id = pp.plongeur_id;
+        plongeurElement.setAttribute("draggable", "true");
+        plongeurElement.textContent = `${pp.plongeurs.nom} (${niveauAffiche})`;
+
+        // 🔥 Réintégration des événements drag & drop
+        plongeurElement.addEventListener("dragstart", (event) => {
+            event.dataTransfer.setData("text/plain", pp.plongeur_id);
+            plongeurElement.classList.add("opacity-50");
+        });
+
+        plongeurElement.addEventListener("dragend", () => {
+            plongeurElement.classList.remove("opacity-50");
+        });
+
+        palanqueeBody.appendChild(plongeurElement);
+    });
+
+    // Suppression de la palanquée
+    div.querySelector(".delete-palanquee").addEventListener("click", function () {
+        supprimerPalanquee(id);
+    });
+
+    // Réintégration du système de drop sur la palanquée
+    palanqueeBody.addEventListener("dragover", (event) => {
+        event.preventDefault(); // Essentiel pour autoriser le dépôt !
+        event.dataTransfer.dropEffect = "move";
+    });
+
+    palanqueeBody.addEventListener("drop", (event) => {
+        event.preventDefault();
+        const plongeurId = event.dataTransfer.getData("text/plain");
+        const plongeur = document.querySelector(`[data-id='${plongeurId}']`);
+        if (plongeur) {
+            palanqueeBody.appendChild(plongeur);
+        }
+    });
+
+    palanqueesContainer.appendChild(div);
+}
 
 
-                    // 🔥 Ajouter les événements drag and drop
-                    plongeurElement.addEventListener("dragstart", (event) => {
-                        event.dataTransfer.setData("text/plain", pp.plongeur_id);
-                        plongeurElement.classList.add("opacity-50");
-                    });
 
-                    plongeurElement.addEventListener("dragend", () => {
-                        plongeurElement.classList.remove("opacity-50");
-                    });
-
-                    palanqueeBody.appendChild(plongeurElement);
-                });
-
-
-
-                // Suppression de la palanquée
-                div.querySelector(".delete-palanquee").addEventListener("click", function () {
-                supprimerPalanquee(id);
-                });
-
-                // Permettre le drag and drop
-                palanqueeBody.addEventListener("dragover", (event) => {
-                event.preventDefault(); // Essentiel pour autoriser le dépôt !
-                event.dataTransfer.dropEffect = "move";
-                });
-
-                palanqueeBody.addEventListener("drop", (event) => {
-                event.preventDefault();
-                const plongeurId = event.dataTransfer.getData("text/plain");
-                const plongeur = document.querySelector(`[data-id='${plongeurId}']`);
-                if (plongeur) {
-                    palanqueeBody.appendChild(plongeur);
-                }
-                });
-
-                palanqueesContainer.appendChild(div);
-            }
 
 
             function afficherPalanquees() {

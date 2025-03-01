@@ -27,14 +27,17 @@
                         <ul class="plongeurs-list">
                             <% if (palanquee.plongeurs && palanquee.plongeurs.length > 0) { %>
                                 <% palanquee.plongeurs.forEach(function(plongeur) { %>
-                                    <li class="plongeur-item"><%= plongeur.nom %> (<%= plongeur.niveau %>)</li>
+                                    <li class="plongeur-item">
+                                        <%= plongeur.nom %> -  
+                                        <%= plongeur.niveau_plongeur_historique ? plongeur.niveau_plongeur_historique : "N/A" %>
+                                    </li>
                                 <% }); %>
                             <% } else { %>
                                 <li>Aucun plongeur dans cette palanquée.</li>
                             <% } %>
                         </ul>
                     </div>
-
+        
                     <div class="palanquee-right">
                         <form id="form-<%= palanquee.id %>" class="palanquee-form">
                             <input type="hidden" name="palanquee_id" value="<%= palanquee.id %>">
@@ -42,15 +45,15 @@
                             <label>Profondeur (m) :</label>
                             <input type="number" name="profondeur" class="profondeur" value="<%= palanquee.profondeur || '' %>" 
                                 <%= palanquee.profondeur ? 'disabled' : '' %> required>
-                    
+                        
                             <label>Durée (min) :</label>
                             <input type="number" name="duree" class="duree" value="<%= palanquee.duree || '' %>" 
                                 <%= palanquee.duree ? 'disabled' : '' %> required>                
-                    
+                        
                             <label>Paliers :</label>
                             <input type="text" name="paliers" class="paliers" value="<%= palanquee.paliers || '' %>" 
                                 <%= palanquee.paliers ? 'disabled' : '' %> required>
-                    
+                        
                             <!-- 🔹 Boutons alignés sur la même ligne -->
                             <div class="btn-group">
                                 <button type="submit" class="btn-enregistrer"
@@ -62,14 +65,12 @@
                             </div>
                         </form>
                     </div>
-                    
-                    
                 </div>
             <% }); %>
         <% } else { %>
             <p>Aucune palanquée disponible pour cette plongée.</p>
         <% } %>
-    </div>
+        
 
         <!-- Bottom Navigation -->
         <div class="fixed bottom-0 left-0 w-full bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl">
@@ -199,7 +200,7 @@ async function envoyerParWhatsApp() {
         
                         <% if (palanquee.plongeurs && palanquee.plongeurs.length > 0) { %>
                             <% palanquee.plongeurs.forEach(function(plongeur) { %>
-                                message += `   - <%= plongeur.nom %> (<%= plongeur.niveau %>)\n`;
+                                message += `   - <%= plongeur.nom %> (<%= plongeur.niveau_plongeur_historique %>)\n`;
                             <% }); %>
                         <% } else { %>
                             message += `   Aucun plongeur dans cette palanquée.\n`;
@@ -218,15 +219,7 @@ async function envoyerParWhatsApp() {
 
         </script>
 
-        <script>
-            function modifierPalanquee(palanqueeId) {
-                if (!palanqueeId) {
-                    alert("❌ Erreur : ID de la palanquée manquant.");
-                    return;
-                }
-                window.location.href = `/modif_palanquee?id=` + palanqueeId;
-            }
-        </script>
+
     <!-- IndexedDB and App Scripts -->
     <script src="/js/indexeddb.js"></script>
     <script src="/js/client.js"></script>
