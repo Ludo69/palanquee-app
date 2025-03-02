@@ -53,6 +53,7 @@
                 <input type="hidden" id="sortie_id_hidden" name="sortie_id">
                 
                 <div id="liste-plongeurs">
+                    <% plongeurs.sort((a, b) => a.nom.localeCompare(b.nom)); %> <!-- Tri des plongeurs par ordre alphabétique -->
                     <% plongeurs.forEach(plongeur => { %>
                         <label class="flex items-center space-x-2">
                             <input type="checkbox" name="plongeurs[]" value="<%= plongeur.id %>">
@@ -61,6 +62,7 @@
                         </label>
                     <% }) %>
                 </div>
+                
         
                 <button type="submit" class="add-button">Ajouter Plongeurs à la Sortie</button>
             </form>
@@ -95,78 +97,158 @@
         const plongeurs = <%- JSON.stringify(plongeurs) %>;
         console.log("Plongeurs chargés :", plongeurs);
     
+        // Charger les plongeurs associés lors du clic sur le bouton "+"
         document.querySelectorAll(".ajouter-plongeur").forEach((button) => {
-            button.addEventListener("click", async function () {
-                const sortieId = this.dataset.id;
-                console.log(`Bouton + cliqué pour la sortie ID: ${sortieId}`);
-    
-                // Trouver l'élément .sortie correspondant
-                let sortieDiv = this.closest(".sortie");
-                if (!sortieDiv) {
-                    console.error("Erreur : Impossible de trouver la sortie correspondante !");
-                    return;
-                }
-    
-                // Vérifier si la section existe déjà
-                let existingSection = document.getElementById(`plongeurs-section-${sortieId}`);
-                if (existingSection) {
-                    console.log("Section déjà affichée, suppression...");
-                    existingSection.remove(); // Ferme si déjà ouvert
-                    return;
-                }
-    
-                // Supprimer toute autre section affichée
-                document.querySelectorAll(".plongeurs-section").forEach((section) => section.remove());
-    
-                try {
-                    console.log("Fetching plongeurs associés...");
-                    const response = await fetch(`/get-plongeurs-sortie/${sortieId}`);
-    
-                    if (!response.ok) {
-                        throw new Error("Erreur réseau");
-                    }
-    
-                    const plongeursAssocies = await response.json();
-                    console.log("Plongeurs associés récupérés :", plongeursAssocies);
-    
-                    // Construire le HTML
-                    let plongeursHTML = `
-                        <div id="plongeurs-section-${sortieId}" class="plongeurs-section bg-gray-900 p-4 mt-2 rounded-lg shadow-md">
-                            <h2 class="text-xl font-bold text-white mb-2">Sélectionner les plongeurs</h2>
-                            <form action="/ajouter-plongeurs-a-sortie" method="POST">
+    button.addEventListener("click", async function (event) {
+        event.preventDefault();  // Empêcher la soumission du formulaire lors du clic sur "+"
+
+        const sortieId = this.dataset.id;
+        console.log(`Bouton "+" cliqué pour la sortie ID: ${sortieId}`);
+
+        let sortieDiv = this.closest(".sortie");
+        if (!sortieDiv) {
+            console.error("Erreur : Impossible de trouver la sortie correspondante !");
+            return;
+        }
+
+        // Vérifier si la section existe déjà
+        let existingSection = document.getElementById(`plongeurs-section-${sortieId}`);
+        if (existingSection) {
+            console.log("Section déjà affichée, suppression...");
+            existingSection.remove(); // Ferme si déjà ouvert
+            return;
+        }
+
+        document.querySelectorAll(".plongeurs-section").forEach((section) => section.remove()); // Fermer toute autre section
+
+        try {
+            console.log("Fetching plongeurs associés...");
+            const response = await fetch(`/get-plongeurs-sortie/${sortieId}`);
+
+            if (!response.ok) {
+                throw new Error("Erreur réseau");
+            }
+
+            const plongeursAssocies = await response.json();
+            console.log("Plongeurs associés récupérés :", plongeursAssocies);
+
+            // Assure-toi que plongeursAssocies.plongeurs_associes est un tableau
+            const plongeursAssociesArray = Array.isArray(plongeursAssocies.plongeurs_associes) ? plongeursAssocies.plongeurs_associes : [];
+
+            // Construire le HTML pour les plongeurs
+            let plongeursHTML = `
+                <div id="plongeurs-section-${sortieId}" class="plongeurs-section bg-gray-900 p-4 mt-2 rounded-lg shadow-md">
+                    <h2 class="text-xl font-bold text-white mb-2">Sélectionner les plongeurs</h2>
+                    <form action="/ajouter-plongeurs-a-sortie" method="POST">
                         <input type="hidden" name="sortie_id" value="${sortieId}">`;
-    
-                    plongeurs.forEach((plongeur) => {
-                        let checkmark = plongeursAssocies.plongeurs_associes.includes(plongeur.id) ? "✅" : "";
-                        plongeursHTML += `
-                        <div class="flex justify-between items-center bg-gray-800 p-2 rounded-md mb-2">
-                            <label class="text-white flex items-center space-x-2">
+
+            plongeurs.forEach((plongeur) => {
+                let checkmark = "";
+                let removeButton = "";
+
+                // Vérifier si le plongeur est associé à la sortie en comparant avec l'ID
+                if (plongeursAssociesArray.includes(plongeur.id)) {
+                    checkmark = "✅";
+                    removeButton = `<button type="button" class="remove-plongeur bg-red-500 text-white px-2 py-1 rounded-md"
+                            data-plongeur-id="${plongeur.id}" data-sortie-id="${sortieId}">❌</button>`;
+                }
+
+                plongeursHTML += `
+                    <div class="flex justify-between items-center bg-gray-800 p-2 rounded-md mb-2">
+                        <label class="text-white flex items-center space-x-2">
                             <input type="checkbox" name="plongeurs[]" value="${plongeur.id}" class="form-checkbox text-blue-500">
                             <span>${plongeur.nom}</span>
-                            </label>
-                            <span id="checkmark-${plongeur.id}" class="text-green-400">${checkmark}</span>
-                        </div>`;
-                    });
-    
-                    plongeursHTML += `
-                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md w-full mt-3">
-                        Ajouter Plongeurs
-                    </button>`;
-    
-                    // Vérifier si la sortie existe et insérer après
-                    if (sortieDiv) {
-                        sortieDiv.insertAdjacentHTML("afterend", plongeursHTML);
-                    } else {
-                        console.warn("Aucune sortie trouvée, ajout en fin de page.");
-                        document.body.insertAdjacentHTML("beforeend", plongeursHTML);
-                    }
-                } catch (error) {
-                    console.error("Erreur lors de la récupération des plongeurs associés :", error);
-                }
+                        </label>
+                        <span id="checkmark-${plongeur.id}" class="text-green-400">${checkmark}</span>
+                        ${removeButton}
+                    </div>`;
             });
-        });
-    
-        document.querySelectorAll('.supprimer-sortie').forEach(button => {
+
+            plongeursHTML += `
+                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md w-full mt-3">
+                    Ajouter Plongeurs
+                </button>
+            </form></div>`;
+
+            if (sortieDiv) {
+                sortieDiv.insertAdjacentHTML("afterend", plongeursHTML);
+            } else {
+                console.warn("Aucune sortie trouvée, ajout en fin de page.");
+                document.body.insertAdjacentHTML("beforeend", plongeursHTML);
+            }
+
+            // Gérer la suppression du plongeur au clic sur la croix rouge
+            document.querySelectorAll(".remove-plongeur").forEach((removeButton) => {
+                removeButton.addEventListener("click", async function (event) {
+                    event.preventDefault();  // Empêcher la soumission du formulaire de manière immédiate
+
+                    const plongeurId = this.dataset.plongeurId;
+                    const sortieId = this.dataset.sortieId;
+
+                    console.log(`Suppression du plongeur ID: ${plongeurId} de la sortie ID: ${sortieId}`);
+
+                    try {
+                        console.log(`Plongeur ID: ${plongeurId}, Sortie ID: ${sortieId}`);
+                        const response = await fetch(`/retirer-plongeur`, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({ plongeurId: plongeurId, sortieId: sortieId }), // Modifié ici
+                        });
+
+                        if (response.ok) {
+                            console.log(`Plongeur ID: ${plongeurId} supprimé avec succès`);
+                            // Mettre à jour l'interface utilisateur après suppression
+                            this.closest(".flex").remove();
+                            // Optionnel : Recharger la liste des plongeurs si tu veux afficher à nouveau la liste complète des plongeurs
+                            await refreshPlongeursList();
+                        } else {
+                            console.error("Erreur lors de la suppression du plongeur");
+                        }
+                    } catch (error) {
+                        console.error("Erreur de réseau :", error);
+                    }
+                });
+            });
+        } catch (error) {
+            console.error("Erreur lors de la récupération des plongeurs associés :", error);
+        }
+    });
+});
+
+// Fonction pour récupérer et afficher la liste des plongeurs mise à jour
+async function refreshPlongeursList() {
+    try {
+        const response = await fetch(`/get-plongeurs-list`);
+        const data = await response.json();
+
+        if (response.ok) {
+            // Mettre à jour l'interface avec les nouveaux plongeurs
+            const plongeursListContainer = document.querySelector(".plongeurs-list");
+            plongeursListContainer.innerHTML = '';  // Vider la liste actuelle
+
+            // Ajouter les plongeurs actualisés dans le DOM
+            data.plongeurs.forEach(plongeur => {
+                plongeursListContainer.innerHTML += `
+                    <div class="plongeur-item">
+                        <span>${plongeur.nom}</span>
+                        <button class="remove-plongeur" data-plongeur-id="${plongeur.id}" data-sortie-id="${sortieId}">Retirer</button>
+                    </div>
+                `;
+            });
+
+        } else {
+            console.error("Erreur lors du rafraîchissement de la liste des plongeurs");
+        }
+    } catch (error) {
+        console.error("Erreur de réseau pour rafraîchir la liste des plongeurs :", error);
+    }
+}
+
+
+
+document.querySelectorAll('.supprimer-sortie').forEach(button => {
             button.addEventListener('click', function () {
                 const sortieId = this.dataset.id;
                 if (confirm("Êtes-vous sûr de vouloir supprimer cette sortie ?")) {
@@ -182,6 +264,9 @@
                 }
             });
         });
+
+
+
     </script>
     
     

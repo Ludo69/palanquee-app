@@ -1093,6 +1093,36 @@ app.post("/ajouter-plongee", async (req, res) => {
     }
 });
 
+app.post('/retirer-plongeur', async (req, res) => {
+    const { plongeurId, sortieId } = req.body;
+
+    console.log("Données reçues:", req.body);
+
+    if (!plongeurId || !sortieId) {
+        return res.status(400).json({ success: false, message: "Plongeur ou sortie manquant." });
+    }
+
+    try {
+        // Utiliser Supabase pour supprimer l'association dans la table plongeurs_sorties
+        const { error } = await supabase
+            .from('plongeurs_sorties')
+            .delete()
+            .eq('plongeur_id', plongeurId)
+            .eq('sortie_id', sortieId);
+
+        if (error) {
+            console.error("Erreur lors de la suppression de l'association dans la base de données :", error);
+            return res.status(500).json({ success: false, message: "Erreur serveur" });
+        }
+
+        return res.json({ success: true });
+    } catch (error) {
+        console.error("Erreur lors de la suppression :", error);
+        return res.status(500).json({ success: false, message: "Erreur serveur" });
+    }
+});
+
+
 // Démarrage du serveur
 app.listen(port, () => {
 console.log(`✅ Serveur démarré sur http://localhost:${port}`);

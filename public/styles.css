@@ -431,3 +431,8 @@ body {
   z-index: 1000; /* Plus élevé que le calendrier */
 }
 
+/* Taille des icônes */
+.bouton-plongeur svg {
+  width: 14px; /* Ajuste la taille de l'icône */
+  height: 14px; /* Ajuste la taille de l'icône */
+}
