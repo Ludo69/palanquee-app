@@ -21,9 +21,7 @@
         <h1 class="text-3xl font-bold mb-4 text-center text-white">Sélection jour de plongée</h1>
     
         <!-- Calendrier (fixe) -->
-        <div id="calendar" class="mt-6 bg-gray-800 p-4 rounded-lg shadow-md">
-            <!-- Contenu du calendrier -->
-        </div>
+        <div id="calendar" class="mt-6 bg-gray-800 p-4 rounded-lg shadow-md"></div>
     
         <input type="hidden" id="dateInput">
         <input type="hidden" id="sortieIdInput">
@@ -37,7 +35,6 @@
         </button>
     </div>
     
-
     <!-- Bottom Navigation -->
     <div class="fixed bottom-0 left-0 w-full bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl">
         <a href="/" class="text-gray-400 hover:text-blue-400 flex flex-col items-center">
@@ -61,7 +58,7 @@
     <script>
         let selectedSortieId = null;
         let selectedDate = null;
-    
+
         function validerSelection() {
             const selectedDateValue = $('#dateInput').val();
             const sortieId = $('#sortieIdInput').val();
@@ -76,7 +73,7 @@
                 window.location.href = `/plongees/${sortieId}/${selectedDateValue}`;
             }
         }
-    
+
         $(document).ready(function() {
             const sorties = [
                 <% sorties.forEach(sortie => { %>
@@ -88,23 +85,40 @@
                     },
                 <% }) %>
             ];
-    
+
+            const plongees = [
+                <% plongees.forEach(plongee => { %>
+                    '<%= plongee.date %>',
+                <% }) %>
+            ];
+
+            // Transformer les dates de plongée en événements pour FullCalendar
+            const diveEvents = plongees.map(date => ({
+                start: date,
+                allDay: true,
+                rendering: 'background',
+                backgroundColor: '#034aff'
+            }));
+
             $('#calendar').fullCalendar({
                 locale: 'fr', // Définit la langue en français
-                 height: 'auto',
+                height: 'auto',
                 header: {
                     left: 'prev,next today',
                     center: 'title',
                     right: 'month,agendaWeek,agendaDay'
                 },
-                events: sorties.map(sortie => ({
-                    title: sortie.lieu,
-                    start: sortie.start,
-                    end: sortie.end,
-                    backgroundColor: '#3B82F6',
-                    textColor: 'white',
-                    id: sortie.id
-                })),
+                events: [
+                    ...sorties.map(sortie => ({
+                        title: sortie.lieu,
+                        start: sortie.start,
+                        end: sortie.end,
+                        backgroundColor: '#762fbd',
+                        textColor: 'white',
+                        id: sortie.id
+                    })),
+                    ...diveEvents // Ajouter les événements de plongée
+                ],
                 eventRender: function(event, element) {
                     element.attr('title', event.title);
                 },
@@ -130,7 +144,7 @@
                     }
                 }
             });
-    
+
             // Style pour la sélection de date
             $("<style>")
                 .prop("type", "text/css")
@@ -139,9 +153,6 @@
         });
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/locale/fr.js"></script>
-
-    
-    
     <!-- IndexedDB and App Scripts -->
     <script src="/js/indexeddb.js"></script>
     <script src="/js/client.js"></script>

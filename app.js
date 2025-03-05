@@ -150,19 +150,27 @@ app.get("/gestion-sorties", async (req, res) => {
 app.get("/selection-sorties", async (req, res) => {
     try {
         // Récupérer les sorties disponibles
-        const { data: sorties, error } = await supabase
+        const { data: sorties, error: sortiesError } = await supabase
             .from("sorties")
             .select("id, lieu, date_debut, date_fin"); // Sélectionner les colonnes que vous souhaitez afficher
 
-        if (error) throw error;
+        if (sortiesError) throw sortiesError;
+
+        // Récupérer les dates de plongées
+        const { data: plongees, error: plongeesError } = await supabase
+            .from("plongees")
+            .select("date");
+
+        if (plongeesError) throw plongeesError;
 
         // Loguer les données récupérées pour débogage
         console.log("Sorties récupérées :", sorties);
+        console.log("Plongées récupérées :", plongees);
 
         // Rendre la vue de sélection des sorties avec les données récupérées
-        res.render("selection_sorties", { sorties });
+        res.render("selection_sorties", { sorties, plongees });
     } catch (error) {
-        console.error("Erreur lors de la récupération des sorties :", error);
+        console.error("Erreur lors de la récupération des sorties ou des plongées :", error);
         res.status(500).send("Erreur serveur");
     }
 });
