@@ -69,13 +69,14 @@
                 
                     <!-- 🔻 Partie Bas (Nouveau Conteneur pour le bouton) -->
                     <div class="palanquee-bas w-full flex justify-center mt-4">
-                        <button type="submit" class="btn-enregistrer"
+                        <button type="submit" class="btn-enregistrer" data-form-id="form-<%= palanquee.id %>"
                             <%= (palanquee.duree !== null && palanquee.duree !== '' &&
                                 palanquee.profondeur !== null && palanquee.profondeur !== '' &&
                                 palanquee.paliers !== null && palanquee.paliers !== '') ? 'disabled' : '' %>>
                             Enregistrer
-                        </button> 
+                        </button>
                     </div>
+                    
 
                 </div>
                 
@@ -117,68 +118,93 @@
     console.log("🔍 ID de la plongée récupéré :", plongeeId);
 
     document.querySelectorAll(".btn-enregistrer").forEach(button => {
-        button.addEventListener("click", async function (event) {
-            event.preventDefault(); // Empêche le rechargement de la page
-            this.disabled = true; // 🔹 Désactive immédiatement le bouton pour éviter un double clic
+    button.addEventListener("click", async function (event) {
+        event.preventDefault(); // Empêche le rechargement de la page
+        this.disabled = true; // Désactive immédiatement le bouton pour éviter un double clic
 
-            const palanqueeId = this.closest("form").querySelector("[name='palanquee_id']").value;
-            if (!palanqueeId) {
-                console.error("❌ Erreur : ID de palanquée manquant !");
-                alert("❌ Impossible d'enregistrer : ID de la palanquée manquant.");
+        // Trouver le formulaire en utilisant data-form-id
+        const form = document.querySelector(`#${this.getAttribute("data-form-id")}`);
+        if (!form) {
+            console.error("❌ Erreur : Le formulaire spécifié par data-form-id n'a pas été trouvé.");
+            alert("❌ Impossible d'enregistrer : formulaire non trouvé.");
+            this.disabled = false;
+            return;
+        }
+
+        // Récupérer l'ID de la palanquée à partir de l'input name="palanquee_id"
+        const palanqueeIdInput = form.querySelector("[name='palanquee_id']");
+        if (!palanqueeIdInput) {
+            console.error("❌ Erreur : Champ palanquee_id introuvable dans le formulaire.");
+            alert("❌ Impossible d'enregistrer : ID de la palanquée introuvable.");
+            this.disabled = false;
+            return;
+        }
+
+        const palanqueeId = palanqueeIdInput.value;
+        console.log("✅ ID de la palanquée récupéré :", palanqueeId);
+
+        if (!palanqueeId) {
+            console.error("❌ Erreur : ID de palanquée manquant !");
+            alert("❌ Impossible d'enregistrer : ID de la palanquée manquant.");
+            this.disabled = false;
+            return;
+        }
+
+        // Vérifier si le formulaire existe
+        const formElement = document.querySelector(`#form-${palanqueeId}`);
+        console.log("Formulaire trouvé :", formElement);
+
+        if (!formElement) {
+            console.error(`❌ Erreur : Formulaire pour la palanquée ${palanqueeId} introuvable !`);
+            alert(`❌ Erreur interne : formulaire #form-${palanqueeId} non trouvé.`);
+            this.disabled = false;
+            return;
+        }
+
+        // Récupération sécurisée des champs
+        const dureeInput = formElement.querySelector(".duree");
+        const profondeurInput = formElement.querySelector(".profondeur");
+        const paliersInput = formElement.querySelector(".paliers");
+
+        if (!dureeInput || !profondeurInput || !paliersInput) {
+            console.error("❌ Erreur : Un ou plusieurs champs sont introuvables !");
+            alert("❌ Erreur interne : champs de saisie non trouvés.");
+            this.disabled = false;
+            return;
+        }
+
+        const duree = dureeInput.value;
+        const profondeur = profondeurInput.value;
+        const paliers = paliersInput.value;
+
+        try {
+            const response = await fetch("/sauvegarder_parametres", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: palanqueeId, duree, profondeur, paliers })
+            });
+
+            if (!response.ok) throw new Error("Erreur serveur");
+
+            const result = await response.json();
+            if (result.success) {
+                alert("✅ Paramètres enregistrés avec succès !");
+                dureeInput.disabled = true;
+                profondeurInput.disabled = true;
+                paliersInput.disabled = true;
+            } else {
+                alert("❌ Erreur lors de l'enregistrement.");
                 this.disabled = false;
-                return;
             }
-
-            const form = document.querySelector(`#form-${palanqueeId}`);
-            if (!form) {
-                console.error("❌ Erreur : Formulaire introuvable !");
-                alert("❌ Erreur interne : formulaire non trouvé.");
-                this.disabled = false;
-                return;
-            }
-
-            // Récupération sécurisée des champs
-            const dureeInput = form.querySelector(".duree");
-            const profondeurInput = form.querySelector(".profondeur");
-            const paliersInput = form.querySelector(".paliers");
-
-            if (!dureeInput || !profondeurInput || !paliersInput) {
-                console.error("❌ Erreur : Un ou plusieurs champs sont introuvables !");
-                alert("❌ Erreur interne : champs de saisie non trouvés.");
-                this.disabled = false;
-                return;
-            }
-
-            const duree = dureeInput.value;
-            const profondeur = profondeurInput.value;
-            const paliers = paliersInput.value;
-
-            try {
-                const response = await fetch("/sauvegarder_parametres", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ id: palanqueeId, duree, profondeur, paliers })
-                });
-
-                if (!response.ok) throw new Error("Erreur serveur");
-
-                const result = await response.json();
-                if (result.success) {
-                    alert("✅ Paramètres enregistrés avec succès !");
-                    dureeInput.disabled = true;
-                    profondeurInput.disabled = true;
-                    paliersInput.disabled = true;
-                } else {
-                    alert("❌ Erreur lors de l'enregistrement.");
-                    this.disabled = false;
-                }
-            } catch (error) {
-                console.error("🚨 Erreur lors de la requête ::", error);
-                alert("❌ Erreur de communication avec le serveur.");
-                this.disabled = false;
-            }
-        });
+        } catch (error) {
+            console.error("🚨 Erreur lors de la requête ::", error);
+            alert("❌ Erreur de communication avec le serveur.");
+            this.disabled = false;
+        }
     });
+});
+
+
 
 // Initialisation de la valeur "Aucun" dans le champ paliers au chargement de la page
 document.querySelectorAll(".palanquee-form").forEach(form => {
