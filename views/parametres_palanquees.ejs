@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <h1 class="text-3xl font-bold mb-4 text-center text-white">Paramètres des Palanquées</h1>
+    <h1 class="text-3xl font-bold mb-4 text-center text-white">Paramètres</h1>
     <link rel="stylesheet" href="/styles.css">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
     <!-- Bouton Retour -->
-    <button onclick="retour()" class="fixed top-4 left-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600 transition duration-300">
+    <!--<button onclick="retour()" class="fixed top-4 left-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600 transition duration-300">
         Retour
-    </button>
+    </button>-->
     <div class="container">
         <!-- Icône WhatsApp stylisée -->
         <a href="javascript:void(0);" class="btn-whatsapp" onclick="envoyerParWhatsApp()">
@@ -37,7 +37,7 @@
                             <% } %>
                         </ul>
                     </div>
-        
+                
                     <div class="palanquee-right">
                         <form id="form-<%= palanquee.id %>" class="palanquee-form">
                             <input type="hidden" name="palanquee_id" value="<%= palanquee.id %>">
@@ -53,6 +53,10 @@
                             <label>Paliers :</label>
                             <input type="text" name="paliers" class="paliers" value="<%= palanquee.paliers || '' %>" 
                                 <%= palanquee.paliers ? 'disabled' : '' %> required>
+                                <div>
+                                    <input type="checkbox" id="paliers-<%= palanquee.id %>-checkbox" class="paliers-checkbox">
+                                    <label for="paliers-<%= palanquee.id %>-checkbox">3m / 3m Sécu</label>
+                                </div>
                         
                             <!-- 🔹 Boutons alignés sur la même ligne -->
                             <div class="btn-group">
@@ -92,132 +96,159 @@
             </a>
         </div>
 
+    
     <script>
-        // Fonction pour revenir à l'écran précédent
-            function retour() {
-            history.back(); // Revenir à la page précédente
-        }
-        const urlParams = new URLSearchParams(window.location.search);
-        const plongeeId = urlParams.get("id"); // Récupère l'ID de la plongée depuis l'URL
-        console.log("🔍 ID de la plongée récupéré :", plongeeId);
+    // Fonction pour revenir à l'écran précédent
+    function retour() {
+        history.back(); // Revenir à la page précédente
+    }
 
-        document.querySelectorAll(".btn-enregistrer").forEach(button => {
-    button.addEventListener("click", async function (event) {
-        event.preventDefault(); // Empêche le rechargement de la page
-        this.disabled = true; // 🔹 Désactive immédiatement le bouton pour éviter un double clic
+    const urlParams = new URLSearchParams(window.location.search);
+    const plongeeId = urlParams.get("id"); // Récupère l'ID de la plongée depuis l'URL
+    console.log("🔍 ID de la plongée récupéré :", plongeeId);
 
-        const palanqueeId = this.closest("form").querySelector("[name='palanquee_id']").value;
-        if (!palanqueeId) {
-            console.error("❌ Erreur : ID de palanquée manquant !");
-            alert("❌ Impossible d'enregistrer : ID de la palanquée manquant.");
-            this.disabled = false;
-            return;
-        }
+    document.querySelectorAll(".btn-enregistrer").forEach(button => {
+        button.addEventListener("click", async function (event) {
+            event.preventDefault(); // Empêche le rechargement de la page
+            this.disabled = true; // 🔹 Désactive immédiatement le bouton pour éviter un double clic
+
+            const palanqueeId = this.closest("form").querySelector("[name='palanquee_id']").value;
+            if (!palanqueeId) {
+                console.error("❌ Erreur : ID de palanquée manquant !");
+                alert("❌ Impossible d'enregistrer : ID de la palanquée manquant.");
+                this.disabled = false;
+                return;
+            }
+
+            const form = document.querySelector(`#form-${palanqueeId}`);
+            if (!form) {
+                console.error("❌ Erreur : Formulaire introuvable !");
+                alert("❌ Erreur interne : formulaire non trouvé.");
+                this.disabled = false;
+                return;
+            }
+
+            // Récupération sécurisée des champs
+            const dureeInput = form.querySelector(".duree");
+            const profondeurInput = form.querySelector(".profondeur");
+            const paliersInput = form.querySelector(".paliers");
+
+            if (!dureeInput || !profondeurInput || !paliersInput) {
+                console.error("❌ Erreur : Un ou plusieurs champs sont introuvables !");
+                alert("❌ Erreur interne : champs de saisie non trouvés.");
+                this.disabled = false;
+                return;
+            }
+
+            const duree = dureeInput.value;
+            const profondeur = profondeurInput.value;
+            const paliers = paliersInput.value;
+
+            try {
+                const response = await fetch("/sauvegarder_parametres", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: palanqueeId, duree, profondeur, paliers })
+                });
+
+                if (!response.ok) throw new Error("Erreur serveur");
+
+                const result = await response.json();
+                if (result.success) {
+                    alert("✅ Paramètres enregistrés avec succès !");
+                    dureeInput.disabled = true;
+                    profondeurInput.disabled = true;
+                    paliersInput.disabled = true;
+                } else {
+                    alert("❌ Erreur lors de l'enregistrement.");
+                    this.disabled = false;
+                }
+            } catch (error) {
+                console.error("🚨 Erreur lors de la requête ::", error);
+                alert("❌ Erreur de communication avec le serveur.");
+                this.disabled = false;
+            }
+        });
+    });
+
+    // Gestion de la case à cocher pour les paliers
+    document.querySelectorAll(".paliers-checkbox").forEach(checkbox => {
+    checkbox.addEventListener("change", function() {
+        const palanqueeId = this.id.replace("paliers-", "").replace("-checkbox", "");
+        console.log("✅ ID extrait :", palanqueeId);
 
         const form = document.querySelector(`#form-${palanqueeId}`);
         if (!form) {
-            console.error("❌ Erreur : Formulaire introuvable !");
-            alert("❌ Erreur interne : formulaire non trouvé.");
-            this.disabled = false;
+            console.error(`❌ ERREUR : Aucun formulaire trouvé avec l'ID #form-${palanqueeId}`);
             return;
         }
 
-        // Récupération sécurisée des champs
-        const dureeInput = form.querySelector(".duree");
-        const profondeurInput = form.querySelector(".profondeur");
         const paliersInput = form.querySelector(".paliers");
+        console.log("🔍 Élément paliersInput trouvé :", paliersInput);
 
-        if (!dureeInput || !profondeurInput || !paliersInput) {
-            console.error("❌ Erreur : Un ou plusieurs champs sont introuvables !");
-            alert("❌ Erreur interne : champs de saisie non trouvés.");
-            this.disabled = false;
+        if (!paliersInput) {
+            console.error(`❌ ERREUR : Aucun champ paliers trouvé dans #form-${palanqueeId}`);
             return;
         }
 
-        const duree = dureeInput.value;
-        const profondeur = profondeurInput.value;
-        const paliers = paliersInput.value;
-
-        try {
-            const response = await fetch("/sauvegarder_parametres", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id: palanqueeId, duree, profondeur, paliers })
-            });
-
-            if (!response.ok) throw new Error("Erreur serveur");
-
-            const result = await response.json();
-            if (result.success) {
-                alert("✅ Paramètres enregistrés avec succès !");
-                dureeInput.disabled = true;
-                profondeurInput.disabled = true;
-                paliersInput.disabled = true;
-            } else {
-                alert("❌ Erreur lors de l'enregistrement.");
-                this.disabled = false;
-            }
-        } catch (error) {
-            console.error("🚨 Erreur lors de la requête ::", error);
-            alert("❌ Erreur de communication avec le serveur.");
-            this.disabled = false;
-        }
+        paliersInput.value = this.checked ? '3m / 3m Sécu' : '';
     });
 });
 
-async function envoyerParWhatsApp() {
-                const plongeeId = "<%= typeof plongeeId !== 'undefined' ? plongeeId : '' %>";
-        
-                try {
-                    const response = await fetch(`/plongee_info?id=${plongeeId}`);
-                    const data = await response.json();
-        
-                    if (data.error) {
-                        alert("Erreur : " + data.error);
-                        return;
-                    }
-        
-                    console.log("📅 Date brute récupérée :", data.date);
-        
-                    let datePlongee = data.date;
-                    if (!datePlongee || datePlongee.toLowerCase().includes("invalid")) {
-                        console.error("❌ Erreur : Date invalide ->", data.date);
-                        datePlongee = "Date inconnue";
-                    }
-        
-                    let nomSitePlongee = data.site || "Site inconnu"; 
-        
-                    let message = `🌊 *Compte-rendu Plongée* 🌊\n`;
-                    message += `📅 *Date* : ${datePlongee}\n`;
-                    message += `🤿 *Plongée n°1 - ${nomSitePlongee}*\n\n`;
-        
-                    <% palanquees.forEach(function(palanquee) { %>
-                        message += `🔹 *Palanquée <%= palanquee.nom %>*\n`;
-                        message += `⏳ *Durée* : <%= palanquee.duree || 'Non défini' %> min\n`;
-                        message += `📏 *Profondeur* : <%= palanquee.profondeur || 'Non défini' %> m\n`;
-                        message += `⚓ *Paliers* : <%= palanquee.paliers || 'Non définis' %>\n`;
-                        message += `👥 *Plongeurs* :\n`;
-        
-                        <% if (palanquee.plongeurs && palanquee.plongeurs.length > 0) { %>
-                            <% palanquee.plongeurs.forEach(function(plongeur) { %>
-                                message += `   - <%= plongeur.nom %> (<%= plongeur.niveau_plongeur_historique %>)\n`;
-                            <% }); %>
-                        <% } else { %>
-                            message += `   Aucun plongeur dans cette palanquée.\n`;
-                        <% } %>
-        
-                        message += "\n"; // Ligne vide pour séparer
-                    <% }); %>
-        
-                    let url = "https://wa.me/?text=" + encodeURIComponent(message);
-                    window.location.href = url; // Redirection directe au lieu d'une pop-up
-                } catch (error) {
-                    console.error("❌ Erreur récupération plongée:", error);
-                    alert("Impossible de récupérer les informations de la plongée.");
-                }
+
+
+    async function envoyerParWhatsApp() {
+        const plongeeId = "<%= typeof plongeeId !== 'undefined' ? plongeeId : '' %>";
+
+        try {
+            const response = await fetch(`/plongee_info?id=${plongeeId}`);
+            const data = await response.json();
+
+            if (data.error) {
+                alert("Erreur : " + data.error);
+                return;
             }
 
-        </script>
+            console.log("📅 Date brute récupérée :", data.date);
+
+            let datePlongee = data.date;
+            if (!datePlongee || datePlongee.toLowerCase().includes("invalid")) {
+                console.error("❌ Erreur : Date invalide ->", data.date);
+                datePlongee = "Date inconnue";
+            }
+
+            let nomSitePlongee = data.site || "Site inconnu"; 
+
+            let message = `🌊 *Compte-rendu Plongée* 🌊\n`;
+            message += `📅 *Date* : ${datePlongee}\n`;
+            message += `🤿 *Plongée n°1 - ${nomSitePlongee}*\n\n`;
+
+            <% palanquees.forEach(function(palanquee) { %>
+                message += `🔹 *Palanquée <%= palanquee.nom %>*\n`;
+                message += `📏 *Profondeur* : <%= palanquee.profondeur || 'Non défini' %> m\n`;
+                message += `⏳ *Durée* : <%= palanquee.duree || 'Non défini' %> min\n`;
+                message += `⚓ *Paliers* : <%= palanquee.paliers || 'Non définis' %>\n`;
+                message += `👥 *Plongeurs* :\n`;
+
+                <% if (palanquee.plongeurs && palanquee.plongeurs.length > 0) { %>
+                    <% palanquee.plongeurs.forEach(function(plongeur) { %>
+                        message += `   - <%= plongeur.nom %> (<%= plongeur.niveau_plongeur_historique %>)\n`;
+                    <% }); %>
+                <% } else { %>
+                    message += `   Aucun plongeur dans cette palanquée.\n`;
+                <% } %>
+
+                message += "\n"; // Ligne vide pour séparer
+            <% }); %>
+
+            let url = "https://wa.me/?text=" + encodeURIComponent(message);
+            window.location.href = url; // Redirection directe au lieu d'une pop-up
+        } catch (error) {
+            console.error("❌ Erreur récupération plongée:", error);
+            alert("Impossible de récupérer les informations de la plongée.");
+        }
+    }
+</script>
 
 
     <!-- IndexedDB and App Scripts -->
