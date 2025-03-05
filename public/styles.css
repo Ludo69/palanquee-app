@@ -250,8 +250,7 @@ body {
 }
 
 
-.btn-enregistrer,
-.btn-modifier {
+.btn-enregistrer{
     display: flex;
     align-items: center;
     justify-content: center;

@@ -21,23 +21,27 @@
         <% if (palanquees && palanquees.length > 0) { %>
             <% palanquees.forEach(function(palanquee) { %>
                 <div class="palanquee-container">
+                    <!-- 🟢 Partie Gauche -->
                     <div class="palanquee-left">
                         <h2 class="palanquee-nom"><%= palanquee.nom %></h2>
                         <p><strong>Plongeurs :</strong></p>
-                        <ul class="plongeurs-list">
+                        <ul class="plongeurs-list flex flex-col gap-1">
                             <% if (palanquee.plongeurs && palanquee.plongeurs.length > 0) { %>
-                                <% palanquee.plongeurs.forEach(function(plongeur) { %>
-                                    <li class="plongeur-item">
+                                <% palanquee.plongeurs.forEach(function(plongeur) { 
+                                    let couleurClasse = (["N1", "N2", "N3"].includes(plongeur.niveau_plongeur_historique)) ? "text-green-500" : "text-blue-500"; 
+                                %>
+                                    <li class="<%= couleurClasse %> font-semibold">
                                         <%= plongeur.nom %> -  
                                         <%= plongeur.niveau_plongeur_historique ? plongeur.niveau_plongeur_historique : "N/A" %>
                                     </li>
                                 <% }); %>
                             <% } else { %>
-                                <li>Aucun plongeur dans cette palanquée.</li>
+                                <li class="text-gray-500 italic">Aucun plongeur dans cette palanquée.</li>
                             <% } %>
                         </ul>
                     </div>
                 
+                    <!-- 🔵 Partie Droite -->
                     <div class="palanquee-right">
                         <form id="form-<%= palanquee.id %>" class="palanquee-form">
                             <input type="hidden" name="palanquee_id" value="<%= palanquee.id %>">
@@ -53,23 +57,28 @@
                             <label>Paliers :</label>
                             <input type="text" name="paliers" class="paliers" value="<%= palanquee.paliers || '' %>" 
                                 <%= palanquee.paliers ? 'disabled' : '' %> required>
-                                <div>
-                                    <input type="checkbox" id="paliers-<%= palanquee.id %>-checkbox" class="paliers-checkbox">
-                                    <label for="paliers-<%= palanquee.id %>-checkbox">3m / 3m Sécu</label>
-                                </div>
-                        
-                            <!-- 🔹 Boutons alignés sur la même ligne -->
-                            <div class="btn-group">
-                                <button type="submit" class="btn-enregistrer"
-                                    <%= (palanquee.duree !== null && palanquee.duree !== '' &&
-                                         palanquee.profondeur !== null && palanquee.profondeur !== '' &&
-                                         palanquee.paliers !== null && palanquee.paliers !== '') ? 'disabled' : '' %>>
-                                    Enregistrer
-                                </button>                                    
-                            </div>
+                            
+                            <!-- ✅ Checkbox alignée -->
+                            <div class="inline-flex items-center space-x-1">
+                                <input type="checkbox" id="paliers-<%= palanquee.id %>-checkbox" class="paliers-checkbox">
+                                <label for="paliers-<%= palanquee.id %>-checkbox" class="whitespace-nowrap text-sm m-0 p-0">3m / 3m Sécu</label>
+                            </div>                                                       
+                                                                                           
                         </form>
                     </div>
+                
+                    <!-- 🔻 Partie Bas (Nouveau Conteneur pour le bouton) -->
+                    <div class="palanquee-bas w-full flex justify-center mt-4">
+                        <button type="submit" class="btn-enregistrer"
+                            <%= (palanquee.duree !== null && palanquee.duree !== '' &&
+                                palanquee.profondeur !== null && palanquee.profondeur !== '' &&
+                                palanquee.paliers !== null && palanquee.paliers !== '') ? 'disabled' : '' %>>
+                            Enregistrer
+                        </button> 
+                    </div>
+
                 </div>
+                
             <% }); %>
         <% } else { %>
             <p>Aucune palanquée disponible pour cette plongée.</p>
@@ -171,8 +180,16 @@
         });
     });
 
-    // Gestion de la case à cocher pour les paliers
-    document.querySelectorAll(".paliers-checkbox").forEach(checkbox => {
+// Initialisation de la valeur "Aucun" dans le champ paliers au chargement de la page
+document.querySelectorAll(".palanquee-form").forEach(form => {
+    const paliersInput = form.querySelector(".paliers");
+    if (paliersInput && !paliersInput.value) {
+        paliersInput.value = 'Aucun'; // Valeur par défaut "Aucun" au chargement de la page
+    }
+});
+
+// Gestion de la case à cocher pour les paliers
+document.querySelectorAll(".paliers-checkbox").forEach(checkbox => {
     checkbox.addEventListener("change", function() {
         const palanqueeId = this.id.replace("paliers-", "").replace("-checkbox", "");
         console.log("✅ ID extrait :", palanqueeId);
@@ -191,9 +208,21 @@
             return;
         }
 
-        paliersInput.value = this.checked ? '3m / 3m Sécu' : '';
+        // Si la case "3m / 3m Sécu" est cochée
+        if (this.checked && this.id.includes('checkbox')) {
+            paliersInput.value = '3m / 3m Sécu'; // Mettre "3m / 3m Sécu" dans le champ
+        } else {
+            // Si aucune case n'est cochée, on met "Aucun" comme valeur par défaut
+            const anyChecked = form.querySelectorAll(".paliers-checkbox:checked").length > 0;
+            if (!anyChecked) {
+                paliersInput.value = 'Aucun'; // "Aucun" est défini si aucune case n'est cochée
+            }
+        }
     });
 });
+
+
+
 
 
 
