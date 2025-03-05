@@ -20,29 +20,16 @@
         <!-- Titre -->
         <h1 class="text-3xl font-bold mb-4 text-center text-white">Sélectionnez une Sortie</h1>
     
-        <!-- Liste des sorties scrollable -->
-        <div class="overflow-y-auto max-h-64 space-y-4">
-            <% sorties.forEach(sortie => { %>
-                <div class="bg-gray-800 p-4 rounded-lg shadow-md flex justify-between items-center cursor-pointer hover:bg-gray-700 transition duration-300" onclick="selectSortie('<%= sortie.id %>')">
-                    <div class="flex items-center space-x-4 w-full">
-                        <span class="font-bold text-lg truncate"><%= sortie.lieu %></span>
-                        <span class="text-gray-400 text-sm whitespace-nowrap">
-                            <%= new Date(sortie.date_debut).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) %>
-                        </span>
-                    </div>
-                    <div class="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-white opacity-50" id="checkmark-<%= sortie.id %>">
-                        ✔
-                    </div>
-                </div>
-            <% }) %>
-        </div>
-            
         <!-- Calendrier (fixe) -->
         <div id="calendar" class="mt-6 bg-gray-800 p-4 rounded-lg shadow-md">
             <!-- Contenu du calendrier -->
         </div>
     
         <input type="hidden" id="dateInput">
+        <input type="hidden" id="sortieIdInput">
+    
+        <!-- Message d'erreur -->
+        <div id="error-message" class="text-red-500 text-center mt-4" style="display: none;"></div>
     
         <!-- Bouton Continuer -->
         <button id="continuer-btn" onclick="validerSelection()" class="mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white text-lg font-semibold py-3 rounded-lg shadow-md transition duration-300">
@@ -75,20 +62,18 @@
         let selectedSortieId = null;
         let selectedDate = null;
     
-        function selectSortie(sortieId) {
-            selectedSortieId = sortieId;
-    
-            // Réinitialiser les checkmarks
-            document.querySelectorAll('.w-6.h-6').forEach(el => el.classList.remove('opacity-100'));
-            document.getElementById(`checkmark-${sortieId}`).classList.add('opacity-100');
-        }
-    
         function validerSelection() {
             const selectedDateValue = $('#dateInput').val();
-            if (selectedSortieId && selectedDateValue) {
-                window.location.href = `/plongees/${selectedSortieId}/${selectedDateValue}`;
+            const sortieId = $('#sortieIdInput').val();
+            const errorMessage = $('#error-message');
+            if (!selectedDateValue) {
+                errorMessage.text("Veuillez sélectionner une date pour une sortie.");
+                errorMessage.show();
+            } else if (!sortieId) {
+                errorMessage.text("Aucune sortie prévue à cette date.");
+                errorMessage.show();
             } else {
-                alert("Veuillez sélectionner une sortie et une date.");
+                window.location.href = `/plongees/${sortieId}/${selectedDateValue}`;
             }
         }
     
@@ -96,6 +81,7 @@
             const sorties = [
                 <% sorties.forEach(sortie => { %>
                     {
+                        id: '<%= sortie.id %>',
                         lieu: '<%= sortie.lieu %>',
                         start: '<%= sortie.date_debut %>',
                         end: '<%= sortie.date_fin %>'
@@ -105,34 +91,44 @@
     
             $('#calendar').fullCalendar({
                 locale: 'fr', // Définit la langue en français
-    header: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'month,agendaWeek,agendaDay'
-    },
-    events: sorties.map(sortie => ({
-        title: sortie.lieu,
-        start: sortie.start,
-        end: sortie.end,
-        backgroundColor: '#3B82F6',
-        textColor: 'white'
-    })),
-    eventRender: function(event, element) {
-        element.attr('title', event.title);
-    },
-    dayClick: function(date, jsEvent, view) {
-    // Supprime la classe "selected-date" de toutes les cellules avant d'ajouter la nouvelle
-    $('#calendar').find('.fc-day, .fc-day-top').removeClass('selected-date');
+                header: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'month,agendaWeek,agendaDay'
+                },
+                events: sorties.map(sortie => ({
+                    title: sortie.lieu,
+                    start: sortie.start,
+                    end: sortie.end,
+                    backgroundColor: '#3B82F6',
+                    textColor: 'white',
+                    id: sortie.id
+                })),
+                eventRender: function(event, element) {
+                    element.attr('title', event.title);
+                },
+                dayClick: function(date, jsEvent, view) {
+                    // Supprime la classe "selected-date" de toutes les cellules avant d'ajouter la nouvelle
+                    $('#calendar').find('.fc-day, .fc-day-top').removeClass('selected-date');
 
-    // Ajouter la classe à la cellule cliquée
-    $(`td[data-date="${date.format('YYYY-MM-DD')}"], .fc-day-top[data-date="${date.format('YYYY-MM-DD')}"]`).addClass('selected-date');
+                    // Ajouter la classe à la cellule cliquée
+                    $(`td[data-date="${date.format('YYYY-MM-DD')}"], .fc-day-top[data-date="${date.format('YYYY-MM-DD')}"]`).addClass('selected-date');
 
-    // Mettre à jour l'input caché avec la date sélectionnée
-    $('#dateInput').val(date.format('YYYY-MM-DD'));
-}
+                    // Mettre à jour l'input caché avec la date sélectionnée
+                    $('#dateInput').val(date.format('YYYY-MM-DD'));
 
-});
+                    // Masquer le message d'erreur
+                    $('#error-message').hide();
 
+                    // Vérifie si une sortie existe pour la date sélectionnée
+                    const sortie = sorties.find(sortie => sortie.start <= date.format('YYYY-MM-DD') && sortie.end >= date.format('YYYY-MM-DD'));
+                    if (sortie) {
+                        $('#sortieIdInput').val(sortie.id);
+                    } else {
+                        $('#sortieIdInput').val('');
+                    }
+                }
+            });
     
             // Style pour la sélection de date
             $("<style>")
