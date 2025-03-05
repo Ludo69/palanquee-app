@@ -422,12 +422,14 @@ body {
 }
 
 /* Styles généraux pour le calendrier */
-.calendar {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: auto;
-  display: block;
+#calendar {
+  flex-grow: 1;
+  height: 70vh; /* Ajuste selon la taille de l'écran */
+  min-height: 500px; /* Taille minimale pour éviter les coupures */
+  max-height: 80vh; /* Évite qu'il dépasse l'écran */
+  overflow: hidden; /* Empêche le scroll */
 }
+
 
 /* Styles pour les petits écrans */
 @media (max-width: 600px) {
@@ -485,4 +487,10 @@ body {
 .bouton-plongeur svg {
   width: 14px; /* Ajuste la taille de l'icône */
   height: 14px; /* Ajuste la taille de l'icône */
+}
+
+.w-full {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* Pleine hauteur écran */
 }
