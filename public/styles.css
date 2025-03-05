@@ -488,9 +488,3 @@ body {
   width: 14px; /* Ajuste la taille de l'icône */
   height: 14px; /* Ajuste la taille de l'icône */
 }
-
-.w-full {
-  display: flex;
-  flex-direction: column;
-  height: 100vh; /* Pleine hauteur écran */
-}
