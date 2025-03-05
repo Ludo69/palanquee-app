@@ -12,8 +12,6 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1b263b">
     <link rel="icon" type="image/x-icon" href="/icons/favicon.ico">
-
-    
 </head>
 <body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen">
     
@@ -60,8 +58,24 @@
             <span class="text-xs">📋 Palanquées</span>
         </a>
     </div>
-    <!-- IndexedDB and App Scripts -->
-    <script src="/js/indexeddb.js"></script>
-    <script src="/js/client.js"></script>
+
+    <!-- Service Worker Script -->
+    <script>
+        console.log('Vérification de l\'enregistrement du service worker');
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then((registration) => {
+                        console.log('Service Worker enregistré avec succès:', registration);
+                    })
+                    .catch((error) => {
+                        console.log('Échec de l\'enregistrement du Service Worker:', error);
+                    });
+            });
+        } else {
+            console.log('Service Worker non supporté par ce navigateur');
+        }
+    </script>
 </body>
 </html>

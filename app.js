@@ -22,6 +22,7 @@ app.get("/", (req, res) => {
     res.render("index");
 });
 
+
 // Gestion des plongeurs
 app.get("/gestion-plongeurs", async (req, res) => {
     try {
