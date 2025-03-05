@@ -421,10 +421,60 @@ body {
   border-radius: 5px;
 }
 
-#calendar {
-  overflow: hidden !important;
-  position: relative;
-  z-index: 1; /* Plus bas que le menu */
+/* Styles généraux pour le calendrier */
+.calendar {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  display: block;
+}
+
+/* Styles pour les petits écrans */
+@media (max-width: 600px) {
+  .calendar {
+    font-size: 0.8em;
+  }
+
+  .calendar table {
+    width: 100%;
+    table-layout: auto;
+  }
+
+  .calendar th, .calendar td {
+    padding: 5px;
+  }
+}
+
+/* Styles pour les écrans moyens */
+@media (min-width: 601px) and (max-width: 1024px) {
+  .calendar {
+    font-size: 0.9em;
+  }
+
+  .calendar table {
+    width: 100%;
+    table-layout: auto;
+  }
+
+  .calendar th, .calendar td {
+    padding: 10px;
+  }
+}
+
+/* Styles pour les grands écrans */
+@media (min-width: 1025px) {
+  .calendar {
+    font-size: 1em;
+  }
+
+  .calendar table {
+    width: 100%;
+    table-layout: auto;
+  }
+
+  .calendar th, .calendar td {
+    padding: 15px;
+  }
 }
 
 .fixed.bottom-0 {
