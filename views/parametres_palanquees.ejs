@@ -252,57 +252,64 @@ document.querySelectorAll(".paliers-checkbox").forEach(checkbox => {
 
 
 
-    async function envoyerParWhatsApp() {
-        const plongeeId = "<%= typeof plongeeId !== 'undefined' ? plongeeId : '' %>";
+async function envoyerParWhatsApp() {
+    const plongeeId = "<%= typeof plongeeId !== 'undefined' ? plongeeId : '' %>";
 
-        try {
-            const response = await fetch(`/plongee_info?id=${plongeeId}`);
-            const data = await response.json();
+    try {
+        const response = await fetch(`/plongee_info?id=${plongeeId}`);
+        const data = await response.json();
 
-            if (data.error) {
-                alert("Erreur : " + data.error);
-                return;
-            }
-
-            console.log("📅 Date brute récupérée :", data.date);
-
-            let datePlongee = data.date;
-            if (!datePlongee || datePlongee.toLowerCase().includes("invalid")) {
-                console.error("❌ Erreur : Date invalide ->", data.date);
-                datePlongee = "Date inconnue";
-            }
-
-            let nomSitePlongee = data.site || "Site inconnu"; 
-
-            let message = `🌊 *Compte-rendu Plongée* 🌊\n`;
-            message += `📅 *Date* : ${datePlongee}\n`;
-            message += `🤿 *Plongée n°1 - ${nomSitePlongee}*\n\n`;
-
-            <% palanquees.forEach(function(palanquee) { %>
-                message += `🔹 *Palanquée <%= palanquee.nom %>*\n`;
-                message += `📏 *Profondeur* : <%= palanquee.profondeur || 'Non défini' %> m\n`;
-                message += `⏳ *Durée* : <%= palanquee.duree || 'Non défini' %> min\n`;
-                message += `⚓ *Paliers* : <%= palanquee.paliers || 'Non définis' %>\n`;
-                message += `👥 *Plongeurs* :\n`;
-
-                <% if (palanquee.plongeurs && palanquee.plongeurs.length > 0) { %>
-                    <% palanquee.plongeurs.forEach(function(plongeur) { %>
-                        message += `   - <%= plongeur.nom %> (<%= plongeur.niveau_plongeur_historique %>)\n`;
-                    <% }); %>
-                <% } else { %>
-                    message += `   Aucun plongeur dans cette palanquée.\n`;
-                <% } %>
-
-                message += "\n"; // Ligne vide pour séparer
-            <% }); %>
-
-            let url = "https://wa.me/?text=" + encodeURIComponent(message);
-            window.location.href = url; // Redirection directe au lieu d'une pop-up
-        } catch (error) {
-            console.error("❌ Erreur récupération plongée:", error);
-            alert("Impossible de récupérer les informations de la plongée.");
+        if (data.error) {
+            alert("Erreur : " + data.error);
+            return;
         }
+
+        console.log("📅 Date brute récupérée :", data.date);
+
+        let datePlongee = data.date;
+        if (!datePlongee || datePlongee.toLowerCase().includes("invalid")) {
+            console.error("❌ Erreur : Date invalide ->", data.date);
+            datePlongee = "Date inconnue";
+        }
+
+        let nomSitePlongee = data.site || "Site inconnu"; 
+
+        let message = `🌊 *Compte-rendu Plongée* 🌊\n`;
+        message += `📅 *Date* : ${datePlongee}\n`;
+        message += `🤿 *Plongée n°1 - ${nomSitePlongee}*\n\n`;
+
+        <% palanquees.forEach(function(palanquee) { %>
+            message += `🔹 *Palanquée <%= palanquee.nom %>*\n`;
+            message += `📏 *Profondeur* : <%= palanquee.profondeur || 'Non défini' %> m\n`;
+            message += `⏳ *Durée* : <%= palanquee.duree || 'Non défini' %> min\n`;
+            message += `⚓ *Paliers* : <%= palanquee.paliers || 'Non définis' %>\n`;
+            message += `👥 *Plongeurs* :\n`;
+
+            <% if (palanquee.plongeurs && palanquee.plongeurs.length > 0) { %>
+                <% palanquee.plongeurs.forEach(function(plongeur) { %>
+                    message += `   - <%= plongeur.nom %> (<%= plongeur.niveau_plongeur_historique %>)\n`;
+                <% }); %>
+            <% } else { %>
+                message += `   Aucun plongeur dans cette palanquée.\n`;
+            <% } %>
+
+            message += "\n"; // Ligne vide pour séparer
+        <% }); %>
+
+        // Générer le PDF
+        const pdfResponse = await fetch(`/generate-pdf?palanquees=${JSON.stringify(palanquees)}`);
+        const pdfData = await pdfResponse.json();
+
+        // Ajouter le lien de téléchargement du PDF
+        message += `📄 *Télécharger le PDF* : ${pdfData.filePath}\n`;
+
+        let url = "https://wa.me/?text=" + encodeURIComponent(message);
+        window.location.href = url; // Redirection directe au lieu d'une pop-up
+    } catch (error) {
+        console.error("❌ Erreur récupération plongée:", error);
+        alert("Impossible de récupérer les informations de la plongée.");
     }
+}
 </script>
 
 

@@ -1,8 +1,20 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const { createClient } = require("@supabase/supabase-js");
+const PdfPrinter = require('pdfmake');
 const app = express();
 const port = 3000;
+
+const fonts = {
+    Helvetica: {
+        normal: 'Helvetica',
+        bold: 'Helvetica-Bold',
+        italics: 'Helvetica-Oblique',
+        bolditalics: 'Helvetica-BoldOblique'
+    }
+};
+
+const printer = new PdfPrinter(fonts);
 
 // Configuration de Supabase
 const supabaseUrl = "https://xoiyziphxfkfxfawcafm.supabase.co";
@@ -1129,6 +1141,47 @@ app.post('/retirer-plongeur', async (req, res) => {
         console.error("Erreur lors de la suppression :", error);
         return res.status(500).json({ success: false, message: "Erreur serveur" });
     }
+});
+
+// Route pour générer le PDF
+app.get('/generate-pdf', async (req, res) => {
+    const { palanquees } = req.query;
+
+    const docDefinition = {
+        content: [
+            { text: 'Compte-rendu de Plongée', style: 'header' },
+            { text: 'Informations des palanquées :' },
+            ...palanquees.map(palanquee => ({
+                text: [
+                    { text: `Palanquée : ${palanquee.nom}\n`, style: 'subheader' },
+                    { text: `Profondeur : ${palanquee.profondeur || 'Non définie'} m\n` },
+                    { text: `Durée : ${palanquee.duree || 'Non définie'} min\n` },
+                    { text: `Paliers : ${palanquee.paliers || 'Non définis'}\n` },
+                    { text: 'Plongeurs :\n' },
+                    ...palanquee.plongeurs.map(plongeur => ({
+                        text: `   - ${plongeur.nom} (${plongeur.niveau_plongeur_historique})\n`
+                    }))
+                ]
+            }))
+        ],
+        styles: {
+            header: {
+                fontSize: 18,
+                bold: true
+            },
+            subheader: {
+                fontSize: 14,
+                bold: true
+            }
+        }
+    };
+
+    const pdfDoc = printer.createPdfKitDocument(docDefinition);
+    const filePath = `plongee-${Date.now()}.pdf`;
+    pdfDoc.pipe(fs.createWriteStream(filePath));
+    pdfDoc.end();
+
+    res.json({ filePath });
 });
 
 
