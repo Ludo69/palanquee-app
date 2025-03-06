@@ -13,28 +13,34 @@
     <meta name="theme-color" content="#1b263b">
     <link rel="icon" type="image/x-icon" href="/icons/favicon.ico">
 </head>
-<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen">
+<body class="bg-gray-900 text-white flex flex-col items-center min-h-screen">
     
-
-    <div class="w-full max-w-md p-6 text-center">
+    <div class="w-full max-w-md p-6">
         <!-- Titre -->
-        <h1 class="text-3xl font-bold mb-4 text-white">Gestion des Palanquées</h1>
+        <h1 class="text-3xl font-bold text-center mb-6 text-white">Gestion des Palanquées</h1>
         
         <!-- Image avec effet arrondi -->
-        <div class="rounded-2xl overflow-hidden shadow-lg">
+        <div class="rounded-2xl overflow-hidden shadow-lg mb-6">
             <img src="/images/plongeur.avif" alt="Plongée" class="w-full object-cover">
         </div>
 
-        <!-- Boutons -->
-        <div class="mt-6 space-y-4">
-            <a href="/gestion-plongeurs" class="w-full block text-lg font-semibold bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
-                <i class="fas fa-user mr-2"></i>👤 Gestion des Plongeurs
+        <!-- Grille de cartes -->
+        <div class="grid grid-cols-2 gap-4">
+            <a href="/gestion-plongeurs" class="bg-blue-500 p-6 rounded-2xl shadow-md text-center flex flex-col items-center">
+                <i class="fas fa-user text-3xl mb-2"></i>
+                <span class="text-lg font-semibold">Gestion des Plongeurs</span>
             </a>
-            <a href="/gestion-sorties" class="w-full block text-lg font-semibold bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
-                <i class="far fa-calendar-alt mr-2"></i>🤿 Gestion des Sorties
+            <a href="/gestion-sorties" class="bg-green-500 p-6 rounded-2xl shadow-md text-center flex flex-col items-center">
+                <i class="far fa-calendar-alt text-3xl mb-2"></i>
+                <span class="text-lg font-semibold">Gestion des Sorties</span>
             </a>
-            <a href="/selection-sorties" class="w-full block text-lg font-semibold bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
-                <i class="fas fa-mask mr-2"></i>📋 Gestion des Palanquées
+            <a href="/selection-sorties" class="bg-orange-500 p-6 rounded-2xl shadow-md text-center flex flex-col items-center">
+                <i class="fas fa-mask text-3xl mb-2"></i>
+                <span class="text-lg font-semibold">Gestion des Palanquées</span>
+            </a>
+            <a href="#" class="bg-purple-500 p-6 rounded-2xl shadow-md text-center flex flex-col items-center">
+                <i class="fas fa-chart-line text-3xl mb-2"></i>
+                <span class="text-lg font-semibold">A propos</span>
             </a>
         </div>
     </div>
@@ -58,24 +64,5 @@
             <span class="text-xs">📋 Palanquées</span>
         </a>
     </div>
-
-    <!-- Service Worker Script -->
-    <script>
-        console.log('Vérification de l\'enregistrement du service worker');
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
-                    .then((registration) => {
-                        console.log('Service Worker enregistré avec succès:', registration);
-                    })
-                    .catch((error) => {
-                        console.log('Échec de l\'enregistrement du Service Worker:', error);
-                    });
-            });
-        } else {
-            console.log('Service Worker non supporté par ce navigateur');
-        }
-    </script>
 </body>
 </html>
