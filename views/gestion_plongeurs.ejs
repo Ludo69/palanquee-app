@@ -28,7 +28,7 @@
         <!-- Liste des plongeurs scrollable -->
         <div class="overflow-y-auto max-h-80 w-full p-2 space-y-2 no-scrollbar">
             <% plongeurs.forEach(plongeur => { %>
-                <div class="bg-gray-800 p-3 rounded-lg flex justify-between items-center shadow-md">
+                <div class="bg-[rgba(200,200,200,0.4)] p-3 rounded-lg flex justify-between items-center shadow-md">
                     <span><%= plongeur.nom %> - <%= plongeur.niveau %></span>
                     <div class="space-x-2">
                         <button class="text-yellow-400 hover:text-yellow-300" onclick="openEditPopup('<%= plongeur.id %>', '<%= plongeur.niveau %>')">✏️</button>

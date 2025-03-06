@@ -18,24 +18,28 @@
         <ul class="space-y-3" id="plongeesList">
             <% if (plongees && plongees.length > 0) { %>
                 <% plongees.forEach(function(plongee) { %>
-                    <li class="flex items-center justify-between bg-gray-800 p-3 rounded-lg shadow-md w-full max-w-3xl mx-auto cursor-pointer" 
+                    <li class="flex items-center justify-between bg-[rgba(28,174,186,0.4)] p-3 rounded-lg shadow-md w-full max-w-3xl mx-auto cursor-pointer" 
                         data-id="<%= plongee.id %>">
                         
                         <span>Plongée <%= plongee.numero %> - 
                             <span class="site-name"><%= plongee.site || "Nom du site" %></span>
                         </span>
-        
-                        <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded">Site</button>
-        
-                        <a href="/parametres_palanquees?id=<%= plongee.id %>">
-                            <img src="/icons/liste.png" alt="Paramètres" class="w-6 h-6">
-                        </a>
+            
+                        <!-- Conteneur pour les boutons -->
+                        <div class="ml-auto flex items-center space-x-2">
+                            <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded">Site</button>
+                            <a href="/parametres_palanquees?id=<%= plongee.id %>">
+                                <img src="/icons/liste.png" alt="Paramètres" class="w-6 h-6">
+                            </a>
+                        </div>
                     </li>
                 <% }); %>
             <% } else { %>
                 <p class="text-center text-gray-400">Aucune plongée à afficher.</p>
             <% } %>
         </ul>
+        
+        
         
 
         <div class="mt-6 flex justify-center">
@@ -88,7 +92,7 @@
                 if (plongees.length > 0) {
                     plongees.forEach(plongee => {
                         const li = document.createElement("li");
-                        li.classList.add("flex", "items-center", "justify-between", "bg-gray-800", "p-3", "rounded-lg", "shadow-md", "w-full", "max-w-3xl", "mx-auto", "cursor-pointer");
+                        li.classList.add("flex", "items-center", "justify-between", "bg-[rgba(28,174,186,0.4)]", "p-3", "rounded-lg", "shadow-md", "w-full", "max-w-3xl", "mx-auto", "cursor-pointer");
                         li.setAttribute("data-id", plongee.id);
 
                         li.innerHTML = `
@@ -230,3 +234,4 @@
     <script src="/js/client.js"></script>
 </body>
 </html>
+

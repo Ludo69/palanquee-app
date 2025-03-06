@@ -26,7 +26,20 @@
                         <h2 class="palanquee-nom"><%= palanquee.nom %></h2>
                         <p><strong>Plongeurs :</strong></p>
                         <ul class="plongeurs-list flex flex-col gap-1">
-                            <% if (palanquee.plongeurs && palanquee.plongeurs.length > 0) { %>
+                            <% if (palanquee.plongeurs && palanquee.plongeurs.length > 0) { 
+                                // Trier les plongeurs pour que ceux avec la classe bleue (non guide) soient en haut
+                                palanquee.plongeurs.sort(function(a, b) {
+                                    const aEstBleu = !["N1", "N2", "N3"].includes(a.niveau_plongeur_historique); // Bleu si pas un guide
+                                    const bEstBleu = !["N1", "N2", "N3"].includes(b.niveau_plongeur_historique); // Bleu si pas un guide
+                                    
+                                    // Si A est bleu et B ne l'est pas, A doit être avant B
+                                    if (aEstBleu && !bEstBleu) return -1;
+                                    // Si B est bleu et A ne l'est pas, B doit être avant A
+                                    if (!aEstBleu && bEstBleu) return 1;
+                                    // Si les deux ont la même classe (les deux sont bleus ou les deux sont verts), on garde leur ordre
+                                    return 0;
+                                });
+                            %>
                                 <% palanquee.plongeurs.forEach(function(plongeur) { 
                                     let couleurClasse = (["N1", "N2", "N3"].includes(plongeur.niveau_plongeur_historique)) ? "text-green-500" : "text-blue-500"; 
                                 %>
@@ -40,6 +53,7 @@
                             <% } %>
                         </ul>
                     </div>
+                    
                 
                     <!-- 🔵 Partie Droite -->
                     <div class="palanquee-right">
