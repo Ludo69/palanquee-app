@@ -1,59 +1,88 @@
 // Le nom du cache
 const CACHE_NAME = 'palanquee-cache-v1';
+
+// Liste des ressources à mettre en cache
 const CACHE_URLS = [
-    '/',                  // La page d'accueil
-    '/index.html',        // Index principal
-    '/manifest.json',     // Fichier de configuration du manifest
-    '/icons/favicon.ico', // Icône du site
-    '/images/plongeur.avif', // Image utilisée dans la page d'accueil
-    '/js/indexeddb.js',   // Ton script pour IndexedDB
-    '/js/client.js',      // Ton script principal
-    '/css/styles.css',    // Ton fichier CSS
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/vite.svg',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
+  '/src/index.css',
+  '/src/App.tsx',
+  '/src/main.tsx'
 ];
 
-// Événement d'installation du service worker
+// Installation du service worker
 self.addEventListener('install', (event) => {
-    event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(CACHE_URLS); // Met les fichiers dans le cache
-        })
-    );
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        console.log('Cache ouvert');
+        return cache.addAll(CACHE_URLS);
+      })
+      .catch((error) => {
+        console.error('Erreur lors de la mise en cache:', error);
+      })
+  );
 });
 
-// Événement d'activation du service worker
+// Activation du service worker
 self.addEventListener('activate', (event) => {
-    const cacheWhitelist = [CACHE_NAME]; // Permet de supprimer les anciens caches
-
-    event.waitUntil(
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames.map((cacheName) => {
-                    if (!cacheWhitelist.includes(cacheName)) {
-                        return caches.delete(cacheName); // Supprime les anciens caches
-                    }
-                })
-            );
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('Suppression de l\'ancien cache:', cacheName);
+            return caches.delete(cacheName);
+          }
         })
-    );
+      );
+    })
+  );
 });
 
-// Gestion des requêtes réseau
+// Stratégie de cache : Cache First, puis Network
 self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        caches.match(event.request).then((cachedResponse) => {
-            if (cachedResponse) {
-                // Si la réponse est dans le cache, on la renvoie
-                return cachedResponse;
+  event.respondWith(
+    caches.match(event.request)
+      .then((response) => {
+        // Si la ressource est dans le cache, on la retourne
+        if (response) {
+          return response;
+        }
+
+        // Sinon, on fait la requête réseau
+        return fetch(event.request)
+          .then((response) => {
+            // On ne met en cache que les requêtes réussies
+            if (!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
             }
 
-            // Sinon, on fait la requête réseau normale
-            return fetch(event.request).then((response) => {
-                return caches.open(CACHE_NAME).then((cache) => {
-                    // Ajoute la réponse au cache avant de la renvoyer
-                    cache.put(event.request, response.clone());
-                    return response;
-                });
-            });
-        })
-    );
+            // On clone la réponse car elle ne peut être utilisée qu'une fois
+            const responseToCache = response.clone();
+
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+
+            return response;
+          })
+          .catch(() => {
+            // En cas d'erreur réseau, on peut retourner une page d'erreur en cache
+            return caches.match('/offline.html');
+          });
+      })
+  );
+});
+
+// Écoute des messages pour forcer la mise à jour du cache
+self.addEventListener('message', (event) => {
+  if (event.data === 'skipWaiting') {
+    self.skipWaiting();
+  }
 });
