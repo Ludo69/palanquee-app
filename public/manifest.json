@@ -1,11 +1,6 @@
-{
-    "name": "Palanquée",
-    "short_name": "Palanquée",
-    "description": "Application de gestion des palanquées pour la plongée",
-    "start_url": "/",
-    "display": "standalone",
-    "background_color": "#1b263b",
-    "theme_color": "#1b263b",
+  {
+    "short_name": "Palanquee",
+    "name": "Application Palanquee",
     "icons": [
       {
         "src": "/icons/mt-192x192.png",
@@ -17,6 +12,9 @@
         "sizes": "512x512",
         "type": "image/png"
       }
-    ]
+    ],
+    "start_url": "/",
+    "display": "standalone",
+    "theme_color": "#000000",
+    "background_color": "#ffffff"
   }
-  
