@@ -7,6 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-900 text-white flex flex-col items-center min-h-screen">
+        <!-- Bouton de retour en haut à gauche -->
+        <button onclick="window.history.back()" class="absolute top-4 left-4 text-white hover:text-gray-300 text-2xl">
+            ←
+        </button>
 
     <div class="w-full max-w-md p-6 text-center flex flex-col flex-grow">
         <h1 class="text-3xl font-bold mb-4">Gestion des Sorties</h1>
@@ -32,7 +36,7 @@
         <!-- Liste des sorties scrollable -->
         <div class="overflow-y-auto max-h-[calc(100vh-250px)] w-full p-2 space-y-2 no-scrollbar">
             <% sorties.forEach(sortie => { %>
-                <div class="sortie bg-[rgba(200,200,200,0.4)] p-3 rounded-lg flex justify-between items-center shadow-md flex-wrap md:flex-nowrap">
+                <div class="sortie bg-[rgba(42,68,102,1)] p-3 rounded-lg flex justify-between items-center shadow-md flex-wrap md:flex-nowrap">
                     <div>
                         <span class="font-bold"><%= sortie.lieu %></span> - 
                         <%= new Date(sortie.date_debut).toLocaleDateString('fr-FR', { month: '2-digit', year: 'numeric' }) %>

@@ -7,6 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-900 text-white flex flex-col min-h-screen">
+        <!-- Bouton de retour en haut à gauche -->
+        <button onclick="window.history.back()" class="absolute top-4 left-4 text-white hover:text-gray-300 text-2xl">
+            ←
+        </button>
 
     <div class="container mx-auto p-4 flex-grow">
         <h1 class="text-2xl font-bold text-center mb-4">
@@ -18,7 +22,7 @@
         <ul class="space-y-3" id="plongeesList">
             <% if (plongees && plongees.length > 0) { %>
                 <% plongees.forEach(function(plongee) { %>
-                    <li class="flex items-center justify-between bg-[rgba(28,174,186,0.4)] p-3 rounded-lg shadow-md w-full max-w-3xl mx-auto cursor-pointer" 
+                    <li class="flex items-center justify-between bg-[rgba(42,68,102,1)] p-3 rounded-lg shadow-md w-full max-w-3xl mx-auto cursor-pointer" 
                         data-id="<%= plongee.id %>">
                         
                         <span>Plongée <%= plongee.numero %> - 
@@ -89,29 +93,33 @@
                 const plongeesList = document.getElementById("plongeesList");
                 plongeesList.innerHTML = ""; // Vide la liste
 
-                if (plongees.length > 0) {
-                    plongees.forEach(plongee => {
-                        const li = document.createElement("li");
-                        li.classList.add("flex", "items-center", "justify-between", "bg-[rgba(28,174,186,0.4)]", "p-3", "rounded-lg", "shadow-md", "w-full", "max-w-3xl", "mx-auto", "cursor-pointer");
-                        li.setAttribute("data-id", plongee.id);
+                        if (plongees.length > 0) {
+            // Trier les plongées par leur numéro
+            plongees.sort((a, b) => a.numero - b.numero);
 
-                        li.innerHTML = `
-                            <span>Plongée ${plongee.numero} - 
-                                <span class="site-name">${plongee.site || "Nom du site"}</span>
-                            </span>
+            // Afficher les plongées triées
+            plongees.forEach(plongee => {
+                const li = document.createElement("li");
+                li.classList.add("flex", "items-center", "justify-between", "bg-[rgba(42,68,102,1)]", "p-3", "rounded-lg", "shadow-md", "w-full", "max-w-2xl", "mx-auto", "cursor-pointer");
+                li.setAttribute("data-id", plongee.id);
 
-                            <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded">Site</button>
+                li.innerHTML = `
+                    <span>Plongée ${plongee.numero} - 
+                        <span class="site-name">${plongee.site || "Nom du site"}</span>
+                    </span>
 
-                            <a href="/parametres_palanquees?id=${plongee.id}">
-                                <img src="/icons/liste.png" alt="Paramètres" class="w-6 h-6">
-                            </a>
-                        `;
+                    <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded">Site</button>
 
-                        plongeesList.appendChild(li);
-                    });
-                } else {
-                    plongeesList.innerHTML = `<p class="text-center text-gray-400">Aucune plongée à afficher.</p>`;
-                }
+                    <a href="/parametres_palanquees?id=${plongee.id}">
+                        <img src="/icons/liste.png" alt="Paramètres" class="w-6 h-6">
+                    </a>
+                `;
+
+                plongeesList.appendChild(li);
+            });
+        } else {
+            plongeesList.innerHTML = `<p class="text-center text-gray-400">Aucune plongée à afficher.</p>`;
+        }
 
                 // Ajout des gestionnaires d'événements après avoir ajouté les éléments à la liste
                 ajouterGestionnaireEvenements();
