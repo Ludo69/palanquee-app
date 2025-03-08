@@ -252,35 +252,57 @@
                 rendrePlongeursDraggables();
             }
 
-            async function supprimerPalanquee(id) {
-                const palanqueeDiv = document.querySelector(`[data-id="${id}"]`);
-                const palanqueeBody = palanqueeDiv.querySelector(".palanquee-body");
+            function estUUID(valeur) {
+    const regexUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return regexUUID.test(valeur);
+}
 
-                while (palanqueeBody.firstChild) {
-                    plongeursContainer.appendChild(palanqueeBody.firstChild);
-                }
+async function supprimerPalanquee(id) {
+    const palanqueeDiv = document.querySelector(`[data-id="${id}"]`);
+    
+    if (!palanqueeDiv) {
+        console.warn("⚠️ Palanquée introuvable dans le DOM :", id);
+        return;
+    }
 
-                palanqueeDiv.remove();
-                palanquees = palanquees.filter(p => p.id !== id);
+    const palanqueeBody = palanqueeDiv.querySelector(".palanquee-body");
 
-                // 🛑 🔥 Envoi de la requête au backend pour supprimer la palanquée en base de données
-                try {
-                    const response = await fetch(`/supprimer_palanquee/${id}`, {
-                        method: "DELETE",
-                    });
+    if (palanqueeBody) {
+        while (palanqueeBody.firstChild) {
+            plongeursContainer.appendChild(palanqueeBody.firstChild);
+        }
+    }
 
-                    const result = await response.json();
-                    if (!response.ok) {
-                        alert("❌ Erreur lors de la suppression : " + result.error);
-                    }
-                } catch (error) {
-                    console.error("❌ Erreur lors de la suppression :", error);
-                }
+    // Supprime la palanquée du DOM et du tableau
+    palanqueeDiv.remove();
+    palanquees = palanquees.filter(p => p.id !== id);
 
-                setTimeout(() => {
-                    rendrePlongeursDraggables();
-                }, 100);
-            }
+    // 🔥 Vérification de l'UUID avant d'envoyer la requête
+    if (!estUUID(id)) {
+        console.warn("⚠️ ID invalide ou palanquée locale, suppression uniquement en local :", id);
+        return;
+    }
+
+    // 🔥 Envoi de la requête au backend
+    try {
+        const response = await fetch(`/supprimer_palanquee/${id}`, {
+            method: "DELETE",
+        });
+
+        const result = await response.json();
+        if (!response.ok) {
+            alert("❌ Erreur lors de la suppression : " + result.error);
+        }
+    } catch (error) {
+        console.error("❌ Erreur lors de la suppression :", error);
+    }
+
+    // 🕒 Petite pause avant de rendre les plongeurs draggables
+    setTimeout(() => {
+        rendrePlongeursDraggables();
+    }, 100);
+}
+
 
 
             plongeursContainer.addEventListener("dragover", (event) => {
