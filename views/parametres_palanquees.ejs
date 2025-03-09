@@ -284,13 +284,6 @@ document.querySelectorAll(".paliers-checkbox").forEach(checkbox => {
     });
 });
 
-
-
-
-
-
-
-
     async function envoyerParWhatsApp() {
         const plongeeId = "<%= typeof plongeeId !== 'undefined' ? plongeeId : '' %>";
 
@@ -311,9 +304,13 @@ document.querySelectorAll(".paliers-checkbox").forEach(checkbox => {
                 datePlongee = "Date inconnue";
             }
 
-            let nomSitePlongee = data.site || "Site inconnu"; 
+            let nomSitePlongee = data.site || "Site inconnu";
+            let nomDuDP = data.nomdp || "DP non trouvé";
+            let niveauDuDP = data.niveaudp || "Niveau non trouvé";
+
 
             let message = `🌊 *Compte-rendu Plongée* 🌊\n`;
+            message += `👨‍💼 *Directeur de plongée* - ${nomDuDP} (${niveauDuDP})\n`;  // Ajout du niveau ici
             message += `📅 *Date* : ${datePlongee}\n`;
             message += `🤿 *Plongée n°1 - ${nomSitePlongee}*\n\n`;
 

@@ -1372,35 +1372,64 @@ try {
 });
 
 app.get("/plongee_info", async (req, res) => {
-const plongeeId = req.query.id; // Récupération de l'ID de plongée depuis la requête
+    const plongeeId = req.query.id; // Récupération de l'ID de plongée depuis la requête
 
-if (!plongeeId) {
-    return res.status(400).json({ error: "ID de plongée manquant." });
-}
-
-try {
-    let { data, error } = await supabase
-        .from("plongees")
-        .select("date, site")
-        .eq("id", plongeeId)
-        .single(); // Récupère un seul enregistrement
-
-    if (error) throw error;
-
-    if (!data) {
-        return res.status(404).json({ error: "Plongée non trouvée." });
+    if (!plongeeId) {
+        return res.status(400).json({ error: "ID de plongée manquant." });
     }
 
-    // Formater la date en "jour mois année"
-    const options = { day: "2-digit", month: "long", year: "numeric" };
-    const dateFormattee = new Date(data.date).toLocaleDateString("fr-FR", options);
+    try {
+        // Récupérer les données de la plongée
+        let { data, error } = await supabase
+            .from("plongees")
+            .select("date, site, nomdp") // Récupère date, site et nomdp (ID du DP)
+            .eq("id", plongeeId)
+            .single();
 
-    res.json({ date: dateFormattee, site: data.site });
-} catch (err) {
-    console.error("Erreur récupération plongée:", err);
-    res.status(500).json({ error: "Erreur serveur." });
-}
+        if (error) throw error;
+
+        if (!data) {
+            return res.status(404).json({ error: "Plongée non trouvée." });
+        }
+
+        // Récupérer les informations de la plongée
+        const dateFormattee = new Date(data.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+        const nomSitePlongee = data.site || "Site inconnu";
+
+        // Initialiser nomDuDP et niveauDP avec des valeurs par défaut
+        let nomDuDP = "DP non trouvé";
+        let niveauDP = "Niveau non trouvé";
+
+        // Si un ID de DP existe, récupérer le nom et le niveau du DP
+        if (data.nomdp) {
+            let { data: dpData, error: dpError } = await supabase
+                .from("plongeurs")
+                .select("nom, niveau") // Récupère le nom et le niveau du DP
+                .eq("id", data.nomdp)
+                .single(); // On prend un seul résultat, car il doit être unique
+
+            if (dpError) {
+                console.error("Erreur lors de la récupération du DP:", dpError);
+            } else if (dpData) {
+                nomDuDP = dpData.nom || "Nom du DP non trouvé"; // Si un nom est trouvé, on l'affiche
+                niveauDP = dpData.niveau || "Niveau du DP non trouvé"; // Récupère également le niveau
+            }
+        }
+
+        // Renvoyer les informations avec le nom et le niveau du DP
+        res.json({
+            date: dateFormattee,
+            site: nomSitePlongee,
+            nomdp: nomDuDP, // Inclure le nom du DP
+            niveaudp: niveauDP // Inclure le niveau du DP
+        });
+    } catch (err) {
+        console.error("Erreur récupération plongée:", err);
+        res.status(500).json({ error: "Erreur serveur." });
+    }
 });
+
+
 
 app.get("/modif_palanquee/:id", async (req, res) => {
 const palanqueeId = req.params.id;
