@@ -1421,7 +1421,7 @@ app.get("/plongee_info", async (req, res) => {
             date: dateFormattee,
             site: nomSitePlongee,
             nomdp: nomDuDP, // Inclure le nom du DP
-            niveaudp: niveauDP // Inclure le niveau du DP
+            niveaudp: niveauDP // Inclure le niveaux du DP
         });
     } catch (err) {
         console.error("Erreur récupération plongée:", err);
