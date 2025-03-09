@@ -45,7 +45,7 @@
                             <button class="open-dp-modal bg-green-500 text-white px-3 py-1 rounded"
                                     data-plongee-id="<%= plongee.id %>"
                                     data-sortie-id="<%= plongee.sortie_id %>">
-                                Nom DP
+                                Nom du DP
                             </button>
                         </div>
 
@@ -133,23 +133,24 @@
 
                 li.innerHTML = `
                     <!-- Première ligne : Numéro + Site + Boutons -->
-                    <div class="flex items-center justify-between cursor-pointer" data-id="${plongee.id}">
-                        <span>Plongée ${plongee.numero} - 
-                            <span class="site-name">${plongee.site || "Nom du site"}</span>
-                        </span>
-                        <div class="ml-auto flex items-center space-x-2">
-                            <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded">Site</button>
-                            <a href="/parametres_palanquees?id=${plongee.id}">
-                                <img src="/icons/liste.png" alt="Paramètres" class="w-6 h-6">
-                            </a>
-                        </div>
-                    </div>
+<div class="flex items-center justify-between cursor-pointer" data-id="${plongee.id}">
+    <span>Plongée ${plongee.numero} - 
+        <span class="site-name">${plongee.site || "Nom du site"}</span>
+    </span>
+    <div class="ml-auto flex items-center space-x-2">
+        <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded">Site</button>
+        <a href="/parametres_palanquees?id=${plongee.id}">
+            <button class="bg-green-500 text-white px-3 py-1 rounded">Paramètre</button>
+        </a>
+    </div>
+</div>
+
 
                     <!-- Deuxième ligne : DP + bouton Nom DP -->
                     <div class="flex items-center justify-between mt-2">
                         <span>DP : <span id="dp-name-${plongee.id}">${dpNom}</span></span>
                         <button class="open-dp-modal bg-green-500 text-white px-3 py-1 rounded" data-plongee-id="${plongee.id}">
-                            Nom DP
+                            Nom du DP
                         </button>
                     </div>
                 `;
