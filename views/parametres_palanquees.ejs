@@ -82,14 +82,14 @@
                             <input type="text" name="paliers" class="paliers" value="<%= palanquee.paliers || '' %>" 
                                 <%= palanquee.paliers ? 'disabled' : '' %> required>
                             
-<!-- ✅ Checkbox alignée -->
-<div class="flex items-center justify-start gap-2 w-full text-left border border-red-500 p-2">
-    <!-- Case à cocher avec suppression de marges et padding -->
-    <input type="checkbox" id="paliers-<%= palanquee.id %>-checkbox" class="form-checkbox m-0 p-0" style="margin-left: 0px; margin-right: 8px;">
-    
-    <!-- Label sans marges ni padding -->
-    <label for="paliers-<%= palanquee.id %>-checkbox" class="text-sm m-0 p-0" style="margin-left: 0px; margin-right: 0px;">3m / 3m Sécu</label>
-</div>                     
+                            <!-- ✅ Checkbox alignée -->
+                            <div class="flex items-center justify-start gap-2 w-full text-left p-2">
+                                <!-- Case à cocher avec suppression de marges et padding -->
+                                <input type="checkbox" id="paliers-<%= palanquee.id %>-checkbox" class="paliers-checkbox m-0 p-0" style="margin-left: 0px; margin-right: 1px;">
+                                
+                                <!-- Label sans marges ni padding -->
+                                <label for="paliers-<%= palanquee.id %>-checkbox" class="whitespace-nowrap text-sm m-0 p-0" style="margin-left: 0px; margin-right: 0px;">3m / 3m Sécu</label>
+                            </div>                     
                               
                                                              
                         </form>
@@ -242,38 +242,49 @@ document.querySelectorAll(".palanquee-form").forEach(form => {
     }
 });
 
+
 // Gestion de la case à cocher pour les paliers
 document.querySelectorAll(".paliers-checkbox").forEach(checkbox => {
     checkbox.addEventListener("change", function() {
+        // Extrait l'ID sans les préfixes et suffixes
         const palanqueeId = this.id.replace("paliers-", "").replace("-checkbox", "");
         console.log("✅ ID extrait :", palanqueeId);
 
+        // Recherche le formulaire avec cet ID
         const form = document.querySelector(`#form-${palanqueeId}`);
         if (!form) {
             console.error(`❌ ERREUR : Aucun formulaire trouvé avec l'ID #form-${palanqueeId}`);
             return;
         }
 
+        // Recherche le champ .paliers dans le formulaire
         const paliersInput = form.querySelector(".paliers");
-        console.log("🔍 Élément paliersInput trouvé :", paliersInput);
-
         if (!paliersInput) {
             console.error(`❌ ERREUR : Aucun champ paliers trouvé dans #form-${palanqueeId}`);
             return;
         }
 
-        // Si la case "3m / 3m Sécu" est cochée
-        if (this.checked && this.id.includes('checkbox')) {
-            paliersInput.value = '3m / 3m Sécu'; // Mettre "3m / 3m Sécu" dans le champ
+        // Si la case "3m / 3m Sécu" est cochée, mettre la valeur dans le champ
+        if (this.checked) {
+            // Si le champ est vide ou a la valeur "Aucun", mettre "3m / 3m Sécu"
+            if (paliersInput.value === '' || paliersInput.value === 'Aucun') {
+                paliersInput.value = '3m / 3m Sécu';
+                console.log("✅ Valeur du champ 'Paliers' mise à jour à : 3m / 3m Sécu");
+            }
         } else {
-            // Si aucune case n'est cochée, on met "Aucun" comme valeur par défaut
+            // Si la case est décochée, vérifier si une autre case est cochée
             const anyChecked = form.querySelectorAll(".paliers-checkbox:checked").length > 0;
+
+            // Si aucune autre case n'est cochée, remettre "Aucun"
             if (!anyChecked) {
-                paliersInput.value = 'Aucun'; // "Aucun" est défini si aucune case n'est cochée
+                paliersInput.value = 'Aucun';
+                console.log("✅ Valeur du champ 'Paliers' mise à jour à : Aucun");
             }
         }
     });
 });
+
+
 
 
 
@@ -420,11 +431,11 @@ document.querySelectorAll(".paliers-checkbox").forEach(checkbox => {
 }
 
 /* Case à cocher sans marges et padding supplémentaires */
-.palanquee-right .form-checkbox {
+.palanquee-right .paliers-checkbox {
     margin: 0;  /* Retirer toute marge */
     padding: 0;  /* Retirer tout padding */
-    width: 20px;  /* Définir la taille de la case à cocher (tu peux ajuster si nécessaire) */
-    height: 20px;  /* Définir la hauteur de la case à cocher */
+    width: 15px;  /* Définir la taille de la case à cocher (tu peux ajuster si nécessaire) */
+    height: 15px;  /* Définir la hauteur de la case à cocher */
 }
 
 /* Labels */
