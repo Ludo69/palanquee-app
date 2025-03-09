@@ -22,6 +22,10 @@
             <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/WhatsApp_icon.png" alt="Partager sur WhatsApp">
         </a>
 
+        <button onclick="sendWhatsApp()" class="bg-green-500 text-white p-3 rounded-lg">
+            📤 Générer le PDF
+        </button>
+
         <% if (palanquees && palanquees.length > 0) { %>
             <% palanquees.forEach(function(palanquee) { %>
                 <div class="palanquee-container">
@@ -321,6 +325,36 @@ document.querySelectorAll(".paliers-checkbox").forEach(checkbox => {
             alert("Impossible de récupérer les informations de la plongée.");
         }
     }
+
+    async function sendWhatsApp() {
+        const plongeeId = "<%= typeof plongeeId !== 'undefined' ? plongeeId : '' %>";
+    if (!plongeeId) {
+        console.error("❌ Erreur : plongeeId est requis !");
+        return;
+    }
+
+    try {
+        // Appeler l'API qui génère le PDF avec l'ID de la plongée
+        const response = await fetch(`/generate-pdf?plongeeId=${plongeeId}`);
+        if (!response.ok) {
+            throw new Error(`Erreur lors de la génération du PDF (${response.status})`);
+        }
+
+        const data = await response.json();
+        const pdfUrl = window.location.origin + data.url;
+
+        // Construire le message WhatsApp
+        const message = encodeURIComponent(`📄 Voici les paramètres de la plongée : ${pdfUrl}`);
+        const whatsappUrl = `https://wa.me/?text=${message}`;
+
+        // Ouvrir WhatsApp
+        window.open(whatsappUrl, "_blank");
+    } catch (error) {
+        console.error("❌ Erreur lors de la génération du PDF :", error);
+        alert("Erreur lors de la génération du PDF. Veuillez réessayer.");
+    }
+}
+
 </script>
 
 

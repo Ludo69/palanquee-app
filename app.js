@@ -1,7 +1,9 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const { createClient } = require("@supabase/supabase-js");
-const PdfPrinter = require('pdfmake');
+const PDFDocument = require("pdfkit");
+const fs = require("fs");
+const path = require("path");
 const app = express();
 const port = 3000;
 
@@ -14,6 +16,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, "public")));
 app.use(express.static("public"));
 app.set("view engine", "ejs");
 app.set("views", __dirname + "/views");
@@ -22,6 +25,110 @@ app.set("views", __dirname + "/views");
 app.get("/", (req, res) => {
     res.render("index");
 });
+
+// PDF
+app.get("/generate-pdf", async (req, res) => {
+    const { plongeeId } = req.query;
+    if (!plongeeId) {
+        return res.status(400).json({ error: "L'ID de la plongée est requis." });
+    }
+
+    try {
+        // Récupérer les infos de la plongée avec jointure pour obtenir le nom et niveau du DP
+        const { data: plongee, error: plongeeError } = await supabase
+            .from("plongees")
+            .select("nomdp, date, site, plongeurs(niveau, nom)")
+            .eq("id", plongeeId)
+            .single();
+
+        if (plongeeError || !plongee) {
+            throw new Error("Impossible de récupérer les données de la plongée.");
+        }
+
+        // Formater la date en "jour mois année"
+        const datePlongee = new Date(plongee.date);
+        const options = { day: "numeric", month: "long", year: "numeric" };
+        const dateFormatee = datePlongee.toLocaleDateString("fr-FR", options);
+
+        // Construire les données du PDF
+        const data = {
+            nomDP: plongee.plongeurs.nom, // Nom du DP
+            qualificationDP: plongee.plongeurs.niveau, // Niveau du DP
+            site: plongee.site || "Site inconnu",
+            date: dateFormatee,
+            palanquees: [
+                {
+                    nom: "Palanquée A",
+                    niveau: "Débutant",
+                    profPrevue: 12,
+                    dureePrevue: 45,
+                    profMax: 15,
+                    dureeRealisee: 50,
+                },
+                {
+                    nom: "Palanquée B",
+                    niveau: "Avancé",
+                    profPrevue: 20,
+                    dureePrevue: 40,
+                    profMax: 18,
+                    dureeRealisee: 38,
+                }
+            ],
+            paliers: {
+                p3: 5,
+                p6: 3,
+                p9: 2
+            }
+        };
+
+        // Création du document PDF
+        const doc = new PDFDocument({ margin: 40 });
+        const filePath = path.join(__dirname, "public/parametres_plongee.pdf");
+        const stream = fs.createWriteStream(filePath);
+
+        doc.pipe(stream);
+
+        // Titre principal
+        doc.fontSize(20).text("Feuille de Palanquée", { align: "center" });
+        doc.moveDown(2);
+
+        // Infos générales
+        doc.fontSize(14).text(`Nom du DP : ${data.nomDP}`);
+        doc.text(`Qualification DP : ${data.qualificationDP}`);
+        doc.text(`Site de Plongée : ${data.site}`);
+        doc.text(`Date : ${data.date}`);
+        doc.moveDown(2);
+
+        // Boucle pour chaque palanquée
+        data.palanquees.forEach((palanquee, index) => {
+            doc.fontSize(16).text(`Palanquée N°${index + 1} : ${palanquee.nom}`, { underline: true });
+            doc.fontSize(12).text(`Niveau GP : ${palanquee.niveau}`);
+            doc.text(`Profondeur Prévue : ${palanquee.profPrevue}m`);
+            doc.text(`Durée Prévue : ${palanquee.dureePrevue} min`);
+            doc.text(`Profondeur Max Atteinte : ${palanquee.profMax}m`);
+            doc.text(`Durée Réalisée : ${palanquee.dureeRealisee} min`);
+            doc.moveDown(1);
+        });
+
+        // Ajout des paliers de décompression
+        doc.fontSize(14).text("Paliers de décompression", { underline: true });
+        doc.fontSize(12).text(`Palier 3m : ${data.paliers.p3} min`);
+        doc.text(`Palier 6m : ${data.paliers.p6} min`);
+        doc.text(`Palier 9m : ${data.paliers.p9} min`);
+
+        doc.end();
+
+        stream.on("finish", () => {
+            res.json({ url: "/parametres_plongee.pdf" });
+        });
+
+    } catch (error) {
+        console.error("Erreur lors de la génération du PDF :", error);
+        res.status(500).json({ error: "Erreur serveur lors de la génération du PDF." });
+    }
+});
+
+
 
 
 // Gestion des plongeurs
@@ -44,6 +151,118 @@ app.get("/gestion-plongeurs", async (req, res) => {
         res.status(500).send("Erreur serveur");
     }
 });
+
+// Route pour récupérer les plongeurs ayant un niveau E3 ou E4 pour une sortie spécifique
+app.get("/api/get-plongeurs", async (req, res) => {
+    const { sortieId, categorie } = req.query; // Récupère l'ID de la sortie et le niveau (categorie) depuis les paramètres de la requête
+
+    // Validation du niveau, il doit être "E3" ou "E4"
+    if (categorie && !["E3", "E4"].includes(categorie)) {
+        return res.status(400).json({ error: "Le niveau doit être E3 ou E4." });
+    }
+
+    try {
+        // Récupérer les plongeurs associés à la sortie via plongeurs_sorties
+        let query = supabase
+            .from("plongeurs_sorties")
+            .select("plongeur_id")  // Sélectionner uniquement les plongeur_id (avec le "s" enlevé)
+            .eq("sortie_id", sortieId);  // Filtrer par sortie_id
+
+        // Si une catégorie (niveau) est fournie, filtrer les plongeurs par niveau
+        let plongeursIdsQuery;
+        if (categorie) {
+            plongeursIdsQuery = await supabase
+                .from("plongeurs")
+                .select("id")
+                .eq("niveau", categorie);  // Filtrer les plongeurs par niveau
+        }
+
+        // Si une catégorie a été spécifiée, on récupère les ids des plongeurs correspondant à cette catégorie
+        let plongeursIds = [];
+        if (plongeursIdsQuery && plongeursIdsQuery.data) {
+            plongeursIds = plongeursIdsQuery.data.map(plongeur => plongeur.id);
+        }
+
+        // Si des plongeurs de la catégorie sont trouvés, ajouter ce filtre
+        if (plongeursIds.length > 0) {
+            query = query.in("plongeur_id", plongeursIds);  // Utilise "plongeur_id" qui est la colonne correcte
+        }
+
+        const { data: plongeursSorties, error: plongéesError } = await query;
+
+        if (plongéesError) {
+            console.error("Erreur lors de la récupération des plongeurs associés à la sortie:", plongéesError);
+            return res.status(500).json({ error: "Erreur lors de la récupération des plongeurs associés." });
+        }
+
+        if (!plongeursSorties || plongeursSorties.length === 0) {
+            return res.status(404).json({ error: "Aucun plongeur associé à cette sortie." });
+        }
+
+        // Extraire les plongeur_ids uniquement une seule fois
+        const idsPlongeurs = plongeursSorties.map(ps => ps.plongeur_id);
+
+        // Récupérer les détails des plongeurs à partir de leurs ids
+        const { data: plongeurs, error: plongeursError } = await supabase
+            .from("plongeurs")
+            .select("id, nom, niveau")
+            .in("id", idsPlongeurs); // Filtrer par les ids des plongeurs
+
+        if (plongeursError) {
+            console.error("Erreur lors de la récupération des plongeurs:", plongeursError);
+            return res.status(500).json({ error: "Erreur lors de la récupération des plongeurs." });
+        }
+
+        // Si tout va bien, on renvoie les plongeurs
+        res.json(plongeurs);
+    } catch (error) {
+        console.error("Erreur serveur:", error);
+        res.status(500).json({ error: "Erreur serveur." });
+    }
+});
+
+app.post('/api/update-dp', async (req, res) => {
+    const { plongeeId, nomDP } = req.body;
+
+    try {
+        // Utilisation de Supabase pour mettre à jour l'entrée
+        const { data, error } = await supabase
+            .from('plongees')  // Table 'plongees'
+            .update({ nomdp: nomDP })  // Mettre à jour la colonne 'nomdp' (tout en minuscules)
+            .eq('id', plongeeId);  // Condition où l'id correspond à plongeeId
+
+        if (error) {
+            throw error;  // Si une erreur survient
+        }
+
+        res.status(200).json({ message: "Plongée mise à jour avec succès.", data });
+    } catch (error) {
+        console.error("❌ Erreur lors de la mise à jour :", error);
+        res.status(500).json({ error: "Erreur lors de la mise à jour du DP." });
+    }
+});
+
+
+app.get('/api/plongeur/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const { data, error } = await supabase
+            .from('plongeurs')
+            .select('nom')
+            .eq('id', id)
+            .single();
+
+        if (error) throw error;
+
+        res.status(200).json(data);  // Retourner le nom du plongeur
+    } catch (error) {
+        console.error("❌ Erreur lors de la récupération du plongeur :", error);
+        res.status(500).json({ error: "Erreur lors de la récupération du plongeur" });
+    }
+});
+
+
 
 
 app.post("/ajouter-plongeur", async (req, res) => {
@@ -166,8 +385,8 @@ app.get("/selection-sorties", async (req, res) => {
         if (plongeesError) throw plongeesError;
 
         // Loguer les données récupérées pour débogage
-        console.log("Sorties récupérées :", sorties);
-        console.log("Plongées récupérées :", plongees);
+        //console.log("Sorties récupérées :", sorties);
+        //console.log("Plongées récupérées :", plongees);
 
         // Rendre la vue de sélection des sorties avec les données récupérées
         res.render("selection_sorties", { sorties, plongees });
@@ -274,7 +493,7 @@ app.delete("/supprimer-sortie/:id", async (req, res) => {
 });
 
 app.post("/ajouter-plongeurs-a-sortie", async (req, res) => {
-    console.log("Données reçues :", req.body);
+    //console.log("Données reçues :", req.body);
     let { sortie_id, plongeurs } = req.body;
 
     if (!sortie_id || !plongeurs) {
@@ -325,7 +544,7 @@ app.post("/ajouter-plongeurs-a-sortie", async (req, res) => {
             plongeur_id: plongeur_id, // doit être une chaîne UUID
         }));
 
-        console.log("Nouvelle entrée à insérer :", newEntries); // Affiche les nouvelles entrées
+        //console.log("Nouvelle entrée à insérer :", newEntries); // Affiche les nouvelles entrées
 
         // Insérer uniquement les nouveaux plongeurs
         const { error } = await supabase
@@ -344,7 +563,7 @@ app.post("/ajouter-plongeurs-a-sortie", async (req, res) => {
                 );
         }
 
-        console.log("Plongeurs ajoutés :", newEntries); // Log des plongeurs ajoutés
+        //console.log("Plongeurs ajoutés :", newEntries); // Log des plongeurs ajoutés
         res.redirect("/gestion-sorties");
     } catch (error) {
         console.error("Erreur lors de l'ajout des plongeurs :", error);
@@ -383,7 +602,7 @@ app.get("/api/plongees/:sortieId/:date", async (req, res) => {
 
         if (error) throw error;
 
-        console.log("✅ Plongées envoyées en JSON :", plongees); // 🔥 Debug
+        //console.log("✅ Plongées envoyées en JSON :", plongees); // 🔥 Debug
         res.json(plongees); // ✅ On envoie un JSON
     } catch (error) {
         console.error("❌ Erreur serveur :", error);
@@ -393,44 +612,80 @@ app.get("/api/plongees/:sortieId/:date", async (req, res) => {
 
 
 app.post("/api/ajouter-plongee", async (req, res) => {
-try {
-    const { sortie_id, date } = req.body;
-    console.log("Données reçues pour ajout de plongée:", req.body);
+    try {
+        const { sortie_id, date } = req.body;
 
-    if (!sortie_id || !date) {
-        return res.status(400).json({ error: "Données manquantes pour créer la plongée" });
+        if (!sortie_id || !date) {
+            return res.status(400).json({ error: "Données manquantes pour créer la plongée" });
+        }
+
+        // 🔍 Récupérer le nombre actuel de plongées pour cette sortie
+        const { data: existingPlongees, error: countError } = await supabase
+            .from("plongees")
+            .select("id", { count: "exact" }) // On compte le nombre de plongées
+            .eq("sortie_id", sortie_id);
+
+        if (countError) {
+            console.error("Erreur lors de la récupération des plongées :", countError);
+            return res.status(500).json({ error: "Erreur lors de la récupération des plongées" });
+        }
+
+        const numero = (existingPlongees.length || 0) + 1; // Numéro = total existant + 1
+
+        // 🔽 Insérer la nouvelle plongée avec le bon numéro
+        const plongeeData = { numero, sortie_id, date };
+
+        // Si nomdp n'est pas fourni, on le met explicitement à null (pas "null" en chaîne, mais un véritable null)
+        plongeeData.nomdp = null;
+
+        // Insérer la plongée dans la table 'plongees'
+        const { data, error } = await supabase
+            .from("plongees")
+            .insert([plongeeData])
+            .select("*");
+
+        if (error) {
+            console.error("Erreur lors de l'insertion :", error);
+            return res.status(500).json({ error: "Erreur lors de l'insertion" });
+        }
+
+        return res.json(data[0]); // Renvoi la plongée ajoutée
+    } catch (error) {
+        console.error("🚨 Erreur serveur :", error);
+        return res.status(500).json({ error: "Erreur serveur lors de l'ajout de la plongée" });
+    }
+});
+
+app.get("/api/get-dp-name", async (req, res) => {
+    const { plongeeId } = req.query;  // Récupère l'ID de la plongée depuis les paramètres de la requête
+
+    if (!plongeeId) {
+        return res.status(400).json({ error: "Le paramètre plongeeId est requis." });
     }
 
-    // 🔍 Récupérer le nombre actuel de plongées pour cette sortie
-    const { data: existingPlongees, error: countError } = await supabase
-        .from("plongees")
-        .select("id", { count: "exact" }) // On compte le nombre de plongées
-        .eq("sortie_id", sortie_id);
+    try {
+        // Requête pour récupérer le nom du DP pour une plongée donnée
+        const { data, error } = await supabase
+            .from("plongees")
+            .select("nomdp")
+            .eq("id", plongeeId)
+            .single();  // Récupérer un seul enregistrement
 
-    if (countError) {
-        console.error("Erreur lors de la récupération des plongées :", countError);
-        return res.status(500).json({ error: "Erreur lors de la récupération des plongées" });
+        if (error) {
+            console.error("Erreur lors de la récupération du nom du DP:", error);
+            return res.status(500).json({ error: "Erreur lors de la récupération du nom du DP." });
+        }
+
+        // Si les données sont trouvées, on renvoie le nom du DP
+        if (data && data.nomdp) {
+            res.json({ nomdp: data.nomdp });
+        } else {
+            res.status(404).json({ error: "Nom du DP non trouvé pour cette plongée." });
+        }
+    } catch (error) {
+        console.error("Erreur serveur:", error);
+        res.status(500).json({ error: "Erreur serveur." });
     }
-
-    const numero = (existingPlongees.length || 0) + 1; // Numéro = total existant + 1
-
-    // 🔽 Insérer la nouvelle plongée avec le bon numéro
-    const { data, error } = await supabase
-        .from("plongees")
-        .insert([{ numero, sortie_id, date }])
-        .select("*");
-
-    if (error) {
-        console.error("Erreur lors de l'insertion :", error);
-        return res.status(500).json({ error: "Erreur lors de l'insertion" });
-    }
-
-    console.log("✅ Plongée ajoutée :", data[0]);
-    return res.json(data[0]);
-} catch (error) {
-    console.error("🚨 Erreur serveur :", error);
-    return res.status(500).json({ error: "Erreur serveur lors de l'ajout de la plongée" });
-}
 });
 
 
@@ -467,6 +722,7 @@ try {
 });
 
 app.post("/api/update-site", async (req, res) => {
+    console.log("🔍 Requête reçue pour mise à jour :", req.body);
 const { plongeeId, site } = req.body;
 
 console.log(
@@ -667,7 +923,7 @@ app.post("/enregistrer_palanquee", async (req, res) => {
     console.log("On entre dans enregistrer_palanquee");
     const palanquees = req.body;
 
-    console.log("Données reçues :", JSON.stringify(palanquees, null, 2));
+    //console.log("Données reçues :", JSON.stringify(palanquees, null, 2));
 
     if (!Array.isArray(palanquees) || palanquees.length === 0) {
         return res.status(400).json({ error: "Données invalides ou incomplètes" });
@@ -960,7 +1216,7 @@ app.get("/parametres_palanquees", async (req, res) => {
 
 
 app.post("/sauvegarder_parametres", async (req, res) => {
-console.log("📩 Données reçues pour sauvegarde :", req.body);
+//console.log("📩 Données reçues pour sauvegarde :", req.body);
 
 const { id, profondeur, duree, paliers } = req.body;
 
@@ -1106,7 +1362,7 @@ app.post("/ajouter-plongee", async (req, res) => {
 app.post('/retirer-plongeur', async (req, res) => {
     const { plongeurId, sortieId } = req.body;
 
-    console.log("Données reçues:", req.body);
+    //console.log("Données reçues:", req.body);
 
     if (!plongeurId || !sortieId) {
         return res.status(400).json({ success: false, message: "Plongeur ou sortie manquant." });
@@ -1130,6 +1386,26 @@ app.post('/retirer-plongeur', async (req, res) => {
         console.error("Erreur lors de la suppression :", error);
         return res.status(500).json({ success: false, message: "Erreur serveur" });
     }
+});
+
+app.post("/api/set-dp", async (req, res) => {
+    const { plongeeId, dpId } = req.body;
+
+    if (!plongeeId || !dpId) {
+        return res.status(400).json({ error: "Données manquantes" });
+    }
+
+    const { error } = await supabase
+        .from("plongees")
+        .update({ nomDP: dpId }) // Met à jour le DP
+        .eq("id", plongeeId);
+
+    if (error) {
+        console.error("Erreur mise à jour DP :", error);
+        return res.status(500).json({ error: "Erreur serveur" });
+    }
+
+    res.json({ success: true });
 });
 
 // Démarrage du serveur
