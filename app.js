@@ -29,11 +29,14 @@ app.get("/", (req, res) => {
 // PDF
 app.get("/generate-pdf", async (req, res) => {
     const { plongeeId } = req.query;
+
     if (!plongeeId) {
         return res.status(400).json({ error: "L'ID de la plongée est requis." });
     }
 
     try {
+        //console.log("🔍 ID de la plongée reçu :", plongeeId);
+
         // Récupérer les infos de la plongée avec jointure pour obtenir le nom et niveau du DP
         const { data: plongee, error: plongeeError } = await supabase
             .from("plongees")
@@ -42,43 +45,66 @@ app.get("/generate-pdf", async (req, res) => {
             .single();
 
         if (plongeeError || !plongee) {
+            console.error("❌ Erreur lors de la récupération de la plongée :", plongeeError);
             throw new Error("Impossible de récupérer les données de la plongée.");
         }
+
+        //console.log("✅ Données plongée récupérées :", plongee);
+
+        // Récupérer les palanquées associées à cette plongée
+        const { data: palanquees, error: palanqueesError } = await supabase
+            .from("palanquees")
+            .select("id, nom, profondeur, duree, paliers")
+            .eq("plongee_id", plongeeId);
+
+        if (palanqueesError) {
+            console.error("❌ Erreur lors de la récupération des palanquées :", palanqueesError);
+            throw new Error("Impossible de récupérer les palanquées.");
+        }
+
+        //console.log("✅ Palanquées récupérées :", palanquees);
 
         // Formater la date en "jour mois année"
         const datePlongee = new Date(plongee.date);
         const options = { day: "numeric", month: "long", year: "numeric" };
         const dateFormatee = datePlongee.toLocaleDateString("fr-FR", options);
 
+        // Récupérer les plongeurs pour chaque palanquée
+        for (let palanquee of palanquees) {
+            const { data: palanqueesPlongeurs, error: plongeursError } = await supabase
+                .from("palanquees_plongeurs")
+                .select("plongeur_id")
+                .eq("palanquee_id", palanquee.id);
+
+            if (plongeursError) {
+                console.error("❌ Erreur lors de la récupération des plongeurs pour la palanquée :", plongeursError);
+                continue;
+            }
+
+            // Récupérer les informations des plongeurs
+            const plongeurIds = palanqueesPlongeurs.map(p => p.plongeur_id);
+            if (plongeurIds.length > 0) {
+                const { data: plongeurs, error: plongeursDataError } = await supabase
+                    .from("plongeurs")
+                    .select("nom, niveau")
+                    .in("id", plongeurIds);
+
+                if (plongeursDataError) {
+                    console.error("❌ Erreur lors de la récupération des détails des plongeurs :", plongeursDataError);
+                    continue;
+                }
+
+                palanquee.plongeurs = plongeurs;  // Ajouter les plongeurs à la palanquée
+            }
+        }
+
         // Construire les données du PDF
         const data = {
-            nomDP: plongee.plongeurs.nom, // Nom du DP
-            qualificationDP: plongee.plongeurs.niveau, // Niveau du DP
+            nomDP: plongee.plongeurs.nom,
+            qualificationDP: plongee.plongeurs.niveau,
             site: plongee.site || "Site inconnu",
             date: dateFormatee,
-            palanquees: [
-                {
-                    nom: "Palanquée A",
-                    niveau: "Débutant",
-                    profPrevue: 12,
-                    dureePrevue: 45,
-                    profMax: 15,
-                    dureeRealisee: 50,
-                },
-                {
-                    nom: "Palanquée B",
-                    niveau: "Avancé",
-                    profPrevue: 20,
-                    dureePrevue: 40,
-                    profMax: 18,
-                    dureeRealisee: 38,
-                }
-            ],
-            paliers: {
-                p3: 5,
-                p6: 3,
-                p9: 2
-            }
+            palanquees: palanquees || []
         };
 
         // Création du document PDF
@@ -88,33 +114,128 @@ app.get("/generate-pdf", async (req, res) => {
 
         doc.pipe(stream);
 
-        // Titre principal
-        doc.fontSize(20).text("Feuille de Palanquée", { align: "center" });
-        doc.moveDown(2);
+        // Titre principal (FEUILLE DE PALANQUEES)
+        // Dessiner la cellule grise (rectangle)
+        doc.rect(40, doc.y, 550, 30)  // Rectangle gris (cellule)
+        .fill("gray");  // Remplir la cellule de gris
 
-        // Infos générales
-        doc.fontSize(14).text(`Nom du DP : ${data.nomDP}`);
-        doc.text(`Qualification DP : ${data.qualificationDP}`);
-        doc.text(`Site de Plongée : ${data.site}`);
-        doc.text(`Date : ${data.date}`);
-        doc.moveDown(2);
+        // Texte du titre
+        const text = "FEUILLE DE PALANQUEES";
 
-        // Boucle pour chaque palanquée
+        // Calculer la largeur approximative du texte avec la taille de la police
+        const textWidth = text.length * 10;  // Une estimation approximative, ajustez selon la police et taille
+
+        // Calculer la position horizontale pour centrer le texte dans la cellule
+        const x = 40 + (500 - textWidth) / 2;
+
+        // Position verticale juste au-dessus du rectangle (à l'intérieur)
+        const y = doc.y + 8;
+
+        // Définir la couleur du texte en blanc et augmenter la taille du titre
+        doc.fillColor("white").fontSize(24).text(text, x, y);  // Texte blanc plus grand
+
+        // Réinitialiser la couleur du texte à noir pour le reste du document
+        doc.fillColor("black");  // Texte noir pour le reste du document
+
+        // Continuer avec le reste du contenu (par exemple, l'affichage des informations)
+        doc.moveDown(0.5);
+
+        // Définir une position verticale fixe (par exemple, à 150 pour les deux éléments)
+        const yPosition = doc.y;
+
+        // Plongée du : [date] à gauche avec une taille de police plus petite
+        doc.fontSize(12).text(`Plongée du : ${data.date}`, 40, yPosition, { width: 250, align: "left" });
+
+        // Nom du DP : [nomdp] à droite avec une taille de police plus petite
+        doc.fontSize(12).text(`Nom du DP : ${data.nomDP}`, 300, yPosition, { width: 250, align: "left" });
+
+        // Après avoir écrit ces deux éléments, on peut déplacer vers le bas pour la prochaine ligne
+        doc.moveDown(1);  // Passe à la ligne suivante après avoir écrit les deux textes
+
+        // Définir une position verticale fixe (par exemple, à 150 pour les deux éléments)
+        const zPosition = doc.y;
+
+        // Plongée du : [date] à gauche avec une taille de police plus petite
+        doc.fontSize(12).text(`Site de Plongée : ${data.site}`, 40, zPosition, { width: 250, align: "left" });
+
+        // Nom du DP : [nomdp] à droite avec une taille de police plus petite
+        doc.fontSize(12).text(`Qualification du DP : ${data.qualificationDP}`, 300, zPosition, { width: 250, align: "left" });
+
+        // Après avoir écrit ces deux éléments, on peut déplacer vers le bas pour la prochaine ligne
+        doc.moveDown(1);  // Passe à la ligne suivante après avoir écrit les deux textes
+
+        // Séparateur
+        doc.lineWidth(0.5).moveTo(40, doc.y).lineTo(550, doc.y).stroke();
+        doc.moveDown(1);
+                // Tableau des palanquées
+        // Texte à centrer
+        const text2 = "Palanquées";
+
+        // Définir la taille de police
+        const fontSize = 12;
+
+        // Calculer la largeur approximative du texte (peut être ajusté selon la police)
+        const textWidth2 = text2.length * fontSize * 0.6; // Un facteur de 0.6 est une estimation approximative de la largeur
+
+        // Calculer la position horizontale pour centrer
+        const xPosition = (doc.page.width - textWidth2) / 2;
+
+        // Afficher le texte centré
+        doc.fontSize(fontSize).text(text2, xPosition, doc.y, { underline: true });
+
+        // Passer à la ligne suivante
+        doc.moveDown(1);
+
+
+        // Séparateur
+        doc.lineWidth(0.5).moveTo(40, doc.y).lineTo(550, doc.y).stroke();
+        doc.moveDown(1);
+
+        // En-têtes du tableau
+        const tableTop = doc.y;
+        const columnWidths = [100, 80, 60, 60, 100];  // Largeur des colonnes : nom, profondeur, durée, paliers, plongeurs
+        doc.text("Nom", 40, tableTop, { width: columnWidths[0], align: "center" });
+        doc.text("Profondeur (m)", 140, tableTop, { width: columnWidths[1], align: "center" });
+        doc.text("Durée (min)", 220, tableTop, { width: columnWidths[2], align: "center" });
+        doc.text("Paliers", 280, tableTop, { width: columnWidths[3], align: "center" });
+        doc.text("Plongeurs", 340, tableTop, { width: columnWidths[4], align: "center" });
+
+        // Séparateur
+        doc.moveDown(1);
+        doc.lineWidth(0.5).moveTo(40, doc.y).lineTo(460, doc.y).stroke();
+        doc.moveDown(1);
+
+        // Remplir les lignes du tableau
         data.palanquees.forEach((palanquee, index) => {
-            doc.fontSize(16).text(`Palanquée N°${index + 1} : ${palanquee.nom}`, { underline: true });
-            doc.fontSize(12).text(`Niveau GP : ${palanquee.niveau}`);
-            doc.text(`Profondeur Prévue : ${palanquee.profPrevue}m`);
-            doc.text(`Durée Prévue : ${palanquee.dureePrevue} min`);
-            doc.text(`Profondeur Max Atteinte : ${palanquee.profMax}m`);
-            doc.text(`Durée Réalisée : ${palanquee.dureeRealisee} min`);
-            doc.moveDown(1);
+            const startY = doc.y; // Sauvegarder la position initiale en Y avant d'ajouter le texte
+        
+            // Affichage des informations de la palanquée dans les colonnes
+            doc.text(palanquee.nom, 40, startY, { width: columnWidths[0], align: "center" });
+            doc.text(palanquee.profondeur, 140, startY, { width: columnWidths[1], align: "center" });
+            doc.text(palanquee.duree, 220, startY, { width: columnWidths[2], align: "center" });
+            doc.text(palanquee.paliers || "Aucun", 280, startY, { width: columnWidths[3], align: "center" });
+        
+            // Ajouter les plongeurs pour chaque palanquée
+            const plongeursText = palanquee.plongeurs && palanquee.plongeurs.length > 0
+                ? palanquee.plongeurs.map(plongeur => `${plongeur.nom} (${plongeur.niveau})`).join(", ")
+                : "Pas de plongeurs associés";
+        
+            doc.text(plongeursText, 340, startY, { width: columnWidths[4], align: "center" });
+        
+            // Mettre à jour la position de `doc.y` pour tenir compte de la ligne de palanquée et des plongeurs
+            const numberOfLines = palanquee.plongeurs.length > 0 ? palanquee.plongeurs.length : 1;
+            const lineHeight = 12; // Hauteur de la ligne de texte
+            doc.y = startY + lineHeight * numberOfLines + 10; // Ajuster selon le nombre de plongeurs
+        
+            // Ajouter une ligne de séparation sous chaque palanquée
+            doc.lineWidth(0.5).moveTo(40, doc.y).lineTo(460, doc.y).stroke(); // Ligne horizontale
+            doc.moveDown(1); // Avancer d'une ligne verticale après la séparation
+        
+            // Réajustement dynamique : la prochaine palanquée commencera ici
+            doc.y += 5; // Espacement de 5 pour la prochaine palanquée
         });
-
-        // Ajout des paliers de décompression
-        doc.fontSize(14).text("Paliers de décompression", { underline: true });
-        doc.fontSize(12).text(`Palier 3m : ${data.paliers.p3} min`);
-        doc.text(`Palier 6m : ${data.paliers.p6} min`);
-        doc.text(`Palier 9m : ${data.paliers.p9} min`);
+        
+        
 
         doc.end();
 
@@ -123,10 +244,17 @@ app.get("/generate-pdf", async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Erreur lors de la génération du PDF :", error);
+        console.error("❌ Erreur lors de la génération du PDF :", error);
         res.status(500).json({ error: "Erreur serveur lors de la génération du PDF." });
     }
 });
+
+
+
+
+
+
+
 
 
 
@@ -920,7 +1048,7 @@ app.get("/get_palanquees/:plongee_id", async (req, res) => {
 });
 
 app.post("/enregistrer_palanquee", async (req, res) => {
-    console.log("On entre dans enregistrer_palanquee");
+    //console.log("On entre dans enregistrer_palanquee");
     const palanquees = req.body;
 
     //console.log("Données reçues :", JSON.stringify(palanquees, null, 2));
@@ -931,7 +1059,7 @@ app.post("/enregistrer_palanquee", async (req, res) => {
 
     const erreurs = [];
     const plongee_id = palanquees[0]?.plongee_id;
-    console.log("ID reçu dans app.js : ", plongee_id);
+    //console.log("ID reçu dans app.js : ", plongee_id);
 
     if (!plongee_id) {
         return res.status(400).json({ error: "Plongée ID manquant" });
@@ -950,14 +1078,14 @@ app.post("/enregistrer_palanquee", async (req, res) => {
         }
 
         const existingPalanqueesMap = new Map(existingPalanquees.map(p => [p.id, p]));
-        console.log("Palanquées existantes pour cette plongée : ", existingPalanquees);
+        //console.log("Palanquées existantes pour cette plongée : ", existingPalanquees);
 
         // 🔄 Traiter les palanquées reçues
         const updatedPalanquees = [];
         for (const palanqueeData of palanquees) {
-            console.log("palanqueeData : ", palanqueeData);
+            //console.log("palanqueeData : ", palanqueeData);
             let { id, nom, profondeur, duree, paliers, plongeurs } = palanqueeData;
-            console.log("ID après palanqueeData", id);
+            //console.log("ID après palanqueeData", id);
 
             // Vérification des données reçues pour chaque palanquée
             if (!nom || !plongeurs || plongeurs.length === 0) {
@@ -966,10 +1094,10 @@ app.post("/enregistrer_palanquee", async (req, res) => {
             }
 
             if (id) {
-                console.log("ID reçu pour l'enregistrement : ", id);
+                //console.log("ID reçu pour l'enregistrement : ", id);
                 // 🔍 Vérifier si l'ID existe bien en base
                 if (existingPalanqueesMap.has(id)) {
-                    console.log("on identifie que l'id existe");
+                    //console.log("on identifie que l'id existe");
                     // ✅ Mise à jour de la palanquée
                     const { error: updateError } = await supabase
                         .from("palanquees")
@@ -987,7 +1115,7 @@ app.post("/enregistrer_palanquee", async (req, res) => {
                     continue;
                 }
             } else {
-                console.log("On ne reçoit pas un id", id);
+                //console.log("On ne reçoit pas un id", id);
                 // ✅ Insertion d'une nouvelle palanquée
                 const { data: newPalanquee, error: insertError } = await supabase
                     .from("palanquees")
@@ -998,7 +1126,7 @@ app.post("/enregistrer_palanquee", async (req, res) => {
                 if (insertError) {
                     erreurs.push({ palanquee: nom, message: insertError.message });
                 } else {
-                    console.log("Nouvelle palanquée insérée avec ID : ", newPalanquee.id);
+                    //console.log("Nouvelle palanquée insérée avec ID : ", newPalanquee.id);
                     updatedPalanquees.push({ id: newPalanquee.id, plongeurs });
                 }
             }
@@ -1135,7 +1263,7 @@ try {
 
 // Récupérer les paramètres des palanquées
 app.get("/parametres_palanquees", async (req, res) => {
-    console.log("📢 Route /parametres_palanquees appelée avec query:", req.query);
+    //console.log("📢 Route /parametres_palanquees appelée avec query:", req.query);
 
     const plongeeId = req.query.id;
 
@@ -1163,7 +1291,7 @@ app.get("/parametres_palanquees", async (req, res) => {
                 continue;
             }
 
-            console.log(`🔎 ID de la palanquée récupérée: ${palanquee.id}`);
+            //console.log(`🔎 ID de la palanquée récupérée: ${palanquee.id}`);
 
             let { data: palanqueesPlongeurs, error: errorLien } = await supabase
                 .from("palanquees_plongeurs")
@@ -1175,7 +1303,7 @@ app.get("/parametres_palanquees", async (req, res) => {
                 continue;
             }
 
-            console.log(`📝 Liens palanquée-plongeurs:`, JSON.stringify(palanqueesPlongeurs, null, 2));
+            //console.log(`📝 Liens palanquée-plongeurs:`, JSON.stringify(palanqueesPlongeurs, null, 2));
 
             const plongeurIds = palanqueesPlongeurs.map(p => p.plongeur_id);
 
@@ -1195,7 +1323,7 @@ app.get("/parametres_palanquees", async (req, res) => {
                 continue;
             }
 
-            console.log(`👨‍👩‍👧‍👦 Plongeurs trouvés pour ${palanquee.id}:`, JSON.stringify(plongeurs, null, 2));
+            //console.log(`👨‍👩‍👧‍👦 Plongeurs trouvés pour ${palanquee.id}:`, JSON.stringify(plongeurs, null, 2));
 
             // Ajouter le niveau historique pour chaque plongeur
             palanquee.plongeurs = plongeurs.map(plongeur => {
