@@ -82,13 +82,16 @@
                             <input type="text" name="paliers" class="paliers" value="<%= palanquee.paliers || '' %>" 
                                 <%= palanquee.paliers ? 'disabled' : '' %> required>
                             
-                            <!-- ✅ Checkbox alignée -->
-                            <div class="flex items-center gap-2">
-                                <input type="checkbox" id="paliers-<%= palanquee.id %>-checkbox" class="form-checkbox">
-                                <label for="paliers-<%= palanquee.id %>-checkbox" class="whitespace-nowrap text-sm m-0 p-0">3m / 3m Sécu</label>
-                              </div>
-                                                                                    
-                                                                                           
+<!-- ✅ Checkbox alignée -->
+<div class="flex items-center justify-start gap-2 w-full text-left border border-red-500 p-2">
+    <!-- Case à cocher avec suppression de marges et padding -->
+    <input type="checkbox" id="paliers-<%= palanquee.id %>-checkbox" class="form-checkbox m-0 p-0" style="margin-left: 0px; margin-right: 8px;">
+    
+    <!-- Label sans marges ni padding -->
+    <label for="paliers-<%= palanquee.id %>-checkbox" class="text-sm m-0 p-0" style="margin-left: 0px; margin-right: 0px;">3m / 3m Sécu</label>
+</div>                     
+                              
+                                                             
                         </form>
                     </div>
                 
@@ -414,6 +417,14 @@ document.querySelectorAll(".paliers-checkbox").forEach(checkbox => {
     align-items: flex-start;
     gap: 10px;
     width: 50%;
+}
+
+/* Case à cocher sans marges et padding supplémentaires */
+.palanquee-right .form-checkbox {
+    margin: 0;  /* Retirer toute marge */
+    padding: 0;  /* Retirer tout padding */
+    width: 20px;  /* Définir la taille de la case à cocher (tu peux ajuster si nécessaire) */
+    height: 20px;  /* Définir la hauteur de la case à cocher */
 }
 
 /* Labels */
