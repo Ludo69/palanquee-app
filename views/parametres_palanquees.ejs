@@ -17,14 +17,16 @@
         Retour
     </button>-->
     <div class="container">
-        <!-- Icône WhatsApp stylisée -->
-        <a href="javascript:void(0);" class="btn-whatsapp" onclick="envoyerParWhatsApp()">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/WhatsApp_icon.png" alt="Partager sur WhatsApp">
-        </a>
+        <!-- Icône WhatsApp -->
+    <a href="javascript:void(0);" class="btn-whatsapp" onclick="envoyerParWhatsApp()">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/WhatsApp_icon.png" alt="Partager sur WhatsApp">
+    </a>
 
-        <button onclick="sendWhatsApp()" class="bg-green-500 text-white p-3 rounded-lg">
-            📤 Générer le PDF
-        </button>
+    <!-- Icône PDF -->
+    <button onclick="sendWhatsApp()" class="btn-pdf">
+        <img src="\icons\iconPDF.png" alt="PDF Icon" class="icon-pdf" />
+    </button>
+
 
         <% if (palanquees && palanquees.length > 0) { %>
             <% palanquees.forEach(function(palanquee) { %>

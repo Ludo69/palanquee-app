@@ -350,6 +350,7 @@ body {
   margin-left: 10px;
 }
 
+/* Positionnement du bouton WhatsApp */
 .btn-whatsapp {
   position: fixed;
   bottom: 70px;
@@ -362,7 +363,37 @@ body {
   font-size: 16px;
   cursor: pointer;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+  display: inline-block; /* Cela va aligner les éléments horizontalement */
+  vertical-align: middle; /* Assure que l'alignement vertical est bon */
 }
+
+/* Positionnement du bouton PDF */
+.btn-pdf {
+  position: fixed;
+  top: 10px;  /* Positionne le bouton en haut de la page */
+  right: 70px;  /* Positionne le bouton à droite de la page */
+  background-color: #d9534f;
+  color: white;
+  border: none;
+  padding: 0;  /* Supprimer tout padding pour mieux gérer la taille du bouton */
+  border-radius: 50%;  /* Arrondir le bouton */
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+  display: flex;  /* Utilisation de Flexbox pour centrer l'icône */
+  justify-content: center;  /* Centrer horizontalement */
+  align-items: center;  /* Centrer verticalement */
+  width: 50px;  /* Largeur du bouton circulaire */
+  height: 50px;  /* Hauteur du bouton circulaire */
+}
+
+/* Taille de l'icône PDF */
+.btn-pdf img {
+  width: 30px;  /* Taille de l'icône PDF */
+  height: 30px; /* Taille de l'icône PDF */
+}
+
+
 
 .nav-button {
   background: none;
