@@ -296,7 +296,11 @@ document.querySelectorAll(".paliers-checkbox").forEach(checkbox => {
                 return;
             }
 
-            console.log("📅 Date brute récupérée :", data.date);
+            // Afficher l'objet complet sous forme de chaîne formatée
+            console.log("📅 Data (avec JSON.stringify) :", JSON.stringify(data, null, 2));
+
+            // Afficher l'objet sous forme de tableau
+            console.table(data);
 
             let datePlongee = data.date;
             if (!datePlongee || datePlongee.toLowerCase().includes("invalid")) {
