@@ -307,7 +307,7 @@ document.querySelectorAll(".paliers-checkbox").forEach(checkbox => {
             let nomSitePlongee = data.site || "Site inconnu";
             let nomDuDP = data.nomdp || "DP non trouvé";
             let niveauDuDP = data.niveaudp || "Niveau non trouvé";
-            console.log("DP et niveau : " + nomDuDP + ", " + niveauDuDP);
+            console.log("DP et niveau : " + nomSitePlongee + ", " + nomDuDP + ", " + niveauDuDP);
 
             let message = `🌊 *Compte-rendu Plongée* 🌊\n`;
             message += `👨‍💼 *Directeur de plongée* - ${nomDuDP} (${niveauDuDP})\n`;  // Ajout du niveau ici
