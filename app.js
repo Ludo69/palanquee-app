@@ -1565,27 +1565,28 @@ app.post("/api/set-dp", async (req, res) => {
     res.json({ success: true });
 });
 
-// Route pour gérer le webhook GitHub
-app.post("/webhook", (req, res) => {
-    console.log('Webhook reçu:', req.body);
-
-    // Vérifie la branche (optionnel, selon ce que tu veux)
+// Route pour gérer le webhook
+app.post('/webhook', (req, res) => {
+    console.log("Webhook reçu:", req.body); // Affiche les données du webhook pour déboguer
+  
+    // Vérifier que c'est un push sur la branche "main"
     if (req.body.ref === 'refs/heads/main') {
-        console.log("Déploiement sur la branche main...");
-
-        // Exécuter ton script de déploiement
-        exec('/home/ludo/app/deploy.sh', (err, stdout, stderr) => {
-            if (err) {
-                console.error(`Erreur lors du déploiement: ${stderr}`);
-                return res.status(500).send('Erreur du déploiement');
-            }
-            console.log(`Déploiement réussi: ${stdout}`);
-            res.status(200).send('Déploiement terminé');
-        });
+      console.log('Mise à jour de la branche principale détectée.');
+      
+      // Exécuter ton script de déploiement
+      const exec = require('child_process').exec;
+      exec('/home/ludo/app/palanquee-app/deploy.sh', (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Erreur d'exécution: ${stderr}`);
+          return res.status(500).send("Erreur lors du déploiement.");
+        }
+        console.log(stdout);
+        res.send("Déploiement réussi !");
+      });
     } else {
-        res.status(200).send('Pas de déploiement sur cette branche');
+      res.status(200).send("Aucun déploiement nécessaire.");
     }
-});
+  });
 
 // Démarrage du serveur
 app.listen(port, () => {
