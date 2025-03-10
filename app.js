@@ -1575,7 +1575,7 @@ app.post('/webhook', (req, res) => {
       
       // Exécuter ton script de déploiement
       const exec = require('child_process').exec;
-      exec('/home/ludo/app/deploy.sh', (error, stdout, stderr) => {
+      exec('/home/ludo/app/palanquee-app/deploy.sh', (error, stdout, stderr) => {
         if (error) {
           console.error(`Erreur d'exécution: ${stderr}`);
           return res.status(500).send("Erreur lors du déploiement.");
