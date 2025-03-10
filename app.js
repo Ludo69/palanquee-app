@@ -1565,6 +1565,28 @@ app.post("/api/set-dp", async (req, res) => {
     res.json({ success: true });
 });
 
+// Route pour gérer le webhook GitHub
+app.post("/webhook", (req, res) => {
+    console.log('Webhook reçu:', req.body);
+
+    // Vérifie la branche (optionnel, selon ce que tu veux)
+    if (req.body.ref === 'refs/heads/main') {
+        console.log("Déploiement sur la branche main...");
+
+        // Exécuter ton script de déploiement
+        exec('/home/ludo/app/deploy.sh', (err, stdout, stderr) => {
+            if (err) {
+                console.error(`Erreur lors du déploiement: ${stderr}`);
+                return res.status(500).send('Erreur du déploiement');
+            }
+            console.log(`Déploiement réussi: ${stdout}`);
+            res.status(200).send('Déploiement terminé');
+        });
+    } else {
+        res.status(200).send('Pas de déploiement sur cette branche');
+    }
+});
+
 // Démarrage du serveur
 app.listen(port, () => {
 console.log(`✅ Serveur démarré sur http://localhost:${port}`);
