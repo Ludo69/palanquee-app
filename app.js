@@ -15,6 +15,13 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Middleware
 app.use(bodyParser.json());
+app.use((req, res, next) => {
+    console.log("Requête reçue:", req.method, req.url);
+    console.log("Headers:", req.headers);
+    console.log("Body brut:", req.body);
+    next();
+});
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.static("public"));
