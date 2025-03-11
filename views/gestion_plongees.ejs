@@ -27,7 +27,7 @@
             <% if (plongees && plongees.length > 0) { %>
                 <% plongees.forEach(function(plongee) { %>
                     <li class="bg-[rgba(42,68,102,1)] p-3 rounded-lg shadow-md w-full max-w-3xl mx-auto relative">
-    
+        
                         <!-- Première ligne : Plongée + Site + Croix suppression -->
                         <div class="flex items-center justify-between w-full text-white">
                             <span class="text-sm font-medium">
@@ -37,14 +37,14 @@
                             <button type="button" class="remove-plongee text-red-500 hover:text-red-400"
                                 data-plongee-id="<%= plongee.id %>">❌</button>
                         </div>
-                    
+        
                         <!-- Deuxième ligne : DP -->
                         <div class="text-sm text-white mt-1">
                             DP : <span id="dp-name-<%= plongee.id %>" class="font-medium">Inconnu</span>
                         </div>
-                    
-                        <!-- Troisième ligne : Boutons d'action -->
-                        <div class="flex justify-start space-x-2 mt-1">
+        
+                        <!-- Troisième ligne : Boutons d'action (centrés) -->
+                        <div class="flex justify-center space-x-2 mt-2">
                             <button class="open-dp-modal bg-green-500 text-white px-3 py-1 rounded text-xs"
                                     data-plongee-id="<%= plongee.id %>"
                                     data-sortie-id="<%= plongee.sortie_id %>">
@@ -52,17 +52,25 @@
                             </button>
                             <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded text-xs">Saisir le site</button>
                             <a href="/parametres_palanquees?id=<%= plongee.id %>">
-                                <button class="bg-green-500 text-white px-3 py-1 rounded text-xs">Paramètres</button>
+                                <button class="bg-green-500 text-white px-3 py-1 rounded text-xs">Saisir les paramètres</button>
                             </a>
                         </div>
-                    
+        
+                        <!-- Quatrième ligne : Bouton "Gérer les palanquées" centré et CLIQUABLE -->
+                        <div class="flex justify-center mt-3">
+                            <button class="manage-palanquees bg-yellow-500 text-white px-4 py-2 rounded text-sm font-semibold"
+                                data-plongee-id="<%= plongee.id %>">
+                                Gérer les palanquées
+                            </button>
+                        </div>
+        
                     </li>
-                    
                 <% }); %>
             <% } else { %>
                 <p class="text-center text-gray-400">Aucune plongée à afficher.</p>
             <% } %>
         </ul>
+        
 
         <!-- Modal pour afficher les plongeurs -->
         <div id="dp-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -129,54 +137,65 @@
     // Trier les plongées par leur numéro
     plongees.sort((a, b) => a.numero - b.numero);
 
-    // Afficher les plongées triées
-    for (let plongee of plongees) {
-        const li = document.createElement("li");
-        li.classList.add(
-            "bg-[rgba(42,68,102,1)]",
-            "p-3",
-            "rounded-lg",
-            "shadow-md",
-            "w-full",
-            "max-w-3xl",
-            "mx-auto",
-            "relative"
-        );
-        li.setAttribute("data-id", plongee.id); // ✅ Ajout de l'ID ici
+// Afficher les plongées triées
+for (let plongee of plongees) {
+    const li = document.createElement("li");
+    li.classList.add(
+        "bg-[rgba(42,68,102,1)]",
+        "p-3",
+        "rounded-lg",
+        "shadow-md",
+        "w-full",
+        "max-w-3xl",
+        "mx-auto",
+        "relative"
+    );
+    li.setAttribute("data-id", plongee.id); // ✅ Ajout de l'ID ici
 
-        const dpNom = plongee.nomdp ? await getDpNom(plongee.nomdp) : "Inconnu";
+    const dpNom = plongee.nomdp ? await getDpNom(plongee.nomdp) : "Inconnu";
 
-        li.innerHTML = `
-            <!-- Première ligne : Plongée + Site -->
-            <div class="flex items-center justify-between w-full text-white">
-                <span class="text-sm font-medium">
-                    Plongée ${plongee.numero} - <span class="site-name">${plongee.site || "Nom du site"}</span>
-                </span>
-                <button type="button" class="remove-plongee text-red-500 hover:text-red-400"
-                    data-plongee-id="${plongee.id}">❌</button>
-            </div>
+    li.innerHTML = `
+        <!-- Première ligne : Plongée + Site -->
+        <div class="flex items-center justify-between w-full text-white">
+            <span class="text-sm font-medium">
+                Plongée ${plongee.numero} - <span class="site-name">${plongee.site || "Nom du site"}</span>
+            </span>
+            <button type="button" class="remove-plongee text-red-500 hover:text-red-400"
+                data-plongee-id="${plongee.id}">❌</button>
+        </div>
 
-            <!-- Deuxième ligne : DP -->
-            <div class="text-sm text-white mt-1">
-                DP : <span id="dp-name-${plongee.id}" class="font-medium">${dpNom}</span>
-            </div>
+        <!-- Deuxième ligne : DP -->
+        <div class="text-sm text-white mt-1">
+            DP : <span id="dp-name-${plongee.id}" class="font-medium">${dpNom}</span>
+        </div>
 
-            <!-- Troisième ligne : Boutons d'action -->
-            <div class="flex justify-start space-x-2 mt-1">
-                <button class="open-dp-modal bg-green-500 text-white px-3 py-1 rounded text-xs" data-plongee-id="${plongee.id}">
-                    Choix du DP
+        <!-- Troisième ligne : Boutons d'action (centrés) -->
+        <div class="flex justify-center space-x-2 mt-2">
+            <button class="open-dp-modal bg-green-500 text-white px-3 py-1 rounded text-xs" data-plongee-id="${plongee.id}">
+                Choix du DP
+            </button>
+            <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded text-xs">Saisir le site</button>
+            <a href="/parametres_palanquees?id=${plongee.id}">
+                <button class="bg-green-500 text-white px-3 py-1 rounded text-xs">Saisir les paramètres</button>
+            </a>
+        </div>
+
+        <!-- Quatrième ligne : Bouton "Gérer les palanquées" centré et CLIQUABLE -->
+        <div class="flex justify-center mt-3">
+            <a href="/gestion_palanquees?id=${plongee.id}">
+                <button class="bg-yellow-500 text-white px-4 py-2 rounded text-sm font-semibold">
+                    Gérer les palanquées
                 </button>
-                <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded text-xs">Saisir le site</button>
-                <a href="/parametres_palanquees?id=${plongee.id}">
-                    <button class="bg-green-500 text-white px-3 py-1 rounded text-xs">Paramètres</button>
-                </a>
-            </div>
-        `;
-        plongeesList.appendChild(li);
-    }
+            </a>
+        </div>
+    `;
+
+    plongeesList.appendChild(li);
+}
 } else {
     plongeesList.innerHTML = `<p class="text-center text-gray-400">Aucune plongée à afficher.</p>`;
 }
+
 
 
             // Ajouter l'événement de suppression
@@ -224,30 +243,35 @@
 
 
        // Fonction pour ajouter la gestion des événements
-        function ajouterGestionnaireEvenements() {
-            // Gestion de la redirection quand on clique sur une ligne
-            document.querySelectorAll("#plongeesList li").forEach(item => {
-            item.addEventListener("click", function (e) {
-                // Empêcher la navigation si un input ou un bouton est cliqué
-                if (e.target.tagName === "INPUT" || e.target.classList.contains("edit-btn") || e.target.classList.contains("open-dp-modal")) {
-                    e.stopPropagation(); // Empêche la navigation
-                    return;
-                }
+function ajouterGestionnaireEvenements() {
+    // Gestion de la redirection quand on clique sur une ligne
+    document.querySelectorAll("#plongeesList li").forEach(item => {
+        item.addEventListener("click", function (e) {
+            // Empêcher la navigation si un input, un bouton ou "Gérer les palanquées" est cliqué
+            if (
+                e.target.tagName === "INPUT" || 
+                e.target.classList.contains("edit-btn") || 
+                e.target.classList.contains("open-dp-modal") || 
+                e.target.classList.contains("manage-palanquees") // ✅ Ajout de cette condition
+            ) {
+                e.stopPropagation(); // Empêche la navigation
+                return;
+            }
 
-                const plongeeId = this.getAttribute("data-id");
-                const dpNameElement = this.querySelector(`#dp-name-${plongeeId}`); // Récupérer l'élément qui contient le nom du DP
+            const plongeeId = this.getAttribute("data-id");
+            const dpNameElement = this.querySelector(`#dp-name-${plongeeId}`);
 
-                // Vérifier si le nom du DP est "Inconnu"
-                if (dpNameElement && dpNameElement.textContent === "Inconnu") {
-                    // Afficher un message d'alerte
-                    alert("Veuillez sélectionner un DP.");
-                    return; // Empêche la navigation si le DP est "Inconnu"
-                }
+            // Vérifier si le nom du DP est "Inconnu"
+            if (dpNameElement && dpNameElement.textContent === "Inconnu") {
+                alert("Veuillez sélectionner un DP.");
+                return; // Empêche la navigation si le DP est "Inconnu"
+            }
 
-                // Si le DP est bien sélectionné, on peut naviguer vers la page
-                window.location.href = `/gestion_palanquees?id=${plongeeId}`;
-            });
+            // 🚨 Suppression de la redirection automatique
         });
+    });
+
+
 
 
             // Fonction pour vérifier si l'ID est un UUID valide
