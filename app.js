@@ -16,9 +16,9 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // Middleware
 app.use(bodyParser.json());
 app.use((req, res, next) => {
-    console.log("Requête reçue:", req.method, req.url);
-    console.log("Headers:", req.headers);
-    console.log("Body brut:", req.body);
+    //console.log("Requête reçue:", req.method, req.url);
+    //console.log("Headers:", req.headers);
+    //console.log("Body brut:", req.body);
     next();
 });
 
@@ -1596,6 +1596,30 @@ app.post('/webhook', (req, res) => {
         res.status(200).send("Aucun déploiement nécessaire.");
     }
 });
+
+app.delete("/delete-plongee/:id", async (req, res) => {
+    const plongeeId = req.params.id;
+
+    if (!plongeeId) {
+        return res.status(400).json({ error: "ID de plongée manquant" });
+    }
+
+    try {
+        const { error } = await supabase
+            .from("plongees") // Remplace par le nom exact de ta table
+            .delete()
+            .eq("id", plongeeId);
+
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
+
+        res.status(200).json({ success: true, message: "Plongée supprimée avec succès" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 
 
 // Démarrage du serveur

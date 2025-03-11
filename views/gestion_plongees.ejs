@@ -13,11 +13,15 @@
         </button>
 
     <div class="container mx-auto p-4 flex-grow">
-        <h1 class="text-2xl font-bold text-center mb-4">
+        <h1 class="text-2xl font-bold text-center mb-2">
             Plongée du <span id="selected-date" data-date="<%= date %>">
-            <%= new Date(date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) %>
+                <%= new Date(date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) %>
             </span>
         </h1>
+        <p class="text-sm text-center text-white-600">
+            Cliquez sur la plongée pour constituer les palanquées
+        </p>
+        
 
         <ul class="space-y-3" id="plongeesList">
             <% if (plongees && plongees.length > 0) { %>
@@ -126,7 +130,18 @@
             // Afficher les plongées triées
             for (let plongee of plongees) {
                 const li = document.createElement("li");
-                li.classList.add("bg-[rgba(42,68,102,1)]", "p-3", "rounded-lg", "shadow-md", "w-full", "max-w-3xl", "mx-auto");
+                li.classList.add(
+                    "bg-[rgba(42,68,102,1)]",
+                    "p-3",
+                    "rounded-lg",
+                    "shadow-md",
+                    "w-full",
+                    "max-w-3xl",
+                    "mx-auto",
+                    "relative",
+                    "pr-10", // Décale le contenu pour éviter le chevauchement
+                    "pt-6"
+                );
                 li.setAttribute("data-id", plongee.id); // ✅ Ajout de l'ID ici
 
                 const dpNom = plongee.nomdp ? await getDpNom(plongee.nomdp) : "Inconnu";
@@ -153,20 +168,57 @@
                             Choix du DP
                         </button>
                     </div>
+
+                    <!-- Bouton de suppression dans le même style que les autres écrans -->
+                    <button type="button" class="remove-plongee text-red-500 hover:text-red-400 absolute top-2 right-2"
+                        data-plongee-id="${plongee.id}">❌</button>
                 `;
                 plongeesList.appendChild(li);
             }
-        } else {
-            plongeesList.innerHTML = `<p class="text-center text-gray-400">Aucune plongée à afficher.</p>`;
-        }
+            } else {
+                plongeesList.innerHTML = `<p class="text-center text-gray-400">Aucune plongée à afficher.</p>`;
+            }
+
+            // Ajouter l'événement de suppression
+            document.querySelectorAll(".remove-plongee").forEach((btn) => {
+                btn.addEventListener("click", async function (event) {
+                    event.stopPropagation();
+                    const li = this.closest("li");
+                    const plongeeId = li.getAttribute("data-id");
+
+                    if (confirm("Voulez-vous vraiment supprimer cette plongée ?")) {
+                        await deletePlongee(plongeeId, li);
+                    }
+                });
+            });
 
         // Ajout des gestionnaires d'événements après avoir ajouté les éléments à la liste
         ajouterGestionnaireEvenements();
-    } catch (error) {
-        console.error("❌ Erreur lors du chargement des plongées :", error);
-        alert("Erreur lors du chargement des plongées.");
-    }
-}
+            } catch (error) {
+                console.error("❌ Erreur lors du chargement des plongées :", error);
+                alert("Erreur lors du chargement des plongées.");
+            }
+        }
+
+        // Fonction pour supprimer une plongée via l'API
+        async function deletePlongee(plongeeId, liElement) {
+            if (!plongeeId) return;
+
+            const response = await fetch(`/delete-plongee/${plongeeId}`, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                liElement.remove(); // Supprime visuellement la plongée si la suppression en base a réussi
+            } else {
+                alert("Erreur lors de la suppression : " + data.error);
+            }
+        }
 
 
 
