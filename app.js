@@ -1567,13 +1567,15 @@ app.post("/api/set-dp", async (req, res) => {
 
 // Route pour gérer le webhook
 app.post('/webhook', (req, res) => {
-    console.log("Webhook reçu:", req.body); // Affiche les données du webhook pour déboguer
+    console.log("Webhook reçu, corps de la requête:", req.body); // Log pour debug
 
-    // Vérifier que c'est un push sur la branche "main"
+    if (!req.body || typeof req.body !== 'object') {
+        return res.status(400).send("Erreur: Le corps de la requête est invalide.");
+    }
+
     if (req.body.ref === 'refs/heads/main') {
         console.log('Mise à jour de la branche principale détectée.');
 
-        // Exécuter ton script de déploiement
         const exec = require('child_process').exec;
         exec('/home/ludo/app/palanquee-app/deploy.sh', (error, stdout, stderr) => {
             if (error) {
