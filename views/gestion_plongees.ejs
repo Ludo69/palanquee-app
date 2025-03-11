@@ -26,36 +26,38 @@
         <ul class="space-y-3" id="plongeesList">
             <% if (plongees && plongees.length > 0) { %>
                 <% plongees.forEach(function(plongee) { %>
-                    <li class="bg-[rgba(42,68,102,1)] p-3 rounded-lg shadow-md w-full max-w-3xl mx-auto">
-                        
-                        <!-- Première ligne : Numéro + Site + Boutons -->
-                        <div class="flex items-center justify-between cursor-pointer" data-id="<%= plongee.id %>">
-                            <span>Plongée <%= plongee.numero %> - 
+                    <li class="bg-[rgba(42,68,102,1)] p-3 rounded-lg shadow-md w-full max-w-3xl mx-auto relative">
+    
+                        <!-- Première ligne : Plongée + Site + Croix suppression -->
+                        <div class="flex items-center justify-between w-full text-white">
+                            <span class="text-sm font-medium">
+                                Plongée <%= plongee.numero %> - 
                                 <span class="site-name"><%= plongee.site || "Nom du site" %></span>
                             </span>
-        
-                            <div class="ml-auto flex items-center space-x-2">
-                                <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded">Site</button>
-                                <a href="/parametres_palanquees?id=<%= plongee.id %>">
-                                    <button class="bg-green-500 text-white px-3 py-1 rounded">Paramètres</button>
-                                </a>
-                            </div>
-                            
+                            <button type="button" class="remove-plongee text-red-500 hover:text-red-400"
+                                data-plongee-id="<%= plongee.id %>">❌</button>
                         </div>
-        
-                        <!-- Deuxième ligne : DP + bouton Nom DP -->
-                        <div class="flex items-center justify-between mt-2">
-                            <span>DP : <span id="dp-name-<%= plongee.id %>">Inconnu</span></span>
-                            <button class="open-dp-modal bg-green-500 text-white px-3 py-1 rounded"
+                    
+                        <!-- Deuxième ligne : DP -->
+                        <div class="text-sm text-white mt-1">
+                            DP : <span id="dp-name-<%= plongee.id %>" class="font-medium">Inconnu</span>
+                        </div>
+                    
+                        <!-- Troisième ligne : Boutons d'action -->
+                        <div class="flex justify-start space-x-2 mt-1">
+                            <button class="open-dp-modal bg-green-500 text-white px-3 py-1 rounded text-xs"
                                     data-plongee-id="<%= plongee.id %>"
                                     data-sortie-id="<%= plongee.sortie_id %>">
                                 Choix du DP
                             </button>
+                            <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded text-xs">Saisir le site</button>
+                            <a href="/parametres_palanquees?id=<%= plongee.id %>">
+                                <button class="bg-green-500 text-white px-3 py-1 rounded text-xs">Paramètres</button>
+                            </a>
                         </div>
-
-
-        
+                    
                     </li>
+                    
                 <% }); %>
             <% } else { %>
                 <p class="text-center text-gray-400">Aucune plongée à afficher.</p>
@@ -124,60 +126,58 @@
         plongeesList.innerHTML = ""; // Vide la liste
 
         if (plongees.length > 0) {
-            // Trier les plongées par leur numéro
-            plongees.sort((a, b) => a.numero - b.numero);
+    // Trier les plongées par leur numéro
+    plongees.sort((a, b) => a.numero - b.numero);
 
-            // Afficher les plongées triées
-            for (let plongee of plongees) {
-                const li = document.createElement("li");
-                li.classList.add(
-                    "bg-[rgba(42,68,102,1)]",
-                    "p-3",
-                    "rounded-lg",
-                    "shadow-md",
-                    "w-full",
-                    "max-w-3xl",
-                    "mx-auto",
-                    "relative",
-                    "pr-10", // Décale le contenu pour éviter le chevauchement
-                    "pt-6"
-                );
-                li.setAttribute("data-id", plongee.id); // ✅ Ajout de l'ID ici
+    // Afficher les plongées triées
+    for (let plongee of plongees) {
+        const li = document.createElement("li");
+        li.classList.add(
+            "bg-[rgba(42,68,102,1)]",
+            "p-3",
+            "rounded-lg",
+            "shadow-md",
+            "w-full",
+            "max-w-3xl",
+            "mx-auto",
+            "relative"
+        );
+        li.setAttribute("data-id", plongee.id); // ✅ Ajout de l'ID ici
 
-                const dpNom = plongee.nomdp ? await getDpNom(plongee.nomdp) : "Inconnu";
+        const dpNom = plongee.nomdp ? await getDpNom(plongee.nomdp) : "Inconnu";
 
-                li.innerHTML = `
-                    <!-- Première ligne : Numéro + Site + Boutons -->
-                    <div class="flex items-center justify-between cursor-pointer" data-id="${plongee.id}">
-                        <span>Plongée ${plongee.numero} - 
-                            <span class="site-name">${plongee.site || "Nom du site"}</span>
-                        </span>
-                        <div class="ml-auto flex items-center space-x-2">
-                            <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded">Site</button>
-                            <a href="/parametres_palanquees?id=${plongee.id}">
-                                <button class="bg-green-500 text-white px-3 py-1 rounded">Paramètres</button>
-                            </a>
-                        </div>
-                    </div>
+        li.innerHTML = `
+            <!-- Première ligne : Plongée + Site -->
+            <div class="flex items-center justify-between w-full text-white">
+                <span class="text-sm font-medium">
+                    Plongée ${plongee.numero} - <span class="site-name">${plongee.site || "Nom du site"}</span>
+                </span>
+                <button type="button" class="remove-plongee text-red-500 hover:text-red-400"
+                    data-plongee-id="${plongee.id}">❌</button>
+            </div>
 
+            <!-- Deuxième ligne : DP -->
+            <div class="text-sm text-white mt-1">
+                DP : <span id="dp-name-${plongee.id}" class="font-medium">${dpNom}</span>
+            </div>
 
-                    <!-- Deuxième ligne : DP + bouton Nom DP -->
-                    <div class="flex items-center justify-between mt-2">
-                        <span>DP : <span id="dp-name-${plongee.id}">${dpNom}</span></span>
-                        <button class="open-dp-modal bg-green-500 text-white px-3 py-1 rounded" data-plongee-id="${plongee.id}">
-                            Choix du DP
-                        </button>
-                    </div>
+            <!-- Troisième ligne : Boutons d'action -->
+            <div class="flex justify-start space-x-2 mt-1">
+                <button class="open-dp-modal bg-green-500 text-white px-3 py-1 rounded text-xs" data-plongee-id="${plongee.id}">
+                    Choix du DP
+                </button>
+                <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded text-xs">Saisir le site</button>
+                <a href="/parametres_palanquees?id=${plongee.id}">
+                    <button class="bg-green-500 text-white px-3 py-1 rounded text-xs">Paramètres</button>
+                </a>
+            </div>
+        `;
+        plongeesList.appendChild(li);
+    }
+} else {
+    plongeesList.innerHTML = `<p class="text-center text-gray-400">Aucune plongée à afficher.</p>`;
+}
 
-                    <!-- Bouton de suppression dans le même style que les autres écrans -->
-                    <button type="button" class="remove-plongee text-red-500 hover:text-red-400 absolute top-2 right-2"
-                        data-plongee-id="${plongee.id}">❌</button>
-                `;
-                plongeesList.appendChild(li);
-            }
-            } else {
-                plongeesList.innerHTML = `<p class="text-center text-gray-400">Aucune plongée à afficher.</p>`;
-            }
 
             // Ajouter l'événement de suppression
             document.querySelectorAll(".remove-plongee").forEach((btn) => {
