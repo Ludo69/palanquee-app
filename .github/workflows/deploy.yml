@@ -1,4 +1,4 @@
-name: Deploiement en Production
+name: Deploy to Production
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
     - name: Sync files to production
-      run: rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./ 192.168.1.53:/app/palanquee-app
+      run: rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./ osyris.duckdns.org:/app/palanquee-app
 
     - name: Restart application
-      run: ssh -o StrictHostKeyChecking=no ludo@192.168.1.53 'sudo systemctl restart palanquee-app'
+      run: ssh -o StrictHostKeyChecking=no ludo@osyris.duckdns.org 'sudo systemctl restart palanquee-app'
