@@ -384,18 +384,19 @@ app.get('/api/plongeur/:id', async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('plongeurs')
-            .select('nom')
+            .select('nom, niveau') // ✅ On récupère aussi le niveau
             .eq('id', id)
             .single();
 
         if (error) throw error;
 
-        res.status(200).json(data);  // Retourner le nom du plongeur
+        res.status(200).json(data);  // Retourner nom + niveau
     } catch (error) {
         console.error("❌ Erreur lors de la récupération du plongeur :", error);
         res.status(500).json({ error: "Erreur lors de la récupération du plongeur" });
     }
 });
+
 
 
 
