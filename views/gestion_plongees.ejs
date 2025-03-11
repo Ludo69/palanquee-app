@@ -157,15 +157,17 @@ for (let plongee of plongees) {
     li.innerHTML = `
         <!-- Première ligne : Plongée + Site -->
         <div class="flex items-center justify-between w-full text-white">
-            <span class="text-sm font-medium">
+            <span class="text-sm font-bold">
                 Plongée ${plongee.numero} - <span class="site-name">${plongee.site || "Nom du site"}</span>
             </span>
             <button type="button" class="remove-plongee text-red-500 hover:text-red-400"
                 data-plongee-id="${plongee.id}">❌</button>
         </div>
 
+
+
         <!-- Deuxième ligne : DP -->
-        <div class="text-sm text-white mt-1">
+        <div class="text-sm text-white mt-1 font-bold">
             DP : <span id="dp-name-${plongee.id}" class="font-medium">${dpNom}</span>
         </div>
 
