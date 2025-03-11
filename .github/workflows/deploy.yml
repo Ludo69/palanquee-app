@@ -1,4 +1,4 @@
-name: Deploy to Production
+name: Deploiement en Production
 
 on:
   push:
@@ -22,4 +22,4 @@ jobs:
       run: rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./ 192.168.1.53:/app/palanquee-app
 
     - name: Restart application
-      run: ssh -o StrictHostKeyChecking=no user@192.168.1.53 'sudo systemctl restart palanquee-app'
+      run: ssh -o StrictHostKeyChecking=no ludo@192.168.1.53 'sudo systemctl restart palanquee-app'
