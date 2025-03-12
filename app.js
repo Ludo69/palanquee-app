@@ -2,6 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const { createClient } = require("@supabase/supabase-js");
 const PDFDocument = require("pdfkit");
+const https = require("https");
 const fs = require("fs");
 const path = require("path");
 const app = express();
@@ -12,6 +13,12 @@ const supabaseUrl = "https://xoiyziphxfkfxfawcafm.supabase.co";
 const supabaseKey =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvaXl6aXBoeGZrZnhmYXdjYWZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAwODQ3MTMsImV4cCI6MjA1NTY2MDcxM30.tY-3BgdAtSuv1ScGOgnimQEsLnk1mbnN9A2jYatsaNE";
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Charger le certificat SSL
+const options = {
+    key: fs.readFileSync('/home/ludo/palanquee-app/server.key'),
+    cert: fs.readFileSync('/home/ludo/palanquee-app/server.crt')
+  };
 
 // Middleware
 app.use(bodyParser.json());
@@ -1624,7 +1631,11 @@ app.delete("/delete-plongee/:id", async (req, res) => {
 
 
 // Démarrage du serveur
-app.listen(port, () => {
-console.log(`✅ Serveur démarré sur http://localhost:${port}`);
-});
+//app.listen(port, () => {
+//console.log(`✅ Serveur démarré sur http://localhost:${port}`);
+//});
 
+// Démarrer le serveur HTTPS
+https.createServer(options, app).listen(port, "192.168.1.78", () => {
+    console.log(`✅ Serveur HTTPS démarré sur https://192.168.1.78:${port}`);
+  });

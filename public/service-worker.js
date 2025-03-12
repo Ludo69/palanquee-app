@@ -9,11 +9,25 @@ const urlsToCache = [
 // Installation du Service Worker et mise en cache initiale
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache);
-    })
+      caches.open("v1").then(async (cache) => {
+          const cacheKeys = await cache.keys();
+          const cachedUrls = cacheKeys.map(request => request.url);
+
+          const urlsToCache = [
+              "/",
+              "/styles.css",
+              "/script.js"
+          ].filter(url => !cachedUrls.includes(url));
+
+          return cache.addAll(urlsToCache);
+      }).catch(error => {
+          console.error("Erreur lors de l'ajout au cache :", error);
+      })
   );
 });
+
+
+
 
 // Stratégie "Cache First" : Essaye d’abord le cache, puis le réseau
 self.addEventListener("fetch", (event) => {
@@ -35,14 +49,13 @@ self.addEventListener("fetch", (event) => {
 // Nettoyage du cache obsolète lors d'une mise à jour
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            return caches.delete(cache);
-          }
-        })
-      );
-    })
+      caches.keys().then((cacheNames) => {
+          return Promise.all(
+              cacheNames
+                  .filter(cacheName => cacheName !== "plongee-app-cache-v2") // Garde uniquement la dernière version
+                  .map(cacheName => caches.delete(cacheName))
+          );
+      })
   );
 });
+
