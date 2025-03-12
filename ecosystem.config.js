@@ -7,14 +7,14 @@ module.exports = {
           NODE_ENV: 'development',
           SSL_KEY_PATH: '/home/ludo/palanquee-app/certs/server.key',
           SSL_CERT_PATH: '/home/ludo/palanquee-app/certs/server.crt',
-          HOST: '192.168.1.78',
+          HOST: '0.0.0.0',  // Écoute sur toutes les interfaces
           PORT: 3000,
         },
         env_production: {
           NODE_ENV: 'production',
           SSL_KEY_PATH: '/home/ludo/app/palanquee-app/certs/server.key',
           SSL_CERT_PATH: '/home/ludo/app/palanquee-app/certs/server.crt',
-          HOST: '192.168.1.53',
+          HOST: '192.168.1.53',  // Adresse IP de production
           PORT: 3000,
         },
       },
