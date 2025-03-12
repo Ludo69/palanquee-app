@@ -4,27 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Palanquee</title>
-    
+
     <!-- TailwindCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- Manifest & Service Worker -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1b263b">
     <link rel="icon" type="image/x-icon" href="/icons/favicon.ico">
+
+    <!-- Charger Supabase en premier -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <!-- Charger le script principal après Supabase -->
+    <script src="/script.js" defer></script>
 </head>
 <body class="bg-gray-900 text-white flex flex-col items-center min-h-screen">
     
     <div class="w-full max-w-md p-6">
-        <!-- Titre -->
         <h1 class="text-3xl font-bold text-center mb-6 text-white">Gestion des Palanquées</h1>
         
-        <!-- Image avec effet arrondi -->
         <div class="rounded-2xl overflow-hidden shadow-lg mb-6">
             <img src="/images/plongeur.avif" alt="Plongée" class="w-full object-cover">
         </div>
 
-        <!-- Grille de cartes -->
         <div class="grid grid-cols-2 gap-4">
             <a href="/gestion-plongeurs" class="bg-blue-500 p-6 rounded-2xl shadow-md text-center flex flex-col items-center">
                 <i class="fas fa-user text-3xl mb-2"></i>
@@ -40,7 +42,7 @@
             </a>
             <a href="#" id="about-btn" class="bg-purple-500 p-6 rounded-2xl shadow-md text-center flex flex-col items-center">
                 <i class="fas fa-chart-line text-3xl mb-2"></i>
-                <span class="text-lg font-semibold">A propos</span>
+                <span class="text-lg font-semibold">À propos</span>
             </a>
         </div>
     </div>
@@ -49,10 +51,11 @@
     <div id="about-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
         <div class="bg-gray-800 p-6 rounded-2xl max-w-md w-full">
             <h2 class="text-2xl font-bold mb-4">À propos</h2>
-            <p class="mb-4">Cette application est conçue pour simplifier la gestion des palanquées lors des plongées sous-marines. Vous pouvez organiser vos plongeurs, planifier des sorties, et gérer les palanquées en toute simplicité.</p>
+            <p class="mb-4">Cette application aide à gérer les palanquées en plongée sous-marine.</p>
             <button id="close-modal" class="bg-purple-500 text-white px-4 py-2 rounded-lg">Fermer</button>
         </div>
     </div>
+
 
     <!-- Bottom Navigation -->
     <div class="fixed bottom-0 left-0 w-full bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl">
@@ -74,44 +77,26 @@
         </a>
     </div>
 
-    <!-- Script d'enregistrement du Service Worker -->
+    <!-- Enregistrement du Service Worker -->
     <script>
         if ("serviceWorker" in navigator) {
             navigator.serviceWorker.register("/service-worker.js")
-                .then((registration) => {
-                console.log("✅ Service Worker enregistré avec succès :", registration);
-                })
-                .catch((err) => {
-                console.error("❌ Erreur lors de l'enregistrement du Service Worker :", err);
-                });
-            } else {
-            console.warn("⚠️ Les Service Workers ne sont pas supportés par ce navigateur.");
-            }
-
+                .then((registration) => console.log("✅ SW enregistré :", registration))
+                .catch((err) => console.error("❌ Erreur SW :", err));
+        }
     </script>
-    <!-- Script pour gérer le modal -->
+
+    <!-- Gestion du modal -->
     <script>
-        // Récupérer les éléments du DOM
-        const aboutBtn = document.getElementById('about-btn');
-        const aboutModal = document.getElementById('about-modal');
-        const closeModalBtn = document.getElementById('close-modal');
-
-        // Ouvrir le modal lorsque l'utilisateur clique sur "À propos"
-        aboutBtn.addEventListener('click', () => {
-            aboutModal.classList.remove('hidden');
-        });
-
-        // Fermer le modal lorsque l'utilisateur clique sur le bouton "Fermer"
-        closeModalBtn.addEventListener('click', () => {
-            aboutModal.classList.add('hidden');
-        });
-
-        // Fermer le modal si l'utilisateur clique en dehors du modal
-        window.addEventListener('click', (event) => {
-            if (event.target === aboutModal) {
-                aboutModal.classList.add('hidden');
-            }
-        });
+        document.getElementById('about-btn').addEventListener('click', () => document.getElementById('about-modal').classList.remove('hidden'));
+        document.getElementById('close-modal').addEventListener('click', () => document.getElementById('about-modal').classList.add('hidden'));
     </script>
+
+<script>
+    if (navigator.onLine) {
+        synchroniserPlongeesAvecIndexedDB();
+    }
+</script>
+
 </body>
 </html>

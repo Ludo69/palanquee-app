@@ -20,8 +20,6 @@ if (process.env.NODE_ENV === 'production') {
     require('dotenv').config({ path: path.resolve(__dirname, '.env.development') });
 }
 
-
-
 // Charger les certificats SSL
 const options = {
     key: fs.readFileSync(process.env.SSL_KEY_PATH),
