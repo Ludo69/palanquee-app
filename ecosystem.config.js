@@ -16,7 +16,7 @@ module.exports = {
           SSL_CERT_PATH: '/home/ludo/app/palanquee-app/certs/server.crt',
           HOST: '192.168.1.53',
           PORT: 3000,
-        }
-      }
-    ]
+        },
+      },
+    ],
   };
