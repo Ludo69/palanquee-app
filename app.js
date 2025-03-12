@@ -22,10 +22,12 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Vérifiez que les variables d'environnement sont bien chargées
-console.log('SSL_KEY_PATH :', process.env.SSL_KEY_PATH);
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('SSL_KEY_PATH:', process.env.SSL_KEY_PATH);
 console.log('SSL_CERT_PATH:', process.env.SSL_CERT_PATH);
 console.log('HOST:', process.env.HOST);
 console.log('PORT:', process.env.PORT);
+
 
 // Charger les certificats SSL
 const options = {
