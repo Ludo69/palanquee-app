@@ -20,13 +20,7 @@ if (process.env.NODE_ENV === 'production') {
     require('dotenv').config({ path: path.resolve(__dirname, '.env.development') });
 }
 
-console.log('Variables d\'environnement au démarrage :', process.env);
-// Vérifiez que les variables d'environnement sont bien chargées
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('SSL_KEY_PATH:', process.env.SSL_KEY_PATH);
-console.log('SSL_CERT_PATH:', process.env.SSL_CERT_PATH);
-console.log('HOST:', process.env.HOST);
-console.log('PORT:', process.env.PORT);
+
 
 // Charger les certificats SSL
 const options = {
@@ -36,6 +30,14 @@ const options = {
 
 const host = '0.0.0.0'; // Utiliser '0.0.0.0' pour écouter sur toutes les interfaces
 const port = process.env.PORT || 3000;
+
+console.log('Variables d\'environnement au démarrage :', JSON.stringify(process.env, null, 2));
+// Vérifiez que les variables d'environnement sont bien chargées
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('SSL_KEY_PATH:', process.env.SSL_KEY_PATH);
+console.log('SSL_CERT_PATH:', process.env.SSL_CERT_PATH);
+console.log('HOST:', process.env.HOST);
+console.log('PORT:', process.env.PORT);
 
 // Middleware
 app.use(bodyParser.json());
