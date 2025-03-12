@@ -24,7 +24,8 @@ if (process.env.NODE_ENV === 'production') {
 // Vérifiez que les variables d'environnement sont bien chargées
 console.log('SSL_KEY_PATH:', process.env.SSL_KEY_PATH);
 console.log('SSL_CERT_PATH:', process.env.SSL_CERT_PATH);
-// Charger le certificat SSL
+
+// Charger les certificats SSL
 const options = {
     key: fs.readFileSync(process.env.SSL_KEY_PATH),
     cert: fs.readFileSync(process.env.SSL_CERT_PATH)
