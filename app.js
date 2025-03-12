@@ -14,11 +14,21 @@ const supabaseKey =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvaXl6aXBoeGZrZnhmYXdjYWZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAwODQ3MTMsImV4cCI6MjA1NTY2MDcxM30.tY-3BgdAtSuv1ScGOgnimQEsLnk1mbnN9A2jYatsaNE";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Charger les variables d'environnement en fonction de l'environnement
+if (process.env.NODE_ENV === 'production') {
+    require('dotenv').config({ path: path.resolve(__dirname, '.env.production') });
+} else {
+    require('dotenv').config({ path: path.resolve(__dirname, '.env.development') });
+}
+
+// Vérifiez que les variables d'environnement sont bien chargées
+console.log('SSL_KEY_PATH:', process.env.SSL_KEY_PATH);
+console.log('SSL_CERT_PATH:', process.env.SSL_CERT_PATH);
 // Charger le certificat SSL
 const options = {
-    key: fs.readFileSync('/home/ludo/palanquee-app/server.key'),
-    cert: fs.readFileSync('/home/ludo/palanquee-app/server.crt')
-  };
+    key: fs.readFileSync(process.env.SSL_KEY_PATH),
+    cert: fs.readFileSync(process.env.SSL_CERT_PATH)
+};
 
 // Middleware
 app.use(bodyParser.json());
