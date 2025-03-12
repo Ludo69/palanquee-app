@@ -6,7 +6,7 @@ const https = require("https");
 const fs = require("fs");
 const path = require("path");
 const app = express();
-const port = 3000;
+//const port = 3000;
 
 // Configuration de Supabase
 const supabaseUrl = "https://xoiyziphxfkfxfawcafm.supabase.co";
@@ -24,12 +24,17 @@ if (process.env.NODE_ENV === 'production') {
 // Vérifiez que les variables d'environnement sont bien chargées
 console.log('SSL_KEY_PATH:', process.env.SSL_KEY_PATH);
 console.log('SSL_CERT_PATH:', process.env.SSL_CERT_PATH);
+console.log('HOST:', process.env.HOST);
+console.log('PORT:', process.env.PORT);
 
 // Charger les certificats SSL
 const options = {
     key: fs.readFileSync(process.env.SSL_KEY_PATH),
     cert: fs.readFileSync(process.env.SSL_CERT_PATH)
 };
+
+const host = process.env.HOST;
+const port = process.env.PORT;
 
 // Middleware
 app.use(bodyParser.json());
@@ -1647,6 +1652,6 @@ app.delete("/delete-plongee/:id", async (req, res) => {
 //});
 
 // Démarrer le serveur HTTPS
-https.createServer(options, app).listen(port, "192.168.1.78", () => {
-    console.log(`✅ Serveur HTTPS démarré sur https://192.168.1.78:${port}`);
-  });
+https.createServer(options, app).listen(port, host, () => {
+    console.log(`Server is running on https://${host}:${port}`);
+});
