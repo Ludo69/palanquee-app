@@ -35,7 +35,11 @@
     
         <!-- Liste des sorties scrollable -->
         <div class="overflow-y-auto max-h-[calc(100vh-250px)] w-full p-2 space-y-2 no-scrollbar">
-            <% sorties.forEach(sortie => { %>
+            <% 
+            // Trier les sorties par date de début
+            sorties.sort((a, b) => new Date(a.date_debut) - new Date(b.date_debut));
+            
+            sorties.forEach(sortie => { %>
                 <div class="sortie bg-[rgba(42,68,102,1)] p-3 rounded-lg flex justify-between items-center shadow-md flex-wrap md:flex-nowrap">
                     <div>
                         <span class="font-bold"><%= sortie.lieu %></span> - 

@@ -13,13 +13,12 @@
     <meta name="theme-color" content="#1b263b">
     <link rel="icon" type="image/x-icon" href="/icons/favicon.ico">
 
-    <!-- Charger Supabase en premier -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-    <!-- Charger le script principal après Supabase -->
-    <script src="/script.js" defer></script>
+    <!-- Charger Supabase comme un module ES6 -->
+    <script type="module" src="/script.js?v=<%= new Date().getTime() %>" defer></script>
+
 </head>
 <body class="bg-gray-900 text-white flex flex-col items-center min-h-screen">
-    
+
     <div class="w-full max-w-md p-6">
         <h1 class="text-3xl font-bold text-center mb-6 text-white">Gestion des Palanquées</h1>
         
@@ -93,10 +92,24 @@
     </script>
 
 <script>
-    if (navigator.onLine) {
-        synchroniserPlongeesAvecIndexedDB();
+    // Définition de la fonction avant son appel
+    function synchroniserPlongeesAvecIndexedDB() {
+        //console.log("Synchronisation des plongées...");
+        // Logique de synchronisation ici
     }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        if (navigator.onLine) {
+            //console.log("🌐 En ligne, synchronisation en cours...");
+            synchroniserPlongeesAvecIndexedDB();
+        } else {
+            console.log("❌ Hors ligne, pas de synchronisation.");
+        }
+    });
 </script>
+
+
+
 
 </body>
 </html>
