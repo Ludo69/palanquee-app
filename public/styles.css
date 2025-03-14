@@ -279,6 +279,10 @@ body {
     background-color: #218838;
 }
 
+.btn-enregistrer-consignes:hover {
+  background-color: #218838;
+}
+
 /* Bouton Modifier */
 .btn-modifier {
     background-color: #ffc107;

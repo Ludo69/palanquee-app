@@ -63,18 +63,28 @@
                 <!-- 🟦 Les deux blocs alignés côte à côte -->
                 <div class="palanquee-blocs flex gap-2">
                     <!-- 🔵 Bloc "Consignes DP" -->
-                    <div class="bloc-consignes bg-gray-200 text-gray-900 p-3 rounded-lg w-1/2 flex flex-col justify-between">
+                    <div class="bloc-consignes bg-blue-300 text-gray-900 p-3 rounded-lg w-1/2 flex flex-col justify-between">
                         <p class="font-bold text-center mb-2">Consignes DP</p>
                         <form id="consignes-form-<%= palanquee.id %>" class="grid grid-cols-2 gap-x-2 gap-y-1 items-center">
+                            <input type="hidden" name="palanquee_id" value="<%= palanquee.id %>">
+                            
                             <label class="text-sm text-right">Prof :</label>
-                            <input type="number" name="prof_max" class="prof-max w-full p-1 text-sm rounded" placeholder="Max" required inputmode="numeric">
-            
+                            <input type="number" name="prof_max" class="prof-max w-full p-1 text-sm rounded"
+                                value="<%= palanquee.prof_max || '' %>"
+                                <%= palanquee.prof_max ? 'disabled' : '' %> required inputmode="numeric">
+
                             <label class="text-sm text-right">Durée :</label>
-                            <input type="number" name="duree_max" class="duree-max w-full p-1 text-sm rounded" placeholder="Max" required inputmode="numeric">
+                            <input type="number" name="duree_max" class="duree-max w-full p-1 text-sm rounded"
+                                value="<%= palanquee.duree_max || '' %>"
+                                <%= palanquee.duree_max ? 'disabled' : '' %> required inputmode="numeric">
                         </form>
-                        <!-- ✅ Bouton Enregistrer aligné -->
+                        
+                        <!-- ✅ Désactiver le bouton si les champs existent -->
                         <div class="flex justify-center">
-                            <button type="submit" class="btn-enregistrer text-sm p-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition mt-2">
+                            <button type="submit" class="btn-enregistrer-consignes text-sm p-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition mt-2"
+                                data-form-id="consignes-form-<%= palanquee.id %>"
+                                <%= (palanquee.prof_max && palanquee.duree_max) ? 'disabled="disabled"' : '' %>
+                                onclick="desactiverChamps('<%= palanquee.id %>')">
                                 Enregistrer
                             </button>
                         </div>
@@ -290,6 +300,63 @@ document.querySelectorAll(".paliers-checkbox").forEach(checkbox => {
     });
 });
 
+document.querySelectorAll(".btn-enregistrer-consignes").forEach(button => {
+        button.addEventListener("click", async function () {
+            const form = this.closest('.bloc-consignes').querySelector('form');
+            const palanqueeId = form.querySelector('input[name="palanquee_id"]').value;
+            const profMax = form.querySelector('.prof-max').value;
+            const dureeMax = form.querySelector('.duree-max').value;
+
+            if (!profMax || !dureeMax) {
+                alert("Veuillez remplir tous les champs !");
+                return;
+            }
+
+            try {
+                const response = await fetch('/enregistrer-consignes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ palanquee_id: palanqueeId, prof_max: profMax, duree_max: dureeMax })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert("Consignes DP enregistrées !");
+                } else {
+                    alert("Erreur : " + result.error);
+                }
+            } catch (error) {
+                console.error("Erreur lors de l'enregistrement :", error);
+                alert("Une erreur est survenue !");
+            }
+        });
+    });
+
+    function desactiverChamps(palanqueeId) {
+        // Récupérer le formulaire correspondant
+        const form = document.getElementById(`consignes-form-${palanqueeId}`);
+        
+        if (!form) return; // Sécurité si le formulaire n'existe pas
+
+        // Récupérer les champs Prof et Durée
+        const profInput = form.querySelector("input[name='prof_max']");
+        const dureeInput = form.querySelector("input[name='duree_max']");
+        
+        // Vérifier que les deux champs sont bien remplis
+        if (profInput.value.trim() !== "" && dureeInput.value.trim() !== "") {
+            // Désactiver les champs
+            profInput.disabled = true;
+            dureeInput.disabled = true;
+
+            // Désactiver le bouton d'enregistrement
+            const bouton = document.querySelector(`[data-form-id="consignes-form-${palanqueeId}"]`);
+            if (bouton) {
+                bouton.disabled = true;
+            }
+        }
+    }
+
+
     async function envoyerParWhatsApp() {
         const plongeeId = "<%= typeof plongeeId !== 'undefined' ? plongeeId : '' %>";
 
@@ -325,7 +392,12 @@ document.querySelectorAll(".paliers-checkbox").forEach(checkbox => {
             message += `🤿 *Plongée n°1 - ${nomSitePlongee}*\n\n`;
 
             <% palanquees.forEach(function(palanquee) { %>
+                    // 🔵 Ajout des Consignes DP
                 message += `🔹 *Palanquée <%= palanquee.nom %>*\n`;
+                message += `📋 *Consignes DP* :\n`;
+                message += `📏 *Profondeur max* : <%= palanquee.prof_max || 'Non défini' %> m\n`;
+                message += `⏳ *Durée max* : <%= palanquee.duree_max || 'Non défini' %> min\n`;
+                message += `📋 *Réalisés* :\n`;
                 message += `📏 *Profondeur* : <%= palanquee.profondeur || 'Non défini' %> m\n`;
                 message += `⏳ *Durée* : <%= palanquee.duree || 'Non défini' %> min\n`;
                 message += `⚓ *Paliers* : <%= palanquee.paliers || 'Non définis' %>\n`;
@@ -487,7 +559,25 @@ document.querySelectorAll(".paliers-checkbox").forEach(checkbox => {
     font-weight: bold;
 }
 
+/* Bouton Enregistrer */
+.btn-enregistrer-consignes {
+    padding: 10px 20px;
+    background-color: #28a745; /* ✅ Vert */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+}
+
 .btn-enregistrer:disabled {
+    background-color: gray;
+    cursor: not-allowed;
+}
+
+.btn-enregistrer-consignes:disabled {
     background-color: gray;
     cursor: not-allowed;
 }

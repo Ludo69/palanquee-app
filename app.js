@@ -1645,6 +1645,26 @@ app.delete("/delete-plongee/:id", async (req, res) => {
     }
 });
 
+app.post('/enregistrer-consignes', async (req, res) => {
+    const { palanquee_id, prof_max, duree_max } = req.body;
+
+    if (!palanquee_id || !prof_max || !duree_max) {
+        return res.status(400).json({ error: 'Tous les champs sont requis' });
+    }
+
+    // 3️⃣ Mettre à jour Supabase
+    const { error } = await supabase
+        .from('palanquees')
+        .update({ prof_max, duree_max })
+        .eq('id', palanquee_id);
+
+    if (error) {
+        console.error("Erreur Supabase :", error);
+        return res.status(500).json({ error: "Erreur lors de la mise à jour" });
+    }
+
+    res.json({ success: true, message: "Consignes enregistrées avec succès !" });
+});
 
 
 // Démarrer le serveur HTTPS
