@@ -28,90 +28,96 @@
     </button>
 
 
-        <% if (palanquees && palanquees.length > 0) { %>
-            <% palanquees.forEach(function(palanquee) { %>
-                <div class="palanquee-container">
-                    <!-- 🟢 Partie Gauche -->
-                    <div class="palanquee-left">
-                        <h2 class="palanquee-nom"><%= palanquee.nom %></h2>
-                        <p><strong>Plongeurs :</strong></p>
-                        <ul class="plongeurs-list flex flex-col gap-1">
-                            <% if (palanquee.plongeurs && palanquee.plongeurs.length > 0) { 
-                                // Trier les plongeurs pour que ceux avec la classe bleue (non guide) soient en haut
-                                palanquee.plongeurs.sort(function(a, b) {
-                                    const aEstBleu = !["N1", "N2", "N3"].includes(a.niveau_plongeur_historique); // Bleu si pas un guide
-                                    const bEstBleu = !["N1", "N2", "N3"].includes(b.niveau_plongeur_historique); // Bleu si pas un guide
-                                    
-                                    // Si A est bleu et B ne l'est pas, A doit être avant B
-                                    if (aEstBleu && !bEstBleu) return -1;
-                                    // Si B est bleu et A ne l'est pas, B doit être avant A
-                                    if (!aEstBleu && bEstBleu) return 1;
-                                    // Si les deux ont la même classe (les deux sont bleus ou les deux sont verts), on garde leur ordre
-                                    return 0;
-                                });
-                            %>
-                                <% palanquee.plongeurs.forEach(function(plongeur) { 
-                                    let couleurClasse = (["N1", "N2", "N3"].includes(plongeur.niveau_plongeur_historique)) ? "text-green-500" : "text-blue-500"; 
-                                %>
-                                    <li class="<%= couleurClasse %> font-semibold">
-                                        <%= plongeur.nom %> -  
-                                        <%= plongeur.niveau_plongeur_historique ? plongeur.niveau_plongeur_historique : "N/A" %>
-                                    </li>
-                                <% }); %>
-                            <% } else { %>
-                                <li class="text-gray-500 italic">Aucun plongeur dans cette palanquée.</li>
-                            <% } %>
-                        </ul>
+    <% if (palanquees && palanquees.length > 0) { %>
+        <% 
+            // Trier les palanquées par ordre alphabétique des noms des animaux marins
+            palanquees.sort(function(a, b) {
+                return a.nom.localeCompare(b.nom);
+            });
+        %>
+        <% palanquees.forEach(function(palanquee) { %>
+            <div class="palanquee-container flex flex-col gap-2">
+                <!-- 🟢 Partie Informations (Nom centré + Plongeurs en ligne) -->
+                <div class="palanquee-info text-center">
+                    <h2 class="palanquee-nom text-lg font-bold"><%= palanquee.nom %></h2>
+                    <p><strong>Plongeurs :</strong> 
+                        <% if (palanquee.plongeurs && palanquee.plongeurs.length > 0) { 
+                            palanquee.plongeurs.sort(function(a, b) {
+                                const aEstBleu = !["N1", "N2", "N3"].includes(a.niveau_plongeur_historique);
+                                const bEstBleu = !["N1", "N2", "N3"].includes(b.niveau_plongeur_historique);
+                                return aEstBleu === bEstBleu ? 0 : aEstBleu ? -1 : 1;
+                            });
+                            palanquee.plongeurs.forEach(function(plongeur, index) { 
+                                let couleurClasse = (["N1", "N2", "N3"].includes(plongeur.niveau_plongeur_historique)) ? "text-green-500" : "text-blue-500"; 
+                        %>
+                            <span class="<%= couleurClasse %> font-semibold">
+                                <%= plongeur.nom %> - <%= plongeur.niveau_plongeur_historique ? plongeur.niveau_plongeur_historique : "N/A" %>
+                            </span>
+                            <% if (index < palanquee.plongeurs.length - 1) { %> | <% } %>
+                        <% }); } else { %>
+                            <span class="text-gray-500 italic">Aucun plongeur</span>
+                        <% } %>
+                    </p>
+                </div>
+            
+                <!-- 🟦 Les deux blocs alignés côte à côte -->
+                <div class="palanquee-blocs flex gap-2">
+                    <!-- 🔵 Bloc "Consignes DP" -->
+                    <div class="bloc-consignes bg-gray-200 text-gray-900 p-3 rounded-lg w-1/2 flex flex-col justify-between">
+                        <p class="font-bold text-center mb-2">Consignes DP</p>
+                        <form id="consignes-form-<%= palanquee.id %>" class="grid grid-cols-2 gap-x-2 gap-y-1 items-center">
+                            <label class="text-sm text-right">Prof :</label>
+                            <input type="number" name="prof_max" class="prof-max w-full p-1 text-sm rounded" placeholder="Max" required>
+            
+                            <label class="text-sm text-right">Durée :</label>
+                            <input type="number" name="duree_max" class="duree-max w-full p-1 text-sm rounded" placeholder="Max" required>
+                        </form>
+                        <!-- ✅ Bouton Enregistrer aligné -->
+                        <div class="flex justify-center">
+                            <button type="submit" class="btn-enregistrer text-sm p-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition mt-2">
+                                Enregistrer
+                            </button>
+                        </div>
                     </div>
-                    
-                
-                    <!-- 🔵 Partie Droite -->
-                    <div class="palanquee-right">
-                        <form id="form-<%= palanquee.id %>" class="palanquee-form">
+            
+                    <!-- 🔴 Partie "Réalisé" -->
+                    <div class="bloc-formulaire bg-teal-500 text-gray-900 p-3 rounded-lg w-1/2 flex flex-col justify-between">
+                        <p class="font-bold text-center mb-2">Réalisés</p>
+                        <form id="form-<%= palanquee.id %>" class="palanquee-form grid grid-cols-2 gap-x-2 gap-y-1 items-center">
                             <input type="hidden" name="palanquee_id" value="<%= palanquee.id %>">
                             
-                            <label>Profondeur (m) :</label>
-                            <input type="number" name="profondeur" class="profondeur" value="<%= palanquee.profondeur || '' %>" 
+                            <label class="text-sm text-right">Prof :</label>
+                            <input type="number" name="profondeur" class="profondeur w-full p-1 text-sm rounded" value="<%= palanquee.profondeur || '' %>" 
                                 <%= palanquee.profondeur ? 'disabled' : '' %> required>
-                        
-                            <label>Durée (min) :</label>
-                            <input type="number" name="duree" class="duree" value="<%= palanquee.duree || '' %>" 
+            
+                            <label class="text-sm text-right">Durée :</label>
+                            <input type="number" name="duree" class="duree w-full p-1 text-sm rounded" value="<%= palanquee.duree || '' %>" 
                                 <%= palanquee.duree ? 'disabled' : '' %> required>                
-                        
-                            <label>Paliers :</label>
-                            <input type="text" name="paliers" class="paliers" value="<%= palanquee.paliers || '' %>" 
+            
+                            <label class="text-sm text-right">Paliers :</label>
+                            <input type="text" name="paliers" class="paliers w-full p-1 text-sm rounded" value="<%= palanquee.paliers || '' %>" 
                                 <%= palanquee.paliers ? 'disabled' : '' %> required>
-                            
+            
                             <!-- ✅ Checkbox alignée -->
-                            <div class="flex items-center justify-start gap-2 w-full text-left p-2">
-                                <!-- Case à cocher avec suppression de marges et padding -->
-                                <input type="checkbox" id="paliers-<%= palanquee.id %>-checkbox" class="paliers-checkbox m-0 p-0" style="margin-left: 0px; margin-right: 1px;">
-                                
-                                <!-- Label sans marges ni padding -->
-                                <label for="paliers-<%= palanquee.id %>-checkbox" class="whitespace-nowrap text-sm m-0 p-0" style="margin-left: 0px; margin-right: 0px;">3m / 3m Sécu</label>
-                            </div>                     
-                              
-                                                             
+                            <div class="col-span-2 flex items-center gap-2">
+                                <input type="checkbox" id="paliers-<%= palanquee.id %>-checkbox" class="paliers-checkbox">
+                                <label for="paliers-<%= palanquee.id %>-checkbox" class="text-sm">3m / 3m Sécu</label>
+                            </div>
                         </form>
+                        <!-- ✅ Bouton Enregistrer aligné -->
+                        <div class="flex justify-center">
+                            <button type="submit" class="btn-enregistrer text-sm p-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition mt-2" data-form-id="form-<%= palanquee.id %>"
+                                <%= (palanquee.duree && palanquee.profondeur && palanquee.paliers) ? 'disabled' : '' %>>
+                                Enregistrer
+                            </button>
+                        </div>
                     </div>
-                
-                    <!-- 🔻 Partie Bas (Nouveau Conteneur pour le bouton) -->
-                    <div class="palanquee-bas w-full flex justify-center mt-4">
-                        <button type="submit" class="btn-enregistrer" data-form-id="form-<%= palanquee.id %>"
-                            <%= (palanquee.duree !== null && palanquee.duree !== '' &&
-                                palanquee.profondeur !== null && palanquee.profondeur !== '' &&
-                                palanquee.paliers !== null && palanquee.paliers !== '') ? 'disabled' : '' %>>
-                            Enregistrer
-                        </button>
-                    </div>
-                    
-
                 </div>
-                
-            <% }); %>
-        <% } else { %>
-            <p>Aucune palanquée disponible pour cette plongée.</p>
-        <% } %>
+            </div>
+        <% }); %>
+    <% } else { %>
+        <p>Aucune palanquée disponible pour cette plongée.</p>
+    <% } %>
         
 
         <!-- Bottom Navigation -->
