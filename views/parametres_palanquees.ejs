@@ -67,10 +67,10 @@
                         <p class="font-bold text-center mb-2">Consignes DP</p>
                         <form id="consignes-form-<%= palanquee.id %>" class="grid grid-cols-2 gap-x-2 gap-y-1 items-center">
                             <label class="text-sm text-right">Prof :</label>
-                            <input type="number" name="prof_max" class="prof-max w-full p-1 text-sm rounded" placeholder="Max" required>
+                            <input type="number" name="prof_max" class="prof-max w-full p-1 text-sm rounded" placeholder="Max" required inputmode="numeric">
             
                             <label class="text-sm text-right">Durée :</label>
-                            <input type="number" name="duree_max" class="duree-max w-full p-1 text-sm rounded" placeholder="Max" required>
+                            <input type="number" name="duree_max" class="duree-max w-full p-1 text-sm rounded" placeholder="Max" required inputmode="numeric">
                         </form>
                         <!-- ✅ Bouton Enregistrer aligné -->
                         <div class="flex justify-center">
@@ -88,11 +88,11 @@
                             
                             <label class="text-sm text-right">Prof :</label>
                             <input type="number" name="profondeur" class="profondeur w-full p-1 text-sm rounded" value="<%= palanquee.profondeur || '' %>" 
-                                <%= palanquee.profondeur ? 'disabled' : '' %> required>
+                                <%= palanquee.profondeur ? 'disabled' : '' %> required inputmode="numeric">
             
                             <label class="text-sm text-right">Durée :</label>
                             <input type="number" name="duree" class="duree w-full p-1 text-sm rounded" value="<%= palanquee.duree || '' %>" 
-                                <%= palanquee.duree ? 'disabled' : '' %> required>                
+                                <%= palanquee.duree ? 'disabled' : '' %> required inputmode="numeric">                
             
                             <label class="text-sm text-right">Paliers :</label>
                             <input type="text" name="paliers" class="paliers w-full p-1 text-sm rounded" value="<%= palanquee.paliers || '' %>" 
