@@ -61,9 +61,9 @@
                 </div>
             
                 <!-- 🟦 Les deux blocs alignés côte à côte -->
-                <div class="palanquee-blocs flex gap-2">
+                <div class="palanquee-blocs flex flex-col md:flex-row gap-2">
                     <!-- 🔵 Bloc "Consignes DP" -->
-                    <div class="bloc-consignes bg-gray-200 text-gray-900 p-3 rounded-lg w-1/2 flex flex-col justify-between">
+                    <div class="bloc-consignes bg-gray-200 text-gray-900 p-3 rounded-lg w-full md:w-1/2 flex flex-col justify-between">
                         <p class="font-bold text-center mb-2">Consignes DP</p>
                         <form id="consignes-form-<%= palanquee.id %>" class="grid grid-cols-2 gap-x-2 gap-y-1 items-center">
                             <label class="text-sm text-right">Prof :</label>
@@ -81,7 +81,7 @@
                     </div>
             
                     <!-- 🔴 Partie "Réalisé" -->
-                    <div class="bloc-formulaire bg-teal-500 text-gray-900 p-3 rounded-lg w-1/2 flex flex-col justify-between">
+                    <div class="bloc-formulaire bg-teal-500 text-gray-900 p-3 rounded-lg w-full md:w-1/2 flex flex-col justify-between">
                         <p class="font-bold text-center mb-2">Réalisés</p>
                         <form id="form-<%= palanquee.id %>" class="palanquee-form grid grid-cols-2 gap-x-2 gap-y-1 items-center">
                             <input type="hidden" name="palanquee_id" value="<%= palanquee.id %>">
