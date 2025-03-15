@@ -128,7 +128,6 @@
     <% } else { %>
         <p>Aucune palanquée disponible pour cette plongée.</p>
     <% } %>
-        
 
         <!-- Bottom Navigation -->
         <div class="fixed bottom-0 left-0 w-full bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl">
@@ -394,10 +393,10 @@ document.querySelectorAll(".btn-enregistrer-consignes").forEach(button => {
             <% palanquees.forEach(function(palanquee) { %>
                     // 🔵 Ajout des Consignes DP
                 message += `🔹 *Palanquée <%= palanquee.nom %>*\n`;
-                message += `📋 *Consignes DP* :\n`;
-                message += `📏 *Profondeur max* : <%= palanquee.prof_max || 'Non défini' %> m\n`;
-                message += `⏳ *Durée max* : <%= palanquee.duree_max || 'Non défini' %> min\n`;
-                message += `📋 *Réalisés* :\n`;
+                //message += `📋 *Consignes DP* :\n`;
+                //message += `📏 *Profondeur max* : <%= palanquee.prof_max || 'Non défini' %> m\n`;
+                //message += `⏳ *Durée max* : <%= palanquee.duree_max || 'Non défini' %> min\n`;
+                //message += `📋 *Réalisés* :\n`;
                 message += `📏 *Profondeur* : <%= palanquee.profondeur || 'Non défini' %> m\n`;
                 message += `⏳ *Durée* : <%= palanquee.duree || 'Non défini' %> min\n`;
                 message += `⚓ *Paliers* : <%= palanquee.paliers || 'Non définis' %>\n`;
