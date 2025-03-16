@@ -111,7 +111,7 @@
                             <!-- ✅ Checkbox alignée -->
                             <div class="col-span-2 flex items-center gap-2">
                                 <input type="checkbox" id="paliers-<%= palanquee.id %>-checkbox" class="paliers-checkbox">
-                                <label for="paliers-<%= palanquee.id %>-checkbox" class="text-sm">3m / 3m Sécu</label>
+                                <label for="paliers-<%= palanquee.id %>-checkbox" class="text-sm">3min / 3m Sécu</label>
                             </div>
                         </form>
                         <!-- ✅ Bouton Enregistrer aligné -->
@@ -283,8 +283,8 @@ document.querySelectorAll(".paliers-checkbox").forEach(checkbox => {
         if (this.checked) {
             // Si le champ est vide ou a la valeur "Aucun", mettre "3m / 3m Sécu"
             if (paliersInput.value === '' || paliersInput.value === 'Aucun') {
-                paliersInput.value = '3m / 3m Sécu';
-                console.log("✅ Valeur du champ 'Paliers' mise à jour à : 3m / 3m Sécu");
+                paliersInput.value = '3min / 3m Sécu';
+                console.log("✅ Valeur du champ 'Paliers' mise à jour à : 3min / 3m Sécu");
             }
         } else {
             // Si la case est décochée, vérifier si une autre case est cochée

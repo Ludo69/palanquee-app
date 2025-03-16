@@ -139,10 +139,29 @@ app.get("/generate-pdf", async (req, res) => {
         };
 
         // Création du document PDF
-        const doc = new PDFDocument({ margin: 40 });
-        const filePath = path.join(__dirname, "public/parametres_plongee.pdf");
-        const stream = fs.createWriteStream(filePath);
+        // ✅ Initialisation correcte de `datePlongeePDF`
+        const datePlongeePDF = new Date(plongee.date);
+        const now = new Date();
+        datePlongeePDF.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
 
+        
+        // 🔹 Création du document PDF
+        const doc = new PDFDocument({ margin: 40 });
+                const formattedDate = datePlongeePDF.toLocaleString("fr-FR", {
+            year: "2-digit",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit"
+        }).replace(/\D/g, "-"); // Remplace les séparateurs par des tirets
+        const fileName = `parametres_plongee_${formattedDate}.pdf`; 
+        const filePath = path.join(__dirname, "public", fileName); // ✅ filePath défini AVANT utilisation
+
+        const stream = fs.createWriteStream(filePath); // ✅ Maintenant, filePath est bien défini
+
+
+        console.log("📄 Génération du PDF :", filePath); // Debug pour vérifier le chemin
         doc.pipe(stream);
 
         // Titre principal (FEUILLE DE PALANQUEES)
@@ -271,21 +290,32 @@ data.palanquees.forEach((palanquee, index) => {
     // Ligne de séparation sous chaque palanquée
     doc.lineWidth(0.5).moveTo(40, doc.y).lineTo(560, doc.y).stroke();
     doc.moveDown(1);
-});
-
-
-
-        
-        
+}); 
 
         doc.end();
 
+        //const datePlongeePDF = new Date(plongee.date); // Date de la plongée (sans heure)
+        //const now = new Date(); // Heure actuelle
+        //doc.pipe(stream);
+
+
+
+        // Ajouter l'heure actuelle à la date de la plongée
+        datePlongeePDF.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+
+
+
+
+
+        // 🔹 Fin de la génération et envoi de la réponse
         stream.on("finish", () => {
-            res.json({ url: "/parametres_plongee.pdf" });
+            res.json({ url: `/${fileName}` });
         });
+
 
     } catch (error) {
         console.error("❌ Erreur lors de la génération du PDF :", error);
+        console.error(error.stack); // Affiche l'erreur complète
         res.status(500).json({ error: "Erreur serveur lors de la génération du PDF." });
     }
 });
