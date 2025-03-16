@@ -6,6 +6,13 @@ const https = require("https");
 const fs = require("fs");
 const path = require("path");
 const app = express();
+const pdfDir = path.join(__dirname, "public", "pdf");
+
+// Vérifier si le dossier existe, sinon le créer
+if (!fs.existsSync(pdfDir)) {
+    console.log("📂 Dossier 'public/pdf' inexistant, création...");
+    fs.mkdirSync(pdfDir, { recursive: true });
+}
 
 // Configuration de Supabase
 const supabaseUrl = "https://xoiyziphxfkfxfawcafm.supabase.co";
