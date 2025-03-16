@@ -422,48 +422,48 @@ document.querySelectorAll(".btn-enregistrer-consignes").forEach(button => {
     }
 
     async function sendWhatsApp() {
-    const plongeeId = "<%= typeof plongeeId !== 'undefined' ? plongeeId : '' %>";
+        const plongeeId = "<%= typeof plongeeId !== 'undefined' ? plongeeId : '' %>";
 
-    if (!plongeeId) {
-        console.error("❌ Erreur : plongeeId est requis !");
-        alert("ID de plongée requis");
-        return;
-    }
-
-    try {
-        console.log("📡 Envoi de la requête pour générer le PDF...");
-
-        // Appeler l'API qui génère le PDF avec l'ID de la plongée
-        const response = await fetch(`/generate-pdf?plongeeId=${plongeeId}`);
-        
-        // Vérifier la réponse de l'API
-        if (!response.ok) {
-            throw new Error(`Erreur lors de la génération du PDF (${response.status})`);
-        }
-
-        const data = await response.json();
-        const pdfUrl = window.location.origin + data.url;
-
-        // Vérifiez si l'URL du PDF est valide
-        if (!pdfUrl) {
-            console.error("❌ PDF URL est invalide ou vide");
-            alert("Le PDF n'a pas pu être généré");
+        if (!plongeeId) {
+            console.error("❌ Erreur : plongeeId est requis !");
+            alert("ID de plongée requis");
             return;
         }
 
-        console.log("✅ PDF généré avec succès !");
+        try {
+            console.log("📡 Envoi de la requête pour générer le PDF...");
 
-        // Construire le message WhatsApp avec le lien du PDF
-        const message = encodeURIComponent(`📄 Voici les paramètres de la plongée : ${pdfUrl}`);
-        const whatsappUrl = `https://wa.me/?text=${message}`;
+            // Appeler l'API qui génère le PDF avec l'ID de la plongée
+            const response = await fetch(`/generate-pdf?plongeeId=${plongeeId}`);
+            
+            // Vérifier la réponse de l'API
+            if (!response.ok) {
+                throw new Error(`Erreur lors de la génération du PDF (${response.status})`);
+            }
 
-        // Rediriger vers WhatsApp
-        window.location.href = whatsappUrl;  // Utilisation de redirection directe
-    } catch (error) {
-        console.error("❌ Erreur lors de la génération du PDF :", error);
-        alert("Erreur lors de la génération du PDF. Veuillez réessayer.");
+            const data = await response.json();
+            const pdfUrl = window.location.origin + data.url;
+
+            // Vérifiez si l'URL du PDF est valide
+            if (!pdfUrl) {
+                console.error("❌ PDF URL est invalide ou vide");
+                alert("Le PDF n'a pas pu être généré");
+                return;
+            }
+
+            console.log("✅ PDF généré avec succès !");
+
+            // Construire le message WhatsApp avec le lien du PDF
+            const message = encodeURIComponent(`📄 Voici les paramètres de la plongée : ${pdfUrl}`);
+            const whatsappUrl = `https://wa.me/?text=${message}`;
+
+            // Rediriger vers WhatsApp
+            window.location.href = whatsappUrl;  // Utilisation de redirection directe
+        } catch (error) {
+            console.error("❌ Erreur lors de la génération du PDF :", error);
+            alert("Erreur lors de la génération du PDF. Veuillez réessayer.");
+        }
     }
-}
 
 
 </script>

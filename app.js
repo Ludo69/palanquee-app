@@ -156,7 +156,9 @@ app.get("/generate-pdf", async (req, res) => {
             second: "2-digit"
         }).replace(/\D/g, "-"); // Remplace les séparateurs par des tirets
         const fileName = `parametres_plongee_${formattedDate}.pdf`; 
-        const filePath = path.join(__dirname, "public", fileName); // ✅ filePath défini AVANT utilisation
+        const filePath = path.join(__dirname, "public", "pdf", fileName);
+
+       // const filePath = path.join(__dirname, "public", fileName); // ✅ filePath défini AVANT utilisation
 
         const stream = fs.createWriteStream(filePath); // ✅ Maintenant, filePath est bien défini
 
@@ -164,31 +166,45 @@ app.get("/generate-pdf", async (req, res) => {
         console.log("📄 Génération du PDF :", filePath); // Debug pour vérifier le chemin
         doc.pipe(stream);
 
-        // Titre principal (FEUILLE DE PALANQUEES)
-        // Dessiner la cellule grise (rectangle)
-        doc.rect(40, doc.y, 550, 30)  // Rectangle gris (cellule)
-        .fill("gray");  // Remplir la cellule de gris
+
+        // Ajouter le logo (assure-toi que le chemin est correct)
+        const logoPath = __dirname + "/public/images/scc28.jpeg"; 
+
+        const logoWidth = 100;  // Largeur du logo
+        const logoHeight = 40;  // Hauteur du logo
+        const margin = 20;      // Marge entre le logo et le rectangle
+
+        // Position du logo (en haut à gauche)
+        doc.image(logoPath, 50, 50, { width: logoWidth, height: logoHeight });
+
+        // Position du rectangle (juste à droite du logo)
+        const rectX = 50 + logoWidth + margin; // Démarre après le logo avec une marge
+        const rectWidth = 500 - logoWidth - margin; // Largeur ajustée en fonction du logo
+        const rectY = 50; // Même hauteur que le logo
+        const rectHeight = 40; // Hauteur du rectangle (même que le logo pour alignement)
+
+        // Dessiner le rectangle gris
+        doc.rect(rectX, rectY, rectWidth, rectHeight).fill("gray");
 
         // Texte du titre
-        const text = "FEUILLE DE PALANQUEES";
+        const text = "FEUILLE DE PALANQUÉES";
 
-        // Calculer la largeur approximative du texte avec la taille de la police
-        const textWidth = text.length * 10;  // Une estimation approximative, ajustez selon la police et taille
+        // Centrage vertical (ajuster selon la hauteur du texte)
+        const textY = rectY + (rectHeight / 3); 
 
-        // Calculer la position horizontale pour centrer le texte dans la cellule
-        const x = 40 + (500 - textWidth) / 2;
+        // Ajouter le texte bien centré dans le rectangle
+        doc.fillColor("white")
+        .fontSize(20) // Taille ajustée pour éviter de dépasser
+        .text(text, rectX, textY, { align: "center", width: rectWidth }); // Centrage parfait
 
-        // Position verticale juste au-dessus du rectangle (à l'intérieur)
-        const y = doc.y + 8;
-
-        // Définir la couleur du texte en blanc et augmenter la taille du titre
-        doc.fillColor("white").fontSize(24).text(text, x, y);  // Texte blanc plus grand
+        
+        
 
         // Réinitialiser la couleur du texte à noir pour le reste du document
         doc.fillColor("black");  // Texte noir pour le reste du document
 
         // Continuer avec le reste du contenu (par exemple, l'affichage des informations)
-        doc.moveDown(0.5);
+        doc.moveDown(1);
 
         // Définir une position verticale fixe (par exemple, à 150 pour les deux éléments)
         const yPosition = doc.y;
@@ -241,26 +257,26 @@ app.get("/generate-pdf", async (req, res) => {
         doc.lineWidth(0.5).moveTo(40, doc.y).lineTo(550, doc.y).stroke();
         doc.moveDown(1);
 
- // Déclaration unique des largeurs des colonnes
-const columnWidths = [80, 80, 60, 60, 60, 60, 140]; // Ajustement pour la colonne "Plongeurs"
+        // Déclaration unique des largeurs des colonnes
+        const columnWidths = [80, 80, 60, 60, 60, 60, 140]; // Ajustement pour la colonne "Plongeurs"
 
-// En-têtes du tableau
-const tableTop = doc.y;
-doc.text("Nom", 40, tableTop, { width: columnWidths[0], align: "center" });
-doc.text("Prof. max (m)", 120, tableTop, { width: columnWidths[1], align: "center" });
-doc.text("Durée max (min)", 200, tableTop, { width: columnWidths[2], align: "center" });
-doc.text("Profondeur (m)", 260, tableTop, { width: columnWidths[3], align: "center" });
-doc.text("Durée (min)", 320, tableTop, { width: columnWidths[4], align: "center" });
-doc.text("Paliers", 380, tableTop, { width: columnWidths[5], align: "center" });
-doc.text("Plongeurs", 440, tableTop, { width: columnWidths[6], align: "center" });
+        // En-têtes du tableau
+        const tableTop = doc.y;
+        doc.text("Nom", 40, tableTop, { width: columnWidths[0], align: "center" });
+        doc.text("Prof. max (m)", 120, tableTop, { width: columnWidths[1], align: "center" });
+        doc.text("Durée max (min)", 200, tableTop, { width: columnWidths[2], align: "center" });
+        doc.text("Profondeur (m)", 260, tableTop, { width: columnWidths[3], align: "center" });
+        doc.text("Durée (min)", 320, tableTop, { width: columnWidths[4], align: "center" });
+        doc.text("Paliers", 380, tableTop, { width: columnWidths[5], align: "center" });
+        doc.text("Plongeurs", 440, tableTop, { width: columnWidths[6], align: "center" });
 
-// Séparateur
-doc.moveDown(1);
-doc.lineWidth(0.5).moveTo(40, doc.y).lineTo(560, doc.y).stroke();
-doc.moveDown(1);
+        // Séparateur
+        doc.moveDown(1);
+        doc.lineWidth(0.5).moveTo(40, doc.y).lineTo(560, doc.y).stroke();
+        doc.moveDown(1);
 
-// Remplir les lignes du tableau
-data.palanquees.forEach((palanquee, index) => {
+        // Remplir les lignes du tableau
+        data.palanquees.forEach((palanquee, index) => {
     let startY = doc.y; // Position initiale de la ligne
 
     // Affichage des informations de la palanquée avec gestion des valeurs null/undefined
@@ -309,7 +325,7 @@ data.palanquees.forEach((palanquee, index) => {
 
         // 🔹 Fin de la génération et envoi de la réponse
         stream.on("finish", () => {
-            res.json({ url: `/${fileName}` });
+            res.json({ url: `/pdf/${fileName}` });
         });
 
 
