@@ -386,17 +386,15 @@ document.querySelectorAll(".btn-enregistrer-consignes").forEach(button => {
             console.log("DP et niveau : " + nomSitePlongee + ", " + nomDuDP + ", " + niveauDuDP);
 
             let message = `🌊 *Compte-rendu Plongée* 🌊\n`;
-            message += `👨‍💼 *Directeur de plongée* - ${nomDuDP} (${niveauDuDP})\n`;  // Ajout du niveau ici
+            message += `🤿 *Plongée n°1 - ${nomSitePlongee}*\n`;
             message += `📅 *Date* : ${datePlongee}\n`;
-            message += `🤿 *Plongée n°1 - ${nomSitePlongee}*\n\n`;
+            message += `👨‍💼 *Directeur de plongée* - ${nomDuDP} (${niveauDuDP})\n`;  // Ajout du niveau ici
+
+            message += `---------------------------------------- \n\n`;  // Ajout du niveau ici
 
             <% palanquees.forEach(function(palanquee) { %>
                     // 🔵 Ajout des Consignes DP
                 message += `🔹 *Palanquée <%= palanquee.nom %>*\n`;
-                //message += `📋 *Consignes DP* :\n`;
-                //message += `📏 *Profondeur max* : <%= palanquee.prof_max || 'Non défini' %> m\n`;
-                //message += `⏳ *Durée max* : <%= palanquee.duree_max || 'Non défini' %> min\n`;
-                //message += `📋 *Réalisés* :\n`;
                 message += `📏 *Profondeur* : <%= palanquee.profondeur || 'Non défini' %> m\n`;
                 message += `⏳ *Durée* : <%= palanquee.duree || 'Non défini' %> min\n`;
                 message += `⚓ *Paliers* : <%= palanquee.paliers || 'Non définis' %>\n`;
@@ -453,12 +451,34 @@ document.querySelectorAll(".btn-enregistrer-consignes").forEach(button => {
 
             console.log("✅ PDF généré avec succès !");
 
+            // 📧 2️⃣ Envoi du PDF par email
+            const email = prompt("Entrez l'email du destinataire :");
+            if (email) {
+                const emailResponse = await fetch("/send-email", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ email, pdfUrl })
+                });
+
+                const emailData = await emailResponse.json();
+                if (emailResponse.ok) {
+                    alert("✅ Email envoyé avec succès !");
+                } else {
+                    alert("❌ Erreur lors de l'envoi de l'email : " + emailData.error);
+                }
+            }
+
             // Construire le message WhatsApp avec le lien du PDF
             const message = encodeURIComponent(`📄 Voici les paramètres de la plongée : ${pdfUrl}`);
             const whatsappUrl = `https://wa.me/?text=${message}`;
 
             // Rediriger vers WhatsApp
             window.location.href = whatsappUrl;  // Utilisation de redirection directe
+
+
+
         } catch (error) {
             console.error("❌ Erreur lors de la génération du PDF :", error);
             alert("Erreur lors de la génération du PDF. Veuillez réessayer.");

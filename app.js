@@ -7,6 +7,7 @@ const fs = require("fs");
 const path = require("path");
 const app = express();
 const pdfDir = path.join(__dirname, "public", "pdf");
+const nodemailer = require("nodemailer");
 
 // Vérifier si le dossier existe, sinon le créer
 if (!fs.existsSync(pdfDir)) {
@@ -1727,6 +1728,45 @@ app.post('/enregistrer-consignes', async (req, res) => {
     }
 
     res.json({ success: true, message: "Consignes enregistrées avec succès !" });
+});
+
+// 🚀 Route API pour envoyer un email avec le PDF
+app.post("/send-email", async (req, res) => {
+    const { email, pdfUrl } = req.body;
+
+    if (!email || !pdfUrl) {
+        return res.status(400).json({ error: "Email et PDF requis" });
+    }
+
+    let transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+            user: "ludosams@gmail.com",
+            pass: "vjqy kriu sgcu qtlz" // ⚠️ Utilise un mot de passe d’application sécurisé
+        }
+    });
+
+    let mailOptions = {
+        from: '"Club de Plongée" <tonemail@gmail.com>',
+        to: email,
+        subject: "📄 Compte-rendu de plongée",
+        text: "Bonjour,\n\nVoici le compte-rendu de votre plongée en pièce jointe.\n\nCordialement,\nL'équipe de plongée.",
+        attachments: [
+            {
+                filename: "Compte-rendu-Plongée.pdf",
+                path: pdfUrl // Utilise l'URL complète du PDF
+            }
+        ]
+    };
+
+    try {
+        let info = await transporter.sendMail(mailOptions);
+        console.log("📧 Email envoyé :", info.response);
+        res.json({ success: true, message: "Email envoyé avec succès !" });
+    } catch (error) {
+        console.error("❌ Erreur lors de l'envoi de l'email :", error);
+        res.status(500).json({ error: "Erreur lors de l'envoi de l'email" });
+    }
 });
 
 
