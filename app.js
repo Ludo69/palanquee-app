@@ -93,7 +93,7 @@ app.get("/generate-pdf", async (req, res) => {
         // Récupérer les palanquées associées à cette plongée
         const { data: palanquees, error: palanqueesError } = await supabase
             .from("palanquees")
-            .select("id, nom, profondeur, duree, paliers, prof_max, duree_max")
+            .select("id, nom, profondeur, duree, paliers, prof_max, duree_max, type")
             .eq("plongee_id", plongeeId);
 
         if (palanqueesError) {
@@ -195,7 +195,7 @@ app.get("/generate-pdf", async (req, res) => {
         doc.rect(rectX, rectY, rectWidth, rectHeight).fill("gray");
 
         // Texte du titre
-        const text = "FEUILLE DE PALANQUÉES";
+        const text = "FICHE DE SECURITE";
 
         // Centrage vertical (ajuster selon la hauteur du texte)
         const textY = rectY + (rectHeight / 3); 
@@ -218,7 +218,7 @@ app.get("/generate-pdf", async (req, res) => {
         const yPosition = doc.y;
 
         // Plongée du : [date] à gauche avec une taille de police plus petite
-        doc.fontSize(12).text(`Plongée du : ${data.date}`, 40, yPosition, { width: 250, align: "left" });
+        doc.fontSize(12).text(`Date : ${data.date}`, 40, yPosition, { width: 250, align: "left" });
 
         // Nom du DP : [nomdp] à droite avec une taille de police plus petite
         doc.fontSize(12).text(`Nom du DP : ${data.nomDP}`, 300, yPosition, { width: 250, align: "left" });
@@ -239,82 +239,116 @@ app.get("/generate-pdf", async (req, res) => {
         doc.moveDown(1);  // Passe à la ligne suivante après avoir écrit les deux textes
 
         // Séparateur
-        doc.lineWidth(0.5).moveTo(40, doc.y).lineTo(550, doc.y).stroke();
+        doc.lineWidth(0.5).moveTo(40, doc.y).lineTo(600, doc.y).stroke();
         doc.moveDown(1);
-                // Tableau des palanquées
-        // Texte à centrer
-        const text2 = "Palanquées";
 
-        // Définir la taille de police
-        const fontSize = 12;
+        // 📌 Définition du titre "Liste des palanquées"
+        const text2 = "Liste des palanquées";
 
-        // Calculer la largeur approximative du texte (peut être ajusté selon la police)
-        const textWidth2 = text2.length * fontSize * 0.6; // Un facteur de 0.6 est une estimation approximative de la largeur
+        // 📌 Augmenter la taille de police et centrer précisément
+        doc.fontSize(14).text(text2, 0, doc.y, { width: doc.page.width, align: "center", underline: true });
 
-        // Calculer la position horizontale pour centrer
-        const xPosition = (doc.page.width - textWidth2) / 2;
 
-        // Afficher le texte centré
-        doc.fontSize(fontSize).text(text2, xPosition, doc.y, { underline: true });
+        // Remettre la police à 10 pour le reste du document
+        doc.fontSize(10);
 
         // Passer à la ligne suivante
         doc.moveDown(1);
 
+        // Séparateur
+        doc.lineWidth(0.5).moveTo(40, doc.y).lineTo(600, doc.y).stroke();
+        doc.moveDown(1.5);
+
+        // 📌 Position de l'en-tête supplémentaire
+        const headerY = doc.y - 14; // Ajustement de la hauteur pour meilleure lisibilité
+
+        // 🟢 "Consigne maxi DP" (centré sur les colonnes Prof. Max et Durée Max)
+        doc.fontSize(10).text("Consigne maxi DP", 270, headerY, { width: 100, align: "center" });
+
+        // 🟢 "Réalisés" (centré sur les colonnes Prof. et Durée)
+        doc.text("Réalisés", 360, headerY, { width: 100, align: "center" });
+
+        // 🔹 Séparateur vertical bien aligné entre "Consigne maxi DP" et "Réalisés"
+        doc.moveTo(365, headerY - 4).lineTo(365, doc.y + 12).stroke();
+
+        // Remettre la police à 10 pour le reste du document
+        doc.fontSize(10);
 
         // Séparateur
-        doc.lineWidth(0.5).moveTo(40, doc.y).lineTo(550, doc.y).stroke();
+        doc.lineWidth(0.5).moveTo(40, doc.y).lineTo(600, doc.y).stroke();
+
+
+        // 🔹 Ajout d'un espace avant les titres des colonnes
         doc.moveDown(1);
 
-        // Déclaration unique des largeurs des colonnes
-        const columnWidths = [80, 80, 60, 60, 60, 60, 140]; // Ajustement pour la colonne "Plongeurs"
+        // 📌 Nouvelles largeurs des colonnes
+        const columnWidths = [110, 140, 45, 45, 45, 45, 50, 60]; // 🆕 Réduction des colonnes "Prof." et "Durée"
 
-        // En-têtes du tableau
+        // 📌 Positionner correctement les en-têtes des colonnes
         const tableTop = doc.y;
-        doc.text("Nom", 40, tableTop, { width: columnWidths[0], align: "center" });
-        doc.text("Prof. max (m)", 120, tableTop, { width: columnWidths[1], align: "center" });
-        doc.text("Durée max (min)", 200, tableTop, { width: columnWidths[2], align: "center" });
-        doc.text("Profondeur (m)", 260, tableTop, { width: columnWidths[3], align: "center" });
-        doc.text("Durée (min)", 320, tableTop, { width: columnWidths[4], align: "center" });
-        doc.text("Paliers", 380, tableTop, { width: columnWidths[5], align: "center" });
-        doc.text("Plongeurs", 440, tableTop, { width: columnWidths[6], align: "center" });
+        doc.text("Nom", 10, tableTop, { width: columnWidths[0], align: "center" });
+        doc.text("Plongeurs", 125, tableTop, { width: columnWidths[1], align: "center" });
+        doc.text("Prof.", 275, tableTop, { width: columnWidths[2], align: "center" });
+        doc.text("Durée", 320, tableTop, { width: columnWidths[3], align: "center" });
+        doc.text("Prof.", 365, tableTop, { width: columnWidths[4], align: "center" });
+        doc.text("Durée", 410, tableTop, { width: columnWidths[5], align: "center" });
+        doc.text("Paliers", 465, tableTop, { width: columnWidths[6], align: "center" });
+        doc.text("Type plongée", 525, tableTop, { width: columnWidths[7], align: "center" });
 
-        // Séparateur
+        // 📌 Séparateur sous les titres
+        doc.lineWidth(0.5).moveTo(40, doc.y).lineTo(600, doc.y).stroke();
         doc.moveDown(1);
-        doc.lineWidth(0.5).moveTo(40, doc.y).lineTo(560, doc.y).stroke();
-        doc.moveDown(1);
 
-        // Remplir les lignes du tableau
-        data.palanquees.forEach((palanquee, index) => {
-    let startY = doc.y; // Position initiale de la ligne
+        // 📌 Définition des positions X des traits verticaux
+        const columnLines = [120, 270, 320, 365, 410, 460, 520, 590]; // 🆕 Ajustement des traits
 
-    // Affichage des informations de la palanquée avec gestion des valeurs null/undefined
-    doc.text(palanquee.nom || "-", 40, startY, { width: columnWidths[0], align: "center" });
-    doc.text((palanquee.prof_max ?? "-").toString(), 120, startY, { width: columnWidths[1], align: "center" });
-    doc.text((palanquee.duree_max ?? "-").toString(), 200, startY, { width: columnWidths[2], align: "center" });
-    doc.text((palanquee.profondeur ?? "-").toString(), 260, startY, { width: columnWidths[3], align: "center" });
-    doc.text((palanquee.duree ?? "-").toString(), 320, startY, { width: columnWidths[4], align: "center" });
-    doc.text(palanquee.paliers || "Aucun", 380, startY, { width: columnWidths[5], align: "center" });
+        // 📌 Boucle pour remplir le tableau des palanquées
+        data.palanquees.forEach((palanquee) => {
+            let startY = doc.y; // Position initiale
 
-    // Affichage des plongeurs sous la colonne "Plongeurs"
-    let plongeurY = startY; 
+            // 🟢 Colonne "Nom"
+            doc.text(palanquee.nom || "-", 20, startY, { width: columnWidths[0], align: "center" });
 
-    if (palanquee.plongeurs && palanquee.plongeurs.length > 0) {
-        palanquee.plongeurs.forEach(plongeur => {
-            doc.text(`${plongeur.nom || "-"} (${plongeur.niveau || "-"})`, 480, plongeurY, { width: columnWidths[6], align: "left" });
-            plongeurY += 12; // Espacement entre chaque plongeur
+            // 🟢 Colonne "Plongeurs" (non modifiée)
+            let plongeurY = startY;
+            if (palanquee.plongeurs && palanquee.plongeurs.length > 0) {
+                palanquee.plongeurs.forEach(plongeur => {
+                    doc.text(`${plongeur.nom || "-"} (${plongeur.niveau || "-"})`, 130, plongeurY, { width: columnWidths[1], align: "left" });
+                    plongeurY += 14;
+                });
+            } else {
+                doc.text("Aucun plongeur", 130, plongeurY, { width: columnWidths[1], align: "left" });
+                plongeurY += 14;
+            }
+
+            // 📌 Ajustement de la hauteur de fin pour éviter les chevauchements
+            let endY = Math.max(startY + 20, plongeurY);
+
+            // 🟢 Colonnes suivantes (avec alignement centré)
+            doc.text((palanquee.prof_max ?? "-").toString(), 270, startY, { width: columnWidths[2], align: "center" });
+            doc.text((palanquee.duree_max ?? "-").toString(), 320, startY, { width: columnWidths[3], align: "center" });
+            doc.text((palanquee.profondeur ?? "-").toString(), 365, startY, { width: columnWidths[4], align: "center" });
+            doc.text((palanquee.duree ?? "-").toString(), 410, startY, { width: columnWidths[5], align: "center" });
+            doc.text(palanquee.paliers || "Aucun", 465, startY, { width: columnWidths[6], align: "center" });
+            doc.text(palanquee.type || "-", 520, startY, { width: columnWidths[7], align: "center" });
+
+            // 🔹 Ajuster `doc.y` pour la prochaine palanquée
+            doc.y = endY;
+
+            // 🔹 Ligne de séparation sous chaque palanquée
+            doc.lineWidth(0.5).moveTo(40, doc.y).lineTo(600, doc.y).stroke();
+            doc.moveDown(1);
         });
-    } else {
-        doc.text("Aucun plongeur", 480, plongeurY, { width: columnWidths[6], align: "left" });
-        plongeurY += 12;
-    }
 
-    // Ajuster `doc.y` pour la prochaine palanquée (évite le chevauchement)
-    doc.y = Math.max(startY + 20, plongeurY);
+        // 📌 Dessiner les traits verticaux après avoir affiché toutes les palanquées
+        columnLines.forEach(x => {
+            doc.moveTo(x, tableTop).lineTo(x, doc.y).stroke();
+        });
 
-    // Ligne de séparation sous chaque palanquée
-    doc.lineWidth(0.5).moveTo(40, doc.y).lineTo(560, doc.y).stroke();
-    doc.moveDown(1);
-}); 
+
+
+
+         
 
         doc.end();
 
@@ -1440,32 +1474,33 @@ app.get("/parametres_palanquees", async (req, res) => {
 
 
 app.post("/sauvegarder_parametres", async (req, res) => {
-//console.log("📩 Données reçues pour sauvegarde :", req.body);
+    //console.log("📩 Données reçues pour sauvegarde :", req.body);
 
-const { id, profondeur, duree, paliers } = req.body;
+    const { id, profondeur, duree, paliers, type } = req.body;
 
-if (!id || profondeur === undefined || duree === undefined || paliers === undefined) {
-    return res.status(400).json({ error: "Données invalides ou incomplètes." });
-}
-
-try {
-    let { error } = await supabase
-        .from("palanquees")
-        .update({ profondeur, duree, paliers })
-        .eq("id", id);
-
-    if (error) {
-        console.error(`❌ Erreur mise à jour palanquée ${id}:`, error);
-        return res.status(500).json({ error: "Erreur serveur lors de la mise à jour." });
+    if (!id || profondeur === undefined || duree === undefined || paliers === undefined || !type) {
+        return res.status(400).json({ error: "Données invalides ou incomplètes." });
     }
 
-    console.log(`✅ Paramètres de la palanquée ${id} mis à jour avec succès.`);
-    res.json({ success: true, message: "Paramètres enregistrés avec succès !" });
-} catch (error) {
-    console.error("❌ Erreur serveur :", error);
-    res.status(500).json({ error: "Erreur serveur." });
-}
+    try {
+        let { error } = await supabase
+            .from("palanquees")
+            .update({ profondeur, duree, paliers, type }) // 🆕 Ajout de `type` ici
+            .eq("id", id);
+
+        if (error) {
+            console.error(`❌ Erreur mise à jour palanquée ${id}:`, error);
+            return res.status(500).json({ error: "Erreur serveur lors de la mise à jour." });
+        }
+
+        console.log(`✅ Paramètres de la palanquée ${id} mis à jour avec succès.`);
+        res.json({ success: true, message: "Paramètres enregistrés avec succès !" });
+    } catch (error) {
+        console.error("❌ Erreur serveur :", error);
+        res.status(500).json({ error: "Erreur serveur." });
+    }
 });
+
 
 app.get("/plongee_info", async (req, res) => {
     const plongeeId = req.query.id; // Récupération de l'ID de plongée depuis la requête

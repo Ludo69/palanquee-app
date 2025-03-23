@@ -18,7 +18,7 @@
         <h1 class="text-3xl font-bold mb-4 text-center text-white">Gestion des Palanquées</h1>
 
         <!-- Liste des Palanquées (Grille en 2 colonnes) -->
-        <div id="palanqueesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+        <div id="palanqueesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
 
         <!-- Liste des plongeurs disponibles -->
         <h2 class="text-xl font-semibold mt-6 mb-2 text-white">Plongeurs Disponibles</h2>
@@ -72,7 +72,7 @@
             const plongeursContainer = document.getElementById("plongeursContainer");
             const ajouterPalanqueeBtn = document.getElementById("ajouterPalanquee");
 
-            const animauxMarins = ["Calmar géant","Pieuvre", "Dauphin", "Requin", "Tortue", "Méduse", "Raie aigle", "Corail", "Calmar", "Barracuda", "Crevette", "Hippocampe", "Raie Manta", "Perroquet", "Poisson-clown", "Phoque", "Langouste", "Anguille", "Carpe", "Gorgone", "Sirène et Tritons", "Huitre", "Marsouin", "Orque", "Poulpe", "Rascasse", "Requin-baleine", "Sardine"];
+            const animauxMarins = ["Calmar", "Pieuvre", "Dauphin", "Requin", "Tortue", "Méduse", "Raie aigle", "Barracuda", "Crevette", "Hippocampe", "Raie Manta", "Perroquet", "Poisson-clown", "Phoque", "Langouste", "Anguille", "Carpe", "Gorgone",  "Huitre", "Marsouin", "Orque", "Poulpe", "Rascasse", "Baleine", "Sardine", "Dugong", "Lamentin", "Longimanus", "Murène", "Congre", "Baliste", "Carangue", "Poisson-ange", "Chirurgien", "Mérou", "Papillon", "Napoléon", "Dorade", "Diodon", "Tétrodon", "Flûte", "Girelle", "Cocher", "Pastenague", "Anguille", "Empereur", "Vivaneau", "Nason à épron", "Platax", "Crocodile", "Pierre", "Rouget barbé", "Blennie"];
             let nomsUtilises = [];
             let palanquees = [];
             let plongeursRestants = [];
