@@ -184,7 +184,7 @@
 
         const plongeurElement = document.createElement("div");
         plongeurElement.classList.add("plongeur", "px-4", "py-2", "bg-gray-700", "rounded-lg", "shadow", "text-sm", "font-semibold", "whitespace-nowrap", "cursor-pointer");
-        plongeurElement.classList.add((niveauAffiche === 'N1' || niveauAffiche === 'N2' || niveauAffiche === 'N3') ? 'text-green-400' : 'text-blue-400');
+        plongeurElement.classList.add((niveauAffiche === 'N1' || niveauAffiche === 'N2' || niveauAffiche === 'N3' || niveauAffiche === 'PE40') ? 'text-green-400' : 'text-blue-400');
         plongeurElement.dataset.id = pp.plongeur_id;
         plongeurElement.setAttribute("draggable", "true");
         plongeurElement.textContent = `${pp.plongeurs.nom} (${niveauAffiche})`;
@@ -243,7 +243,7 @@
                 plongeursRestants.forEach(plongeur => {
                     const div = document.createElement("div");
                     div.classList.add("plongeur", "px-4", "py-2", "bg-gray-700", "rounded-lg", "shadow", "text-sm", "font-semibold", "whitespace-nowrap", "cursor-pointer");
-                    div.classList.add((plongeur.niveau === 'N1' || plongeur.niveau === 'N2' || plongeur.niveau === 'N3') ? 'text-green-400' : 'text-blue-400');
+                    div.classList.add((plongeur.niveau === 'N1' || plongeur.niveau === 'N2' || plongeur.niveau === 'N3' || plongeur.niveau === 'PE40') ? 'text-green-400' : 'text-blue-400');
                     div.dataset.id = plongeur.id;
                     div.draggable = true;
                     div.innerText = `${plongeur.nom} - ${plongeur.niveau}`;

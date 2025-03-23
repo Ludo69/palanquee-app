@@ -43,12 +43,12 @@
                     <p><strong>Plongeurs :</strong> 
                         <% if (palanquee.plongeurs && palanquee.plongeurs.length > 0) { 
                             palanquee.plongeurs.sort(function(a, b) {
-                                const aEstBleu = !["N1", "N2", "N3"].includes(a.niveau_plongeur_historique);
-                                const bEstBleu = !["N1", "N2", "N3"].includes(b.niveau_plongeur_historique);
+                                const aEstBleu = !["N1", "N2", "N3", "PE40"].includes(a.niveau_plongeur_historique);
+                                const bEstBleu = !["N1", "N2", "N3", "PE40"].includes(b.niveau_plongeur_historique);
                                 return aEstBleu === bEstBleu ? 0 : aEstBleu ? -1 : 1;
                             });
                             palanquee.plongeurs.forEach(function(plongeur, index) { 
-                                let couleurClasse = (["N1", "N2", "N3"].includes(plongeur.niveau_plongeur_historique)) ? "text-green-500" : "text-blue-500"; 
+                                let couleurClasse = (["N1", "N2", "N3", "PE40"].includes(plongeur.niveau_plongeur_historique)) ? "text-green-500" : "text-blue-500"; 
                         %>
                             <span class="<%= couleurClasse %> font-semibold">
                                 <%= plongeur.nom %> - <%= plongeur.niveau_plongeur_historique ? plongeur.niveau_plongeur_historique : "N/A" %>
