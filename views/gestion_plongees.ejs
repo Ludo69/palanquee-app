@@ -62,7 +62,7 @@
                         </div>
 
                         <!-- Quatrième ligne : Bouton "Gérer les palanquées" centré et CLIQUABLE -->
-                        <div class="flex justify-center mt-3">
+                        <div class="flex justify-center mt-3 space-x-4">
                             <button
                                 class="manage-palanquees bg-yellow-500 text-white px-4 py-2 rounded text-sm font-semibold"
                                 data-plongee-id="<%= plongee.id %>">
@@ -164,46 +164,50 @@
 
 
                         li.innerHTML = `
-        <!-- Première ligne : Plongée + Site -->
-        <div class="flex items-center justify-between w-full text-white">
-            <span class="text-sm font-bold">
-                Plongée ${plongee.numero} - <span class="site-name">${plongee.site || "Nom du site"}</span>
-            </span>
-            <button type="button" class="remove-plongee text-red-500 hover:text-red-400"
-                data-plongee-id="${plongee.id}">❌</button>
-        </div>
+                        <!-- Première ligne : Plongée + Site -->
+                        <div class="flex items-center justify-between w-full text-white">
+                            <span class="text-sm font-bold">
+                                Plongée ${plongee.numero} - <span class="site-name">${plongee.site || "Nom du site"}</span>
+                            </span>
+                            <button type="button" class="remove-plongee text-red-500 hover:text-red-400"
+                                data-plongee-id="${plongee.id}">❌</button>
+                        </div>
 
+                        <!-- Deuxième ligne : DP -->
+                        <div class="text-sm text-white mt-1 font-bold">
+                            DP : 
+                            <span id="dp-name-${plongee.id}" class="bg-blue-500 text-white px-3 py-1 rounded-lg text-xs">
+                                ${dpInfos.nom} - ${dpInfos.niveau}
+                            </span>
+                        </div>
 
-<!-- Deuxième ligne : DP -->
-<div class="text-sm text-white mt-1 font-bold">
-    DP : 
-    <span id="dp-name-${plongee.id}" class="bg-blue-500 text-white px-3 py-1 rounded-lg text-xs">
-        ${dpInfos.nom} - ${dpInfos.niveau}
-    </span>
-</div>
+                        <!-- Troisième ligne : Boutons d'action (centrés) -->
+                        <div class="flex justify-center space-x-2 mt-2">
+                            <button class="open-dp-modal bg-green-500 text-white px-3 py-1 rounded text-xs" data-plongee-id="${plongee.id}">
+                                Choix du DP
+                            </button>
+                            <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded text-xs">Saisir le site</button>
+                            <a href="/parametres_palanquees?id=${plongee.id}">
+                                <button class="bg-green-500 text-white px-3 py-1 rounded text-xs">Saisir les paramètres</button>
+                            </a>
+                        </div>
 
-
-
-        <!-- Troisième ligne : Boutons d'action (centrés) -->
-        <div class="flex justify-center space-x-2 mt-2">
-            <button class="open-dp-modal bg-green-500 text-white px-3 py-1 rounded text-xs" data-plongee-id="${plongee.id}">
-                Choix du DP
-            </button>
-            <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded text-xs">Saisir le site</button>
-            <a href="/parametres_palanquees?id=${plongee.id}">
-                <button class="bg-green-500 text-white px-3 py-1 rounded text-xs">Saisir les paramètres</button>
-            </a>
-        </div>
-
-        <!-- Quatrième ligne : Bouton "Gérer les palanquées" centré et CLIQUABLE -->
-        <div class="flex justify-center mt-3">
-            <a href="/gestion_palanquees?id=${plongee.id}">
-                <button class="bg-yellow-500 text-white px-4 py-2 rounded text-sm font-semibold">
-                    Gérer les palanquées
-                </button>
-            </a>
-        </div>
-    `;
+                        <!-- Quatrième ligne : Bouton "Gérer les palanquées" centré et CLIQUABLE -->
+                        <div class="flex justify-center mt-3 space-x-4">
+                            <a href="/gestion_palanquees?id=${plongee.id}">
+                                <button class="bg-yellow-500 text-white px-4 py-2 rounded text-sm font-semibold">
+                                    Gérer les palanquées
+                                </button>
+                            </a>
+                                <button 
+                                    class="start-plongee ${plongee.heure_debut ? 'bg-gray-500' : 'bg-red-500'} text-white px-4 py-2 rounded text-sm font-semibold" 
+                                    data-plongee-id="${plongee.id}"
+                                    ${plongee.heure_debut ? 'disabled' : ''}
+                                >
+                                    ${plongee.heure_debut ? 'Plongée lancée' : 'Lancer la plongée'}
+                                </button>
+                        </div>
+                    `;
 
                         plongeesList.appendChild(li);
                     }
@@ -357,8 +361,47 @@
                     });
                 });
             });
-        }
 
+            // **Nouvelle gestion du bouton "Lancer la plongée"**
+            document.querySelectorAll(".start-plongee").forEach(button => {
+                button.addEventListener("click", async function (e) {
+                    console.log("🟢 Bouton 'Lancer la plongée' cliqué !");
+
+                    const plongeeId = this.getAttribute("data-plongee-id");
+                    console.log("🔹 ID de la plongée :", plongeeId);
+
+                    try {
+                        const now = new Date();  
+                        const heureSQL = now.toISOString().split('T')[1].slice(0, 8); // "HH:MM:SS"
+                        
+                        console.log("🕒 Heure format SQL :", heureSQL); // Vérifie l'heure générée
+                        const response = await fetch("/api/lancer-plongee", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ plongeeId, startTime: heureSQL })
+                        });
+
+                        const result = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(result.error || "Erreur inconnue");
+                        }
+
+                        //alert("✅ Plongée lancée avec succès !");
+                        // Désactiver le bouton après lancement
+                        this.disabled = true;
+                        this.classList.add("bg-gray-500"); // Change la couleur du bouton
+
+                        // Forcer le rafraîchissement de l'écran
+                        window.location.reload();   
+
+                    } catch (error) {
+                        console.error("❌ Erreur :", error);
+                        alert("Erreur : impossible d'enregistrer l'heure !");
+                    }
+                });
+            });
+        }
 
         document.addEventListener("DOMContentLoaded", function () {
             // 🔥 Extraire `sortie_id` depuis l'URL
@@ -406,6 +449,7 @@
             } else {
                 console.error("⚠️ Bouton Ajouter Plongée non trouvé !");
             }
+
         });
 
 
@@ -466,6 +510,8 @@
 
                             const updateData = await updateResponse.json();
                             console.log("✅ Plongée mise à jour avec le DP :", updateData);
+                            // Forcer le rafraîchissement de l'écran
+                            window.location.reload();
                         } catch (error) {
                             console.error("❌ Erreur lors de la mise à jour de la plongée :", error);
                             alert("Erreur lors de la mise à jour du DP de la plongée.");

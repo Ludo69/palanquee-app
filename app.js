@@ -79,7 +79,7 @@ app.get("/generate-pdf", async (req, res) => {
         // Récupérer les infos de la plongée avec jointure pour obtenir le nom et niveau du DP
         const { data: plongee, error: plongeeError } = await supabase
             .from("plongees")
-            .select("nomdp, date, site, plongeurs(niveau, nom)")
+            .select("nomdp, date, site, plongeurs(niveau, nom), heure_debut")
             .eq("id", plongeeId)
             .single();
 
@@ -107,6 +107,17 @@ app.get("/generate-pdf", async (req, res) => {
         const datePlongee = new Date(plongee.date);
         const options = { day: "numeric", month: "long", year: "numeric" };
         const dateFormatee = datePlongee.toLocaleDateString("fr-FR", options);
+        // Formater l'heure en "HHhMM"
+        let heureFormattee = "Heure inconnue";
+        if (plongee.heure_debut) {
+            const [heures, minutes] = plongee.heure_debut.split(":");
+            heureFormattee = `${heures}h${minutes}`;
+        }
+        const dateEtHeure = `${dateFormatee} - ${heureFormattee}`;
+
+        console.log("Date formatée :", dateFormatee);
+        console.log("Heure formatée :", heureFormattee);
+
 
         // Récupérer les plongeurs pour chaque palanquée
         for (let palanquee of palanquees) {
@@ -142,7 +153,7 @@ app.get("/generate-pdf", async (req, res) => {
             nomDP: plongee.plongeurs.nom,
             qualificationDP: plongee.plongeurs.niveau,
             site: plongee.site || "Site inconnu",
-            date: dateFormatee,
+            date: dateEtHeure,
             palanquees: palanquees || []
         };
 
@@ -1513,7 +1524,7 @@ app.get("/plongee_info", async (req, res) => {
         // Récupérer les données de la plongée
         let { data, error } = await supabase
             .from("plongees")
-            .select("date, site, nomdp") // Récupère date, site et nomdp (ID du DP)
+            .select("date, site, nomdp, heure_debut") // Récupère date, site et nomdp (ID du DP)
             .eq("id", plongeeId)
             .single();
 
@@ -1552,7 +1563,8 @@ app.get("/plongee_info", async (req, res) => {
             date: dateFormattee,
             site: nomSitePlongee,
             nomdp: nomDuDP, // Inclure le nom du DP
-            niveaudp: niveauDP // Inclure le niveaux du DP
+            niveaudp: niveauDP, // Inclure le niveaux du DP
+            heure_debut: data.heure_debut // Inclure l'heure de début
         });
     } catch (err) {
         console.error("Erreur récupération plongée:", err);
@@ -1803,6 +1815,34 @@ app.post("/send-email", async (req, res) => {
         res.status(500).json({ error: "Erreur lors de l'envoi de l'email" });
     }
 });
+
+app.post("/api/lancer-plongee", async (req, res) => {
+    const { plongeeId, startTime } = req.body; // Récupérez startTime depuis le corps de la requête
+
+    if (!plongeeId) {
+        return res.status(400).json({ error: "ID de plongée manquant" });
+    }
+
+    try {
+        // Utilisez startTime envoyé par le client ou générez-le ici
+        const heureSQL = new Date().toLocaleTimeString("fr-FR", { hour12: false }); // "HH:MM:SS"
+
+        const { data, error } = await supabase
+            .from("plongees")
+            .update({ heure_debut: heureSQL }) // Utilisez l'heure au format "HH:MM:SS"
+            .eq("id", plongeeId);
+
+        if (error) {
+            throw error;
+        }
+
+        res.json({ success: true, message: "Plongée lancée avec succès", data });
+    } catch (error) {
+        console.error("Erreur lors de la mise à jour de l'heure de début :", error);
+        res.status(500).json({ error: "Erreur serveur" });
+    }
+});
+
 
 
 // Démarrer le serveur HTTPS

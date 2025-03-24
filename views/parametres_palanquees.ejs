@@ -245,7 +245,7 @@
 
                 const result = await response.json();
                 if (result.success) {
-                    alert("✅ Paramètres enregistrés avec succès !");
+                    //alert("✅ Paramètres enregistrés avec succès !");
                     dureeInput.disabled = true;
                     profondeurInput.disabled = true;
                     paliersInput.disabled = true;
@@ -334,7 +334,7 @@ document.querySelectorAll(".btn-enregistrer-consignes").forEach(button => {
 
                 const result = await response.json();
                 if (result.success) {
-                    alert("Consignes DP enregistrées !");
+                    //alert("Consignes DP enregistrées !");
                 } else {
                     alert("Erreur : " + result.error);
                 }
@@ -388,6 +388,16 @@ document.querySelectorAll(".btn-enregistrer-consignes").forEach(button => {
             // Afficher l'objet sous forme de tableau
             console.table(data);
 
+            let heurePlongee = data.heure_debut;
+            console.log("Heure originale : " + heurePlongee);
+            let heurePlongeeFormattee = "Heure inconnue";
+            if (heurePlongee) {
+                // Diviser la chaîne en utilisant le caractère ":"
+                let [heures, minutes] = heurePlongee.split(":");
+                // Reconstituer la chaîne au format "HHhMM"
+                heurePlongeeFormattee = `${heures}h${minutes}`;
+                console.log("Heure formatée : " + heurePlongeeFormattee);
+            }
             let datePlongee = data.date;
             if (!datePlongee || datePlongee.toLowerCase().includes("invalid")) {
                 console.error("❌ Erreur : Date invalide ->", data.date);
@@ -401,7 +411,7 @@ document.querySelectorAll(".btn-enregistrer-consignes").forEach(button => {
 
             let message = `🌊 *Compte-rendu Plongée* 🌊\n`;
             message += `🤿 *Plongée n°1 - ${nomSitePlongee}*\n`;
-            message += `📅 *Date* : ${datePlongee}\n`;
+            message += `📅 *Date* : ${datePlongee} - ${heurePlongeeFormattee}\n`;
             message += `👨‍💼 *Directeur de plongée* - ${nomDuDP} (${niveauDuDP})\n`;  // Ajout du niveau ici
 
             message += `---------------------------------------- \n\n`;  // Ajout du niveau ici
