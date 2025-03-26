@@ -54,7 +54,7 @@
 <body class="bg-gradient-to-b from-dark-dark to-dark-light text-white font-sans min-h-screen pb-16">
 
     <!-- Conteneur principal -->
-    <div class="w-full max-w-5xl mx-auto p-4 sm:p-6 relative">
+    <div class="w-full max-w-3xl mx-auto p-4 sm:p-6 relative">
         <!-- Bouton de retour -->
         <button onclick="window.history.back()"
             class="absolute top-6 left-6 text-gray-300 hover:text-white transition-colors">
@@ -71,7 +71,7 @@
         </div>
 
         <!-- Liste des Palanquées -->
-        <div id="palanqueesContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"></div>
+        <div id="palanqueesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"></div>
 
         <!-- Plongeurs disponibles -->
         <div class="bg-dark-light rounded-2xl p-4 shadow-lg border border-gray-700 mb-6">
@@ -87,9 +87,6 @@
             <button id="ajouterPalanquee"
                 class="flex-1 bg-gradient-to-r from-primary-light to-primary-dark hover:from-primary-dark hover:to-primary-light text-white py-3 rounded-lg font-medium transition-all">
                 <i class="fas fa-plus mr-2"></i> Nouvelle Palanquée
-            </button>
-            <button id="genererPalanquees" class="flex-1 bg-gradient-to-r from-accent-light to-accent-dark hover:from-accent-dark hover:to-accent-light text-white py-3 rounded-lg font-medium transition-all">
-                <i class="fas fa-random mr-2"></i> Générer Aléatoirement
             </button>
             <button id="validerPalanquees"
                 class="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 rounded-lg font-medium transition-all">
@@ -119,30 +116,6 @@
         </a>
     </nav>
 
-    <div id="modalSecurite" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-dark-light rounded-lg p-6 max-w-md mx-4">
-            <h3 class="text-xl font-bold mb-4 text-accent-light">
-                <i class="fas fa-exclamation-triangle mr-2"></i> Vérification requise
-            </h3>
-            <p class="mb-4">
-                Le <span class="font-bold">Directeur de Plongée (DP)</span> doit impérativement :
-            </p>
-            <ul class="list-disc pl-5 mb-4 space-y-2">
-                <li>Vérifier la conformité des palanquées générées</li>
-                <li>S'assurer que tous les critères de sécurité sont respectés</li>
-                <li>Adapter les groupes aux niveaux des plongeurs</li>
-            </ul>
-            <div class="flex justify-end space-x-3">
-                <button id="modalCancel" class="px-4 py-2 rounded bg-gray-600 hover:bg-gray-700">
-                    Annuler
-                </button>
-                <button id="modalConfirm" class="px-4 py-2 rounded bg-accent-light hover:bg-accent-dark">
-                    Confirmer
-                </button>
-            </div>
-        </div>
-    </div>
-
     <script>
         function getPlongeeIdFromURL() {
             const params = new URLSearchParams(window.location.search);
@@ -156,50 +129,6 @@
         }
 
         document.addEventListener("DOMContentLoaded", async function () {
-            // Récupération des éléments de la modale
-            const modal = document.getElementById('modalSecurite');
-            const confirmBtn = document.getElementById('modalConfirm');
-            const cancelBtn = document.getElementById('modalCancel');
-            const genererBtn = document.getElementById('genererPalanquees');
-
-            // Gestion de la modale
-            genererBtn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                
-                if (!sessionStorage.getItem('modalSeen')) {
-                    modal.classList.remove('hidden');
-                    sessionStorage.setItem('modalSeen', 'true');
-                } else {
-                    await executerGeneration();
-                }
-            });
-
-            cancelBtn.addEventListener('click', () => {
-                modal.classList.add('hidden');
-            });
-
-            confirmBtn.addEventListener('click', async () => {
-                modal.classList.add('hidden');
-                await executerGeneration();
-            });
-
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.classList.add('hidden');
-                }
-            });
-
-            async function executerGeneration() {
-                genererBtn.disabled = true;
-                genererBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                try {
-                    await genererPalanqueesAleatoires();
-                } finally {
-                    genererBtn.disabled = false;
-                    genererBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                }
-            }
-
             const palanqueesContainer = document.getElementById("palanqueesContainer");
             const plongeursContainer = document.getElementById("plongeursContainer");
             const ajouterPalanqueeBtn = document.getElementById("ajouterPalanquee");
@@ -221,44 +150,6 @@
 
             function formaterAffichagePlongeur(nom, niveau) {
                 return `${nom} (${niveau})`;
-            }
-
-            // Fonction pour nettoyer toutes les palanquées existantes
-            async function nettoyerPalanquees() {
-                // Récupérer toutes les palanquées existantes
-                const palanqueesExistantes = document.querySelectorAll(".palanquee-container");
-                
-                // Pour chaque palanquée
-                for (const palanquee of palanqueesExistantes) {
-                    const id = palanquee.dataset.id;
-                    const palanqueeBody = palanquee.querySelector(".palanquee-body");
-                    
-                    // Déplacer tous les plongeurs vers le conteneur disponible
-                    while (palanqueeBody?.firstChild) {
-                        plongeursContainer.appendChild(palanqueeBody.firstChild);
-                    }
-                    
-                    // Supprimer la palanquée
-                    palanquee.remove();
-                    
-                    // Si c'est une palanquée enregistrée (UUID), la supprimer du serveur
-                    if (estUUID(id)) {
-                        try {
-                            await fetch(`/supprimer_palanquee/${id}`, {
-                                method: "DELETE",
-                            });
-                        } catch (error) {
-                            console.error("Erreur lors de la suppression de la palanquée:", error);
-                        }
-                    }
-                }
-                
-                // Réinitialiser les variables
-                palanquees = [];
-                nomsUtilises = [];
-                
-                // Rendre les plongeurs à nouveau draggables
-                setTimeout(rendrePlongeursDraggables, 100);
             }
 
             // Fonction pour charger les données
@@ -625,87 +516,6 @@
                 const plongeur = document.querySelector(`[data-id='${plongeurId}']`);
                 if (plongeur) plongeursContainer.appendChild(plongeur);
             });
-
-            // Fonction pour générer des palanquées aléatoires optimisées
-            async function genererPalanqueesAleatoires() {
-                // D'abord, nettoyer toutes les palanquées existantes
-                await nettoyerPalanquees();
-
-                // Récupérer tous les plongeurs disponibles
-                const plongeurs = Array.from(plongeursContainer.querySelectorAll(".plongeur"));
-                if (plongeurs.length === 0) {
-                    alert("Aucun plongeur disponible pour générer des palanquées !");
-                    return;
-                }
-
-                // Trier les plongeurs par niveau
-                const guides = plongeurs.filter(p => estGuide(extraireNiveau(p.textContent)));
-                const n1 = plongeurs.filter(p => extraireNiveau(p.textContent) === 'N1');
-                const autres = plongeurs.filter(p => !estGuide(extraireNiveau(p.textContent)) && extraireNiveau(p.textContent) !== 'N1');
-
-                // Mélanger les tableaux
-                const melangerTableau = (array) => {
-                    for (let i = array.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [array[i], array[j]] = [array[j], array[i]];
-                    }
-                    return array;
-                };
-
-                melangerTableau(guides);
-                melangerTableau(n1);
-                melangerTableau(autres);
-
-                // Calculer le nombre optimal de N1 par guide
-                const nombreOptimalN1ParGuide = Math.ceil(n1.length / guides.length);
-                const maxN1ParGuide = Math.min(4, nombreOptimalN1ParGuide);
-
-                // Créer des palanquées avec N1 de manière équilibrée
-                while (n1.length > 0 && guides.length > 0) {
-                    const id = Date.now() + Math.random();
-                    const nom = genererNomPalanquee();
-                    
-                    // Calculer le nombre de N1 pour cette palanquée
-                    const n1RestantsOptimal = Math.min(
-                        maxN1ParGuide,
-                        Math.ceil(n1.length / guides.length)
-                    );
-                    
-                    const n1Count = Math.min(n1RestantsOptimal, n1.length);
-                    const n1Plongeurs = n1.splice(0, n1Count);
-                    const guide = guides.pop();
-                    
-                    afficherPalanquee(id, nom);
-                    const palanqueeBody = document.querySelector(`[data-id="${id}"] .palanquee-body`);
-                    palanqueeBody.appendChild(guide);
-                    n1Plongeurs.forEach(p => palanqueeBody.appendChild(p));
-                }
-
-                // Créer des palanquées autonomes avec les plongeurs restants
-                const plongeursRestants = [...guides, ...autres];
-                melangerTableau(plongeursRestants);
-
-                while (plongeursRestants.length >= 2) {
-                    const id = Date.now() + Math.random();
-                    const nom = genererNomPalanquee();
-                    const taillePalanquee = Math.min(2, plongeursRestants.length);
-                    
-                    afficherPalanquee(id, nom);
-                    const palanqueeBody = document.querySelector(`[data-id="${id}"] .palanquee-body`);
-                    
-                    for (let i = 0; i < taillePalanquee; i++) {
-                        const plongeur = plongeursRestants.pop();
-                        palanqueeBody.appendChild(plongeur);
-                    }
-                }
-
-                // Remettre les plongeurs non utilisés dans le conteneur disponible
-                plongeursRestants.forEach(p => plongeursContainer.appendChild(p));
-                rendrePlongeursDraggables();
-            }
-
-            // Ajouter l'écouteur d'événement pour le bouton de génération aléatoire
-            //document.getElementById("genererPalanquees").addEventListener("click", genererPalanqueesAleatoires);
 
             await chargerDonnees();
         });
