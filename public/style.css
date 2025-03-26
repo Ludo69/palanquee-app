@@ -115,3 +115,29 @@
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* Fond de la case du jour actuel - Violet clair transparent */
+.fc-today {
+    background-color: rgba(168, 85, 247, 0.15) !important; /* violet-500 à 15% d'opacité */
+
+}
+
+/* En-tête du jour actuel (dans la vue mois) */
+/* Style principal pour la date du jour */
+.fc-today {
+    background-color: rgba(204, 157, 248, 0.1) !important; /* Fond violet très léger */
+    border-left: 3px solid rgba(168, 85, 247, 0.8) !important; /* Trait violet à gauche */
+}
+
+/* Style pour l'en-tête du jour (vue mois) */
+.fc-day-header.fc-today {
+    border-left: 3px solid rgba(168, 85, 247, 0.8) !important;
+    background-color:rgba(168, 85, 247, 0.1) !important;
+    color: white !important;
+}
+
+/* Texte de la date */
+.fc-day-top.fc-today {
+    color: #8B5CF6 !important; /* Violet clair */
+    font-weight: bold;
+}
