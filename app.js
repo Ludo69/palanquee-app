@@ -47,7 +47,8 @@ console.log('HOST:', process.env.HOST);
 console.log('PORT:', process.env.PORT);
 
 // Middleware
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '10mb' })); // Pour JSON
+app.use(bodyParser.urlencoded({ limit: '10mb', extended: true })); // Pour les URL-encodées
 app.use((req, res, next) => {
     //console.log("Requête reçue:", req.method, req.url);
     //console.log("Headers:", req.headers);
