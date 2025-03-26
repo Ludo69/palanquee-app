@@ -52,7 +52,7 @@ app.use(bodyParser.urlencoded({ limit: '10mb', extended: true })); // Pour les U
 app.use((req, res, next) => {
     //console.log("Requête reçue:", req.method, req.url);
     //console.log("Headers:", req.headers);
-    //console.log("Body brut:", req.body);
+    //console.log("Body brut:", req.body); 
     next();
 });
 
