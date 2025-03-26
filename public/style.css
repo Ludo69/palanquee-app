@@ -207,6 +207,54 @@
     color: black;
 }
 
+/* ========================= */
+/* PALANQUÉES */
+/* ========================= */
+
+.palanquees-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  padding: 20px;
+  justify-content: center;
+}
+
+.palanquee-card {
+  background-color: #1b263b;
+  border-radius: 10px;
+  padding: 20px;
+  width: 90%;
+  max-width: 600px;
+  min-height: 140px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease, background 0.3s ease;
+  margin: 15px auto;
+}
+
+.palanquee-card:hover {
+  background: #4ac2b4;
+}
+
+.palanquee-nom {
+  color: #64dfdf;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.plongeurs-list {
+  list-style: none;
+  padding: 0;
+}
+
+.plongeur-item {
+  background-color: #007bff;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  margin-top: 5px;
+  display: inline-block;
+}
+
 /* Conteneur du bouton pour le centrer */
 .btn-container {
     width: 100%;

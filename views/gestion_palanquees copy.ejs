@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -8,11 +9,12 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen px-4">
-        <!-- Bouton de retour en haut à gauche -->
-        <button onclick="window.history.back()" class="absolute top-4 left-4 text-white hover:text-gray-300 text-2xl">
-            ←
-        </button>
+    <!-- Bouton de retour en haut à gauche -->
+    <button onclick="window.history.back()" class="absolute top-4 left-4 text-white hover:text-gray-300 text-2xl">
+        ←
+    </button>
 
     <div class="w-full max-w-4xl p-6">
         <h1 class="text-3xl font-bold mb-4 text-center text-white">Gestion des Palanquées</h1>
@@ -26,17 +28,20 @@
 
         <!-- Boutons d'action -->
         <div class="mt-6 flex justify-between">
-            <button id="ajouterPalanquee" class="w-1/2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md transition duration-300">
+            <button id="ajouterPalanquee"
+                class="w-1/2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md transition duration-300">
                 + Palanquée
             </button>
-            <button id="validerPalanquees" class="w-1/2 ml-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-lg shadow-md transition duration-300">
+            <button id="validerPalanquees"
+                class="w-1/2 ml-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-lg shadow-md transition duration-300">
                 💾 Enregistrer / Mettre à jour
             </button>
         </div>
     </div>
 
     <!-- Bottom Navigation -->
-    <div class="fixed bottom-0 left-0 w-full bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl">
+    <div
+        class="fixed bottom-0 left-0 w-full bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl">
         <a href="/" class="text-gray-400 hover:text-blue-400 flex flex-col items-center">
             <i class="fas fa-home text-xl"></i>
             <span class="text-xs">🏠 Accueil</span>
@@ -72,7 +77,7 @@
             const plongeursContainer = document.getElementById("plongeursContainer");
             const ajouterPalanqueeBtn = document.getElementById("ajouterPalanquee");
 
-            const animauxMarins = ["Calmar", "Pieuvre", "Dauphin", "Requin", "Tortue", "Méduse", "Raie aigle", "Barracuda", "Crevette", "Hippocampe", "Raie Manta", "Perroquet", "Poisson-clown", "Phoque", "Langouste", "Anguille", "Carpe", "Gorgone",  "Huitre", "Marsouin", "Orque", "Poulpe", "Rascasse", "Baleine", "Sardine", "Dugong", "Lamentin", "Longimanus", "Murène", "Congre", "Baliste", "Carangue", "Poisson-ange", "Chirurgien", "Mérou", "Papillon", "Napoléon", "Dorade", "Diodon", "Tétrodon", "Flûte", "Girelle", "Cocher", "Pastenague", "Anguille", "Empereur", "Vivaneau", "Nason à épron", "Platax", "Crocodile", "Pierre", "Rouget barbé", "Blennie"];
+            const animauxMarins = ["Calmar", "Pieuvre", "Dauphin", "Requin", "Tortue", "Méduse", "Raie aigle", "Barracuda", "Crevette", "Hippocampe", "Raie Manta", "Perroquet", "Poisson-clown", "Phoque", "Langouste", "Anguille", "Carpe", "Gorgone", "Huitre", "Marsouin", "Orque", "Poulpe", "Rascasse", "Baleine", "Sardine", "Dugong", "Lamentin", "Longimanus", "Murène", "Congre", "Baliste", "Carangue", "Poisson-ange", "Chirurgien", "Mérou", "Papillon", "Napoléon", "Dorade", "Diodon", "Tétrodon", "Flûte", "Girelle", "Cocher", "Pastenague", "Anguille", "Empereur", "Vivaneau", "Nason à épron", "Platax", "Crocodile", "Pierre", "Rouget barbé", "Blennie"];
             let nomsUtilises = [];
             let palanquees = [];
             let plongeursRestants = [];
@@ -89,7 +94,7 @@
 
                         afficherPalanquees();
                         afficherPlongeursDisponibles();
-                        
+
 
                         // 🔥 Ajout : afficher les plongeurs pour chaque palanquée
                         palanquees.forEach(palanquee => {
@@ -97,7 +102,7 @@
                                 palanquee.palanquees_plongeurs.forEach(pp => {
                                     // On récupère les plongeurs associés à la palanquée
                                     const plongeur = result.plongeurs.find(p => p.id === pp.plongeur_id);
-                                    
+
                                     if (plongeur) {
                                         // Logique pour déterminer quel niveau afficher
                                         let niveauAffiche = plongeur.niveau;  // Par défaut, on prend le niveau actuel
@@ -108,7 +113,7 @@
                                         }
 
                                         console.log(`Plongeur ${plongeur.nom} - Niveau affiché : ${niveauAffiche}`);
-                                        
+
                                         // Afficher ou traiter ce plongeur et son niveau
                                         // À adapter selon ton code d'affichage des plongeurs
                                     }
@@ -163,67 +168,67 @@
             }
 
             function afficherPalanquee(id, nom, plongeurs = []) {
-    const div = document.createElement("div");
-    div.classList.add("bg-gray-800", "p-4", "rounded-lg", "shadow-md", "space-y-2");
-    div.dataset.id = id;
-    div.innerHTML = `
-    <div class="flex justify-between items-center">
-        <span class="text-lg font-semibold text-white">${nom}</span>
-        <button class="delete-palanquee text-red-500 hover:text-red-700 text-lg">❌</button>
-    </div>
-    <div class="palanquee-body bg-gray-700 p-3 rounded-md min-h-[60px]" data-id="${id}"></div>
-    `;
+                const div = document.createElement("div");
+                div.classList.add("bg-gray-800", "p-4", "rounded-lg", "shadow-md", "space-y-2");
+                div.dataset.id = id;
+                div.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-lg font-semibold text-white">${nom}</span>
+                        <button class="delete-palanquee text-red-500 hover:text-red-700 text-lg">❌</button>
+                    </div>
+                    <div class="palanquee-body bg-gray-700 p-3 rounded-md min-h-[60px]" data-id="${id}"></div>
+                    `;
 
-    const palanqueeBody = div.querySelector(".palanquee-body");
+                const palanqueeBody = div.querySelector(".palanquee-body");
 
-    // Ajout des plongeurs déjà assignés
-    plongeurs.forEach(pp => {
-        const niveauAffiche = pp.niveau_plongeur_historique || pp.plongeurs.niveau; // 🔥 Toujours afficher le niveau historique s'il existe
-        
-        console.log(`Plongeur ${pp.plongeurs.nom} - Niveau affiché : ${niveauAffiche}`);
+                // Ajout des plongeurs déjà assignés
+                plongeurs.forEach(pp => {
+                    const niveauAffiche = pp.niveau_plongeur_historique || pp.plongeurs.niveau; // 🔥 Toujours afficher le niveau historique s'il existe
 
-        const plongeurElement = document.createElement("div");
-        plongeurElement.classList.add("plongeur", "px-4", "py-2", "bg-gray-700", "rounded-lg", "shadow", "text-sm", "font-semibold", "whitespace-nowrap", "cursor-pointer");
-        plongeurElement.classList.add((niveauAffiche === 'N1' || niveauAffiche === 'N2' || niveauAffiche === 'N3' || niveauAffiche === 'PE40') ? 'text-green-400' : 'text-blue-400');
-        plongeurElement.dataset.id = pp.plongeur_id;
-        plongeurElement.setAttribute("draggable", "true");
-        plongeurElement.textContent = `${pp.plongeurs.nom} (${niveauAffiche})`;
+                    console.log(`Plongeur ${pp.plongeurs.nom} - Niveau affiché : ${niveauAffiche}`);
 
-        // 🔥 Réintégration des événements drag & drop
-        plongeurElement.addEventListener("dragstart", (event) => {
-            event.dataTransfer.setData("text/plain", pp.plongeur_id);
-            plongeurElement.classList.add("opacity-50");
-        });
+                    const plongeurElement = document.createElement("div");
+                    plongeurElement.classList.add("plongeur", "px-4", "py-2", "bg-gray-700", "rounded-lg", "shadow", "text-sm", "font-semibold", "whitespace-nowrap", "cursor-pointer");
+                    plongeurElement.classList.add((niveauAffiche === 'N1' || niveauAffiche === 'N2' || niveauAffiche === 'N3' || niveauAffiche === 'PE40') ? 'text-green-400' : 'text-blue-400');
+                    plongeurElement.dataset.id = pp.plongeur_id;
+                    plongeurElement.setAttribute("draggable", "true");
+                    plongeurElement.textContent = `${pp.plongeurs.nom} (${niveauAffiche})`;
 
-        plongeurElement.addEventListener("dragend", () => {
-            plongeurElement.classList.remove("opacity-50");
-        });
+                    // 🔥 Réintégration des événements drag & drop
+                    plongeurElement.addEventListener("dragstart", (event) => {
+                        event.dataTransfer.setData("text/plain", pp.plongeur_id);
+                        plongeurElement.classList.add("opacity-50");
+                    });
 
-        palanqueeBody.appendChild(plongeurElement);
-    });
+                    plongeurElement.addEventListener("dragend", () => {
+                        plongeurElement.classList.remove("opacity-50");
+                    });
 
-    // Suppression de la palanquée
-    div.querySelector(".delete-palanquee").addEventListener("click", function () {
-        supprimerPalanquee(id);
-    });
+                    palanqueeBody.appendChild(plongeurElement);
+                });
 
-    // Réintégration du système de drop sur la palanquée
-    palanqueeBody.addEventListener("dragover", (event) => {
-        event.preventDefault(); // Essentiel pour autoriser le dépôt !
-        event.dataTransfer.dropEffect = "move";
-    });
+                // Suppression de la palanquée
+                div.querySelector(".delete-palanquee").addEventListener("click", function () {
+                    supprimerPalanquee(id);
+                });
 
-    palanqueeBody.addEventListener("drop", (event) => {
-        event.preventDefault();
-        const plongeurId = event.dataTransfer.getData("text/plain");
-        const plongeur = document.querySelector(`[data-id='${plongeurId}']`);
-        if (plongeur) {
-            palanqueeBody.appendChild(plongeur);
-        }
-    });
+                // Réintégration du système de drop sur la palanquée
+                palanqueeBody.addEventListener("dragover", (event) => {
+                    event.preventDefault(); // Essentiel pour autoriser le dépôt !
+                    event.dataTransfer.dropEffect = "move";
+                });
 
-    palanqueesContainer.appendChild(div);
-}
+                palanqueeBody.addEventListener("drop", (event) => {
+                    event.preventDefault();
+                    const plongeurId = event.dataTransfer.getData("text/plain");
+                    const plongeur = document.querySelector(`[data-id='${plongeurId}']`);
+                    if (plongeur) {
+                        palanqueeBody.appendChild(plongeur);
+                    }
+                });
+
+                palanqueesContainer.appendChild(div);
+            }
 
 
 
@@ -253,55 +258,55 @@
             }
 
             function estUUID(valeur) {
-    const regexUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    return regexUUID.test(valeur);
-}
+                const regexUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                return regexUUID.test(valeur);
+            }
 
-async function supprimerPalanquee(id) {
-    const palanqueeDiv = document.querySelector(`[data-id="${id}"]`);
-    
-    if (!palanqueeDiv) {
-        console.warn("⚠️ Palanquée introuvable dans le DOM :", id);
-        return;
-    }
+            async function supprimerPalanquee(id) {
+                const palanqueeDiv = document.querySelector(`[data-id="${id}"]`);
 
-    const palanqueeBody = palanqueeDiv.querySelector(".palanquee-body");
+                if (!palanqueeDiv) {
+                    console.warn("⚠️ Palanquée introuvable dans le DOM :", id);
+                    return;
+                }
 
-    if (palanqueeBody) {
-        while (palanqueeBody.firstChild) {
-            plongeursContainer.appendChild(palanqueeBody.firstChild);
-        }
-    }
+                const palanqueeBody = palanqueeDiv.querySelector(".palanquee-body");
 
-    // Supprime la palanquée du DOM et du tableau
-    palanqueeDiv.remove();
-    palanquees = palanquees.filter(p => p.id !== id);
+                if (palanqueeBody) {
+                    while (palanqueeBody.firstChild) {
+                        plongeursContainer.appendChild(palanqueeBody.firstChild);
+                    }
+                }
 
-    // 🔥 Vérification de l'UUID avant d'envoyer la requête
-    if (!estUUID(id)) {
-        console.warn("⚠️ ID invalide ou palanquée locale, suppression uniquement en local :", id);
-        return;
-    }
+                // Supprime la palanquée du DOM et du tableau
+                palanqueeDiv.remove();
+                palanquees = palanquees.filter(p => p.id !== id);
 
-    // 🔥 Envoi de la requête au backend
-    try {
-        const response = await fetch(`/supprimer_palanquee/${id}`, {
-            method: "DELETE",
-        });
+                // 🔥 Vérification de l'UUID avant d'envoyer la requête
+                if (!estUUID(id)) {
+                    console.warn("⚠️ ID invalide ou palanquée locale, suppression uniquement en local :", id);
+                    return;
+                }
 
-        const result = await response.json();
-        if (!response.ok) {
-            alert("❌ Erreur lors de la suppression : " + result.error);
-        }
-    } catch (error) {
-        console.error("❌ Erreur lors de la suppression :", error);
-    }
+                // 🔥 Envoi de la requête au backend
+                try {
+                    const response = await fetch(`/supprimer_palanquee/${id}`, {
+                        method: "DELETE",
+                    });
 
-    // 🕒 Petite pause avant de rendre les plongeurs draggables
-    setTimeout(() => {
-        rendrePlongeursDraggables();
-    }, 100);
-}
+                    const result = await response.json();
+                    if (!response.ok) {
+                        alert("❌ Erreur lors de la suppression : " + result.error);
+                    }
+                } catch (error) {
+                    console.error("❌ Erreur lors de la suppression :", error);
+                }
+
+                // 🕒 Petite pause avant de rendre les plongeurs draggables
+                setTimeout(() => {
+                    rendrePlongeursDraggables();
+                }, 100);
+            }
 
 
 
@@ -320,101 +325,101 @@ async function supprimerPalanquee(id) {
             });
 
             document.getElementById("validerPalanquees").addEventListener("click", async () => {
-    console.log("On entre dans document validerPalanquees ");
-    if (!PLONGEE_ID) {
-        alert("Erreur : Impossible de récupérer l'ID de la plongée !");
-        return;
-    }
+                console.log("On entre dans document validerPalanquees ");
+                if (!PLONGEE_ID) {
+                    alert("Erreur : Impossible de récupérer l'ID de la plongée !");
+                    return;
+                }
 
-    const palanqueesData = [];
+                const palanqueesData = [];
 
-    document.querySelectorAll(".palanquee-body").forEach(palanquee => {
-        // Récupération de l'ID de la palanquée
-        const id = palanquee.dataset.id;
-        
-        // Récupération du conteneur parent pour accéder aux autres informations
-        const palanqueeContainer = palanquee.closest(".bg-gray-800");
-        
-        // Récupération du nom
-        const nomElement = palanqueeContainer?.querySelector("span");
-        const nom = nomElement ? nomElement.textContent : "Nom inconnu";
-        
-        // Récupération des autres informations (profondeur, durée, paliers)
-        const profondeurElement = palanqueeContainer?.querySelector("[data-profondeur]");
-        const dureeElement = palanqueeContainer?.querySelector("[data-duree]");
-        const paliersElement = palanqueeContainer?.querySelector("[data-paliers]");
-        
-        const profondeur = profondeurElement ? parseFloat(profondeurElement.dataset.profondeur || profondeurElement.textContent) : 0;
-        const duree = dureeElement ? parseFloat(dureeElement.dataset.duree || dureeElement.textContent) : 0;
-        const paliers = paliersElement ? paliersElement.dataset.paliers || paliersElement.textContent : "";
-        
-        // Récupération des plongeurs
-        const plongeurs = [...palanquee.querySelectorAll("[data-id]")].map(p => p.dataset.id);
+                document.querySelectorAll(".palanquee-body").forEach(palanquee => {
+                    // Récupération de l'ID de la palanquée
+                    const id = palanquee.dataset.id;
 
-        if (plongeurs.length > 0) {
-            palanqueesData.push({ 
-                id, 
-                nom, 
-                profondeur, 
-                duree, 
-                paliers, 
-                plongeurs 
+                    // Récupération du conteneur parent pour accéder aux autres informations
+                    const palanqueeContainer = palanquee.closest(".bg-gray-800");
+
+                    // Récupération du nom
+                    const nomElement = palanqueeContainer?.querySelector("span");
+                    const nom = nomElement ? nomElement.textContent : "Nom inconnu";
+
+                    // Récupération des autres informations (profondeur, durée, paliers)
+                    const profondeurElement = palanqueeContainer?.querySelector("[data-profondeur]");
+                    const dureeElement = palanqueeContainer?.querySelector("[data-duree]");
+                    const paliersElement = palanqueeContainer?.querySelector("[data-paliers]");
+
+                    const profondeur = profondeurElement ? parseFloat(profondeurElement.dataset.profondeur || profondeurElement.textContent) : 0;
+                    const duree = dureeElement ? parseFloat(dureeElement.dataset.duree || dureeElement.textContent) : 0;
+                    const paliers = paliersElement ? paliersElement.dataset.paliers || paliersElement.textContent : "";
+
+                    // Récupération des plongeurs
+                    const plongeurs = [...palanquee.querySelectorAll("[data-id]")].map(p => p.dataset.id);
+
+                    if (plongeurs.length > 0) {
+                        palanqueesData.push({
+                            id,
+                            nom,
+                            profondeur,
+                            duree,
+                            paliers,
+                            plongeurs
+                        });
+                    }
+                });
+
+                if (palanqueesData.length === 0) {
+                    alert("Aucune palanquée à enregistrer !");
+                    return;
+                }
+
+                try {
+                    // Formatage des données des palanquées
+                    const palanqueesDataFormatted = palanqueesData.map(palanquee => {
+                        // Vérifier si l'ID est un ID temporaire généré par Date.now()
+                        // Ces IDs sont de grands nombres à 13 chiffres (timestamp en millisecondes)
+                        const idValue = palanquee.id;
+                        const isTemporaryId = idValue && String(idValue).length >= 13 && !isNaN(Number(idValue));
+
+                        // Si c'est un ID temporaire, on envoie null pour forcer la création d'une nouvelle palanquée
+                        // Sinon, on envoie l'ID tel quel (qui devrait être un ID valide de Supabase)
+                        return {
+                            plongee_id: PLONGEE_ID,
+                            id: isTemporaryId ? null : idValue,
+                            nom: palanquee.nom,
+                            profondeur: palanquee.profondeur || 0,
+                            duree: palanquee.duree || 0,
+                            paliers: palanquee.paliers || "",
+                            plongeurs: palanquee.plongeurs
+                        };
+                    });
+
+                    console.log("ID de la plongée envoyée à app.js : ", PLONGEE_ID);
+                    console.log("Données envoyées : ", palanqueesDataFormatted);
+
+                    const response = await fetch("/enregistrer_palanquee", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(palanqueesDataFormatted)
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        alert("Palanquées enregistrées avec succès !");
+                        // Ajout d'un délai avant de recharger pour s'assurer que les données sont bien enregistrées
+                        setTimeout(async () => {
+                            await chargerDonnees(); // Recharge les palanquées depuis la base après enregistrement
+                        }, 500);
+                    } else {
+                        alert("❌ Erreur : " + (result.error || "Erreur inconnue lors de l'enregistrement"));
+                        console.error("Détails de l'erreur:", result);
+                    }
+                } catch (error) {
+                    console.error("❌ Erreur lors de l'enregistrement :", error);
+                    alert("❌ Erreur technique lors de l'enregistrement. Consultez la console pour plus de détails.");
+                }
             });
-        }
-    });
-
-    if (palanqueesData.length === 0) {
-        alert("Aucune palanquée à enregistrer !");
-        return;
-    }
-
-    try {
-        // Formatage des données des palanquées
-        const palanqueesDataFormatted = palanqueesData.map(palanquee => {
-            // Vérifier si l'ID est un ID temporaire généré par Date.now()
-            // Ces IDs sont de grands nombres à 13 chiffres (timestamp en millisecondes)
-            const idValue = palanquee.id;
-            const isTemporaryId = idValue && String(idValue).length >= 13 && !isNaN(Number(idValue));
-            
-            // Si c'est un ID temporaire, on envoie null pour forcer la création d'une nouvelle palanquée
-            // Sinon, on envoie l'ID tel quel (qui devrait être un ID valide de Supabase)
-            return {
-                plongee_id: PLONGEE_ID,
-                id: isTemporaryId ? null : idValue,
-                nom: palanquee.nom,
-                profondeur: palanquee.profondeur || 0,
-                duree: palanquee.duree || 0,
-                paliers: palanquee.paliers || "",
-                plongeurs: palanquee.plongeurs
-            };
-        });
-
-        console.log("ID de la plongée envoyée à app.js : ", PLONGEE_ID);
-        console.log("Données envoyées : ", palanqueesDataFormatted);
-        
-        const response = await fetch("/enregistrer_palanquee", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(palanqueesDataFormatted)
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            alert("Palanquées enregistrées avec succès !");
-            // Ajout d'un délai avant de recharger pour s'assurer que les données sont bien enregistrées
-            setTimeout(async () => {
-                await chargerDonnees(); // Recharge les palanquées depuis la base après enregistrement
-            }, 500);
-        } else {
-            alert("❌ Erreur : " + (result.error || "Erreur inconnue lors de l'enregistrement"));
-            console.error("Détails de l'erreur:", result);
-        }
-    } catch (error) {
-        console.error("❌ Erreur lors de l'enregistrement :", error);
-        alert("❌ Erreur technique lors de l'enregistrement. Consultez la console pour plus de détails.");
-    }
-});
 
             await chargerDonnees();
         });
@@ -423,4 +428,5 @@ async function supprimerPalanquee(id) {
     <!--<script src="/js/indexeddb.js"></script>
     <script src="/js/client.js"></script>-->
 </body>
+
 </html>
