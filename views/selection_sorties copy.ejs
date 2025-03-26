@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sélection des Sorties</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            light: '#5E9DFF',
+                            DEFAULT: '#2A70E0',
+                            dark: '#1A4A9C',
+                        },
+                        secondary: {
+                            light: '#4FD1C5',
+                            DEFAULT: '#38B2AC',
+                            dark: '#2C7A7B',
+                        },
+                        accent: {
+                            light: '#F6AD55',
+                            DEFAULT: '#ED8936',
+                            dark: '#DD6B20',
+                        },
+                        dark: {
+                            light: '#2D3748',
+                            DEFAULT: '#1A202C',
+                            dark: '#171923',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Fichier CSS externe -->
+    <link rel="stylesheet" href="/style.css">
+
+    <!-- FullCalendar -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen px-4">
+        <!-- Bouton de retour en haut à gauche -->
+        <button onclick="window.history.back()" class="absolute top-4 left-4 text-white hover:text-gray-300 text-2xl">
+            ←
+        </button>
+
+    <div class="w-full max-w-md p-6">
+        <!-- Titre -->
+        <h1 class="text-3xl font-bold mb-4 text-center text-white">Sélection jour de plongée</h1>
+    
+        <!-- Calendrier (fixe) -->
+        <div id="calendar" class="mt-6 bg-gray-800 p-4 rounded-lg shadow-md"></div>
+    
+        <input type="hidden" id="dateInput">
+        <input type="hidden" id="sortieIdInput">
+    
+        <!-- Message d'erreur -->
+        <div id="error-message" class="text-red-500 text-center mt-4" style="display: none;"></div>
+    
+        <!-- Bouton Continuer -->
+        <button id="continuer-btn" onclick="validerSelection()" class="mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white text-lg font-semibold py-3 rounded-lg shadow-md transition duration-300">
+            Continuer
+        </button>
+    </div>
+    
+    <!-- Bottom Navigation -->
+    <div class="fixed bottom-0 left-0 w-full bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl">
+        <a href="/" class="text-gray-400 hover:text-blue-400 flex flex-col items-center">
+            <i class="fas fa-home text-xl"></i>
+            <span class="text-xs">🏠 Accueil</span>
+        </a>
+        <a href="/gestion-plongeurs" class="text-gray-400 hover:text-green-400 flex flex-col items-center">
+            <i class="fas fa-users text-xl"></i>
+            <span class="text-xs">👤 Plongeurs</span>
+        </a>
+        <a href="/gestion-sorties" class="text-gray-400 hover:text-yellow-400 flex flex-col items-center">
+            <i class="far fa-calendar-alt text-xl"></i>
+            <span class="text-xs">🤿 Sorties</span>
+        </a>
+        <a href="/selection-sorties" class="text-gray-400 hover:text-orange-400 flex flex-col items-center">
+            <i class="fas fa-mask text-xl"></i>
+            <span class="text-xs">📋 Palanquées</span>
+        </a>
+    </div>
+
+    <script>
+        let selectedSortieId = null;
+        let selectedDate = null;
+
+        function validerSelection() {
+            const selectedDateValue = $('#dateInput').val();
+            const sortieId = $('#sortieIdInput').val();
+            const errorMessage = $('#error-message');
+            if (!selectedDateValue) {
+                errorMessage.text("Veuillez sélectionner une date pour une sortie.");
+                errorMessage.show();
+            } else if (!sortieId) {
+                errorMessage.text("Aucune sortie prévue à cette date.");
+                errorMessage.show();
+            } else {
+                window.location.href = `/plongees/${sortieId}/${selectedDateValue}`;
+            }
+        }
+
+        $(document).ready(function() {
+            const sorties = [
+                <% sorties.forEach(sortie => { %>
+                    {
+                        id: '<%= sortie.id %>',
+                        lieu: '<%= sortie.lieu %>',
+                        start: '<%= sortie.date_debut %>',
+                        end: '<%= sortie.date_fin %>'
+                    },
+                <% }) %>
+            ];
+
+            const plongees = [
+                <% plongees.forEach(plongee => { %>
+                    '<%= plongee.date %>',
+                <% }) %>
+            ];
+
+            // Transformer les dates de plongée en événements pour FullCalendar
+            const diveEvents = plongees.map(date => ({
+                start: date,
+                allDay: true,
+                rendering: 'background',
+                backgroundColor: '#034aff'
+            }));
+
+            $('#calendar').fullCalendar({
+                locale: 'fr', // Définit la langue en français
+                height: 'auto',
+                header: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'month,agendaWeek,agendaDay'
+                },
+                events: [
+                    ...sorties.map(sortie => ({
+                        title: sortie.lieu,
+                        start: sortie.start,
+                        end: sortie.end,
+                        backgroundColor: '#762fbd',
+                        textColor: 'white',
+                        id: sortie.id
+                    })),
+                    ...diveEvents // Ajouter les événements de plongée
+                ],
+                eventRender: function(event, element) {
+                    element.attr('title', event.title);
+                },
+                dayClick: function(date, jsEvent, view) {
+                    // Supprime la classe "selected-date" de toutes les cellules avant d'ajouter la nouvelle
+                    $('#calendar').find('.fc-day, .fc-day-top').removeClass('selected-date');
+
+                    // Ajouter la classe à la cellule cliquée
+                    $(`td[data-date="${date.format('YYYY-MM-DD')}"], .fc-day-top[data-date="${date.format('YYYY-MM-DD')}"]`).addClass('selected-date');
+
+                    // Mettre à jour l'input caché avec la date sélectionnée
+                    $('#dateInput').val(date.format('YYYY-MM-DD'));
+
+                    // Masquer le message d'erreur
+                    $('#error-message').hide();
+
+                    // Vérifie si une sortie existe pour la date sélectionnée
+                    const sortie = sorties.find(sortie => sortie.start <= date.format('YYYY-MM-DD') && sortie.end >= date.format('YYYY-MM-DD'));
+                    if (sortie) {
+                        $('#sortieIdInput').val(sortie.id);
+                    } else {
+                        $('#sortieIdInput').val('');
+                    }
+                }
+            });
+
+            // Style pour la sélection de date
+            $("<style>")
+                .prop("type", "text/css")
+                .html(".selected-date { background-color: #FBBF24 !important; color: black !important; }") // Jaune Tailwind pour la sélection
+                .appendTo("head");
+        });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/locale/fr.js"></script>
+    <!-- IndexedDB and App Scripts -->
+    <!-- IndexedDB and App Scripts -->
+    <!--<script src="/js/indexeddb.js"></script>
+    <script src="/js/client.js"></script>-->
+</body>
+</html>

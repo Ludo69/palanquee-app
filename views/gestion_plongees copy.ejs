@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gestion des Plongées</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-900 text-white flex flex-col min-h-screen">
+    <!-- Bouton de retour en haut à gauche -->
+    <button onclick="window.history.back()" class="absolute top-4 left-4 text-white hover:text-gray-300 text-2xl">
+        ←
+    </button>
+
+    <div class="container mx-auto p-4 flex-grow">
+        <h1 class="text-2xl font-bold text-center mb-2">
+            Plongée du <span id="selected-date" data-date="<%= date %>">
+                <%= new Date(date).toLocaleDateString('fr-FR', { day: '2-digit' , month: 'long' , year: 'numeric' }) %>
+            </span>
+        </h1>
+        <p class="text-sm text-center text-white-600">
+            Cliquez sur la plongée pour constituer les palanquées
+        </p>
+
+
+        <ul class="space-y-3" id="plongeesList">
+            <% if (plongees && plongees.length> 0) { %>
+                <% plongees.forEach(function(plongee) { %>
+                    <li class="bg-[rgba(42,68,102,1)] p-3 rounded-lg shadow-md w-full max-w-3xl mx-auto relative">
+
+                        <!-- Première ligne : Plongée + Site + Croix suppression -->
+                        <div class="flex items-center justify-between w-full text-white">
+                            <span class="text-sm font-medium">
+                                Plongée <%= plongee.numero %> -
+                                    <span class="site-name">
+                                        <%= plongee.site || "Nom du site" %>
+                                    </span>
+                            </span>
+                            <button type="button" class="remove-plongee text-red-500 hover:text-red-400"
+                                data-plongee-id="<%= plongee.id %>">❌</button>
+                        </div>
+
+                        <!-- Deuxième ligne : DP -->
+                        <div class="text-sm text-white mt-1">
+                            DP : <span id="dp-name-<%= plongee.id %>" class="font-medium">Inconnu</span>
+                        </div>
+
+                        <!-- Troisième ligne : Boutons d'action (centrés) -->
+                        <div class="flex justify-center space-x-2 mt-2">
+                            <button class="open-dp-modal bg-green-500 text-white px-3 py-1 rounded text-xs"
+                                data-plongee-id="<%= plongee.id %>" data-sortie-id="<%= plongee.sortie_id %>">
+                                Choix du DP
+                            </button>
+                            <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded text-xs">Saisir le
+                                site</button>
+                            <a href="/parametres_palanquees?id=<%= plongee.id %>">
+                                <button class="bg-green-500 text-white px-3 py-1 rounded text-xs">Saisir les
+                                    paramètres</button>
+                            </a>
+                        </div>
+
+                        <!-- Quatrième ligne : Bouton "Gérer les palanquées" centré et CLIQUABLE -->
+                        <div class="flex justify-center mt-3 space-x-4">
+                            <button
+                                class="manage-palanquees bg-yellow-500 text-white px-4 py-2 rounded text-sm font-semibold"
+                                data-plongee-id="<%= plongee.id %>">
+                                Gérer les palanquées
+                            </button>
+                        </div>
+
+                    </li>
+                    <% }); %>
+                        <% } else { %>
+                            <p class="text-center text-gray-400">Aucune plongée à afficher.</p>
+                            <% } %>
+        </ul>
+
+
+        <!-- Modal pour afficher les plongeurs -->
+        <div id="dp-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-gray-800 p-6 rounded-2xl max-w-md w-full">
+                <h2 class="text-2xl font-bold mb-4 text-white">Choix du directeur de plongée</h2>
+                <ul id="dp-list" class="space-y-2 text-white">
+                    <!-- Liste des plongeurs chargée dynamiquement -->
+                </ul>
+                <button id="close-modal" class="mt-4 bg-purple-500 text-white px-4 py-2 rounded-lg">Fermer</button>
+            </div>
+        </div>
+
+
+
+
+        <div class="mt-6 flex justify-center">
+            <button id="ajouter-plongee" class="bg-green-500 text-white px-4 py-2 rounded-lg shadow-md"
+                data-date="<%= date %>">Ajouter Plongée</button>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div
+        class="fixed bottom-0 left-0 w-full bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl">
+        <a href="/" class="text-gray-400 hover:text-blue-400 flex flex-col items-center">
+            <i class="fas fa-home text-xl"></i>
+            <span class="text-xs">🏠 Accueil</span>
+        </a>
+        <a href="/gestion-plongeurs" class="text-gray-400 hover:text-green-400 flex flex-col items-center">
+            <i class="fas fa-users text-xl"></i>
+            <span class="text-xs">👤 Plongeurs</span>
+        </a>
+        <a href="/gestion-sorties" class="text-gray-400 hover:text-yellow-400 flex flex-col items-center">
+            <i class="far fa-calendar-alt text-xl"></i>
+            <span class="text-xs">🤿 Sorties</span>
+        </a>
+        <a href="/selection-sorties" class="text-gray-400 hover:text-orange-400 flex flex-col items-center">
+            <i class="fas fa-mask text-xl"></i>
+            <span class="text-xs">📋 Palanquées</span>
+        </a>
+    </div>
+
+    <script>
+        async function chargerPlongees() {
+            const pathSegments = window.location.pathname.split("/");
+            const sortieId = pathSegments[2];
+            const sortieDate = document.getElementById("selected-date").getAttribute("data-date");
+
+            try {
+                console.log("🔍 ID de la sortie :", sortieId, "| Date :", sortieDate); // Debug
+
+                const response = await fetch(`/api/plongees/${sortieId}/${sortieDate}`);
+
+                if (!response.ok) {
+                    throw new Error(`Erreur serveur (${response.status})`);
+                }
+                const plongees = await response.json();
+
+                console.log("✅ Plongées récupérées avec site et dp :", plongees);
+
+                // Mise à jour de l'affichage
+                const plongeesList = document.getElementById("plongeesList");
+                plongeesList.innerHTML = ""; // Vide la liste
+
+                if (plongees.length > 0) {
+                    // Trier les plongées par leur numéro
+                    plongees.sort((a, b) => a.numero - b.numero);
+
+                    // Afficher les plongées triées
+                    for (let plongee of plongees) {
+                        const li = document.createElement("li");
+                        li.classList.add(
+                            "bg-[rgba(42,68,102,1)]",
+                            "p-3",
+                            "rounded-lg",
+                            "shadow-md",
+                            "w-full",
+                            "max-w-3xl",
+                            "mx-auto",
+                            "relative"
+                        );
+                        li.setAttribute("data-id", plongee.id); // ✅ Ajout de l'ID ici
+
+                        const dpInfos = plongee.nomdp ? await getDpInfos(plongee.nomdp) : { nom: "Inconnu", niveau: "?" };
+
+
+                        li.innerHTML = `
+                        <!-- Première ligne : Plongée + Site -->
+                        <div class="flex items-center justify-between w-full text-white">
+                            <span class="text-sm font-bold">
+                                Plongée ${plongee.numero} - <span class="site-name">${plongee.site || "Nom du site"}</span>
+                            </span>
+                            <button type="button" class="remove-plongee text-red-500 hover:text-red-400"
+                                data-plongee-id="${plongee.id}">❌</button>
+                        </div>
+
+                        <!-- Deuxième ligne : DP -->
+                        <div class="text-sm text-white mt-1 font-bold">
+                            DP : 
+                            <span id="dp-name-${plongee.id}" class="bg-blue-500 text-white px-3 py-1 rounded-lg text-xs">
+                                ${dpInfos.nom} - ${dpInfos.niveau}
+                            </span>
+                        </div>
+
+                        <!-- Troisième ligne : Boutons d'action (centrés) -->
+                        <div class="flex justify-center space-x-2 mt-2">
+                            <button class="open-dp-modal bg-green-500 text-white px-3 py-1 rounded text-xs" data-plongee-id="${plongee.id}">
+                                Choix du DP
+                            </button>
+                            <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded text-xs">Saisir le site</button>
+                            <a href="/parametres_palanquees?id=${plongee.id}">
+                                <button class="bg-green-500 text-white px-3 py-1 rounded text-xs">Saisir les paramètres</button>
+                            </a>
+                        </div>
+
+                        <!-- Quatrième ligne : Bouton "Gérer les palanquées" centré et CLIQUABLE -->
+                        <div class="flex justify-center mt-3 space-x-4">
+                            <a href="/gestion_palanquees?id=${plongee.id}">
+                                <button class="bg-yellow-500 text-white px-4 py-2 rounded text-sm font-semibold">
+                                    Gérer les palanquées
+                                </button>
+                            </a>
+                                <button 
+                                    class="start-plongee ${plongee.heure_debut ? 'bg-gray-500' : 'bg-red-500'} text-white px-4 py-2 rounded text-sm font-semibold" 
+                                    data-plongee-id="${plongee.id}"
+                                    ${plongee.heure_debut ? 'disabled' : ''}
+                                >
+                                    ${plongee.heure_debut ? 'Plongée lancée' : 'Lancer la plongée'}
+                                </button>
+                        </div>
+                    `;
+
+                        plongeesList.appendChild(li);
+                    }
+                } else {
+                    plongeesList.innerHTML = `<p class="text-center text-gray-400">Aucune plongée à afficher.</p>`;
+                }
+
+
+
+                // Ajouter l'événement de suppression
+                document.querySelectorAll(".remove-plongee").forEach((btn) => {
+                    btn.addEventListener("click", async function (event) {
+                        event.stopPropagation();
+                        const li = this.closest("li");
+                        const plongeeId = li.getAttribute("data-id");
+
+                        if (confirm("Voulez-vous vraiment supprimer cette plongée ?")) {
+                            await deletePlongee(plongeeId, li);
+                        }
+                    });
+                });
+
+                // Ajout des gestionnaires d'événements après avoir ajouté les éléments à la liste
+                ajouterGestionnaireEvenements();
+            } catch (error) {
+                console.error("❌ Erreur lors du chargement des plongées :", error);
+                alert("Erreur lors du chargement des plongées.");
+            }
+        }
+
+        // Fonction pour supprimer une plongée via l'API
+        async function deletePlongee(plongeeId, liElement) {
+            if (!plongeeId) return;
+
+            const response = await fetch(`/delete-plongee/${plongeeId}`, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                liElement.remove(); // Supprime visuellement la plongée si la suppression en base a réussi
+            } else {
+                alert("Erreur lors de la suppression : " + data.error);
+            }
+        }
+
+
+
+
+        // Fonction pour ajouter la gestion des événements
+        function ajouterGestionnaireEvenements() {
+            // Gestion de la redirection quand on clique sur une ligne
+            document.querySelectorAll("#plongeesList li").forEach(item => {
+                item.addEventListener("click", function (e) {
+                    // Empêcher la navigation si un input, un bouton ou "Gérer les palanquées" est cliqué
+                    if (
+                        e.target.tagName === "INPUT" ||
+                        e.target.classList.contains("edit-btn") ||
+                        e.target.classList.contains("open-dp-modal") ||
+                        e.target.classList.contains("manage-palanquees") // ✅ Ajout de cette condition
+                    ) {
+                        e.stopPropagation(); // Empêche la navigation
+                        return;
+                    }
+
+                    const plongeeId = this.getAttribute("data-id");
+                    const dpNameElement = this.querySelector(`#dp-name-${plongeeId}`);
+
+                    // Vérifier si le nom du DP est "Inconnu"
+                    if (dpNameElement && dpNameElement.textContent === "Inconnu") {
+                        alert("Veuillez sélectionner un DP.");
+                        return; // Empêche la navigation si le DP est "Inconnu"
+                    }
+
+                    // 🚨 Suppression de la redirection automatique
+                });
+            });
+
+
+
+
+            // Fonction pour vérifier si l'ID est un UUID valide
+            function isValidUUID(id) {
+                const regex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+                return regex.test(id);
+            }
+
+            // Gestion du bouton "Nom DP" pour ouvrir la modal
+            document.querySelectorAll(".open-dp-modal").forEach(button => {
+                button.addEventListener("click", function (e) {
+                    e.stopPropagation(); // Empêche la redirection par défaut
+
+                    const plongeeId = this.closest("li").getAttribute("data-id");
+
+                    // Récupérer l'ID de la sortie depuis l'URL
+                    const pathSegments = window.location.pathname.split("/"); // Divise l'URL en segments
+                    const sortieId = pathSegments[2]; // Récupère le deuxième élément après `/plongees/`
+
+                    // Si l'ID est valide, ouvrir la modal
+                    openDPModal(plongeeId, sortieId); // Ouvre la modal avec l'ID de la plongée et de la sortie
+                });
+            });
+
+
+
+            // Gestion du bouton "Site"
+            document.querySelectorAll(".edit-btn").forEach(button => {
+                button.addEventListener("click", function (e) {
+                    e.stopPropagation(); // Empêche la navigation
+                    const li = this.closest("li");
+                    const siteNameSpan = li.querySelector(".site-name");
+                    const currentSiteName = siteNameSpan.textContent;
+
+                    // Remplacer le texte par un formulaire
+                    siteNameSpan.innerHTML = `
+                        <input type="text" value="${currentSiteName}" class="site-input bg-gray-700 text-white p-1 rounded"/>
+                        <button class="save-btn bg-green-500 text-white px-2 py-1 rounded ml-2">Valider</button>
+                    `;
+
+                    // Gestion du bouton "Valider"
+                    li.querySelector(".save-btn").addEventListener("click", async function (e) {
+                        e.preventDefault(); // Empêche la redirection par défaut
+                        e.stopPropagation(); // Empêche la propagation de l'événement
+                        const newSiteName = li.querySelector(".site-input").value;
+                        const plongeeId = li.getAttribute("data-id");
+
+                        try {
+                            console.log("📡 Envoi requête API : /api/update-site", JSON.stringify({ plongeeId, site: newSiteName }));
+
+                            const response = await fetch("/api/update-site", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ plongeeId: plongeeId, site: newSiteName })
+                            });
+
+                            if (!response.ok) {
+                                throw new Error(`Erreur serveur (${response.status})`);
+                            }
+
+                            const data = await response.json();
+                            console.log("✅ Site mis à jour :", data);
+                            siteNameSpan.textContent = newSiteName; // Mettre à jour le texte avec le nouveau nom du site
+                        } catch (error) {
+                            console.error("❌ Erreur lors de la mise à jour du site :", error);
+                            alert("Erreur lors de la mise à jour du site");
+                        }
+                    });
+                });
+            });
+
+            // **Nouvelle gestion du bouton "Lancer la plongée"**
+            document.querySelectorAll(".start-plongee").forEach(button => {
+                button.addEventListener("click", async function (e) {
+                    console.log("🟢 Bouton 'Lancer la plongée' cliqué !");
+
+                    const plongeeId = this.getAttribute("data-plongee-id");
+                    console.log("🔹 ID de la plongée :", plongeeId);
+
+                    try {
+                        const now = new Date();  
+                        const heureSQL = now.toISOString().split('T')[1].slice(0, 8); // "HH:MM:SS"
+                        
+                        console.log("🕒 Heure format SQL :", heureSQL); // Vérifie l'heure générée
+                        const response = await fetch("/api/lancer-plongee", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ plongeeId, startTime: heureSQL })
+                        });
+
+                        const result = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(result.error || "Erreur inconnue");
+                        }
+
+                        //alert("✅ Plongée lancée avec succès !");
+                        // Désactiver le bouton après lancement
+                        this.disabled = true;
+                        this.classList.add("bg-gray-500"); // Change la couleur du bouton
+
+                        // Forcer le rafraîchissement de l'écran
+                        window.location.reload();   
+
+                    } catch (error) {
+                        console.error("❌ Erreur :", error);
+                        alert("Erreur : impossible d'enregistrer l'heure !");
+                    }
+                });
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            // 🔥 Extraire `sortie_id` depuis l'URL
+            const pathSegments = window.location.pathname.split("/"); // Divise l'URL en segments
+            const sortieId = pathSegments[2]; // Récupère le deuxième élément après `/plongees/`
+            const sortieDate = document.getElementById("selected-date").getAttribute("data-date");
+
+            console.log("🔹 sortie_id détecté :", sortieId);
+
+            if (!sortieId || sortieId.length !== 36) {
+                console.error("❌ Erreur : sortie_id invalide !");
+                alert("Erreur : Aucun ID de sortie valide trouvé.");
+                return;
+            }
+
+            // Récupérer le bouton "Ajouter Plongée"
+            const ajouterPlongeeBtn = document.getElementById("ajouter-plongee");
+
+            if (ajouterPlongeeBtn) {
+                ajouterPlongeeBtn.addEventListener("click", async () => {
+                    console.log("🟢 Bouton Ajouter Plongée cliqué !");
+
+                    try {
+                        const response = await fetch("/api/ajouter-plongee", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                sortie_id: sortieId, // 🟢 UUID détecté depuis l'URL
+                                date: sortieDate // Date de la sortie prévue
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`Erreur serveur (${response.status})`);
+                        }
+
+                        const data = await response.json();
+                        console.log("✅ Réponse serveur :", data);
+                        chargerPlongees(); // Recharge uniquement la liste des plongées
+                    } catch (error) {
+                        console.error("❌ Erreur lors de l'ajout :", error);
+                        alert("Erreur lors de l'ajout de la plongée");
+                    }
+                });
+            } else {
+                console.error("⚠️ Bouton Ajouter Plongée non trouvé !");
+            }
+
+        });
+
+
+        // Fonction pour ouvrir la modal et charger les plongeurs
+        async function openDPModal(plongeeId, sortieId) {
+            try {
+                const url = `/api/get-plongeurs?sortieId=${sortieId}`;
+
+                // Récupérer les plongeurs associés à cette sortie
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Erreur serveur (${response.status})`);
+                }
+
+                let plongeurs = await response.json();
+                console.log("✅ Plongeurs récupérés :", plongeurs);
+
+                // Filtrer les plongeurs pour ne conserver que ceux de niveau E3 ou E4
+                plongeurs = plongeurs.filter(plongeur => plongeur.niveau === "E3" || plongeur.niveau === "E4");
+
+                if (plongeurs.length === 0) {
+                    alert("Aucun plongeur de niveau E3 ou E4 disponible.");
+                }
+
+                // Remplir la liste des plongeurs dans la modal
+                const dpList = document.getElementById('dp-list');
+                dpList.innerHTML = ''; // Réinitialise la liste
+
+                plongeurs.forEach(plongeur => {
+                    // Créer un div cliquable pour chaque plongeur
+                    const div = document.createElement('div');
+                    div.classList.add('plongeur-item', 'bg-gray-700', 'text-white', 'p-3', 'rounded-lg', 'mb-2', 'cursor-pointer');
+                    div.textContent = `${plongeur.nom} - Niveau: ${plongeur.niveau || 'Inconnu'}`;
+
+                    // Ajouter un gestionnaire d'événements pour sélectionner un plongeur
+                    div.addEventListener('click', async function () {
+                        // Mettre à jour le nom du DP dans la plongée correspondante
+                        const dpNameSpan = document.getElementById(`dp-name-${plongeeId}`);
+                        dpNameSpan.textContent = plongeur.nom; // Remplacer "Inconnu" par le nom du plongeur sélectionné
+
+                        // Fermer la modal
+                        document.getElementById('dp-modal').classList.add('hidden');
+
+                        // Mettre à jour la plongée avec le nom du DP sélectionné
+                        try {
+                            const updateResponse = await fetch('/api/update-dp', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    plongeeId: plongeeId,
+                                    nomDP: plongeur.id // Utilisation de l'ID du plongeur comme nomDP
+                                })
+                            });
+
+                            if (!updateResponse.ok) {
+                                throw new Error(`Erreur serveur (${updateResponse.status})`);
+                            }
+
+                            const updateData = await updateResponse.json();
+                            console.log("✅ Plongée mise à jour avec le DP :", updateData);
+                            // Forcer le rafraîchissement de l'écran
+                            window.location.reload();
+                        } catch (error) {
+                            console.error("❌ Erreur lors de la mise à jour de la plongée :", error);
+                            alert("Erreur lors de la mise à jour du DP de la plongée.");
+                        }
+                    });
+
+                    dpList.appendChild(div);
+                });
+
+                // Afficher la modal
+                document.getElementById('dp-modal').classList.remove('hidden');
+            } catch (error) {
+                console.error("❌ Erreur lors de la récupération des plongeurs :", error);
+                alert("Erreur lors de la récupération des plongeurs.");
+            }
+        }
+
+
+
+
+
+
+        // Fonction pour fermer la modal
+        document.getElementById('close-modal').addEventListener('click', function () {
+            document.getElementById('dp-modal').classList.add('hidden');
+        });
+
+        async function getDpInfos(nomdp) {
+            if (!nomdp) {
+                console.error("❌ Erreur : ID de DP est nul ou non défini");
+                return { nom: "Inconnu", niveau: "?" }; // Retourne des valeurs par défaut
+            }
+
+            try {
+                const response = await fetch(`/api/plongeur/${nomdp}`);
+                if (!response.ok) {
+                    throw new Error(`Erreur serveur (${response.status})`);
+                }
+                const data = await response.json();
+                return {
+                    nom: data.nom || "Inconnu",
+                    niveau: data.niveau || "?" // Niveau par défaut si manquant
+                };
+            } catch (error) {
+                console.error("❌ Erreur lors de la récupération du plongeur :", error);
+                return { nom: "Inconnu", niveau: "?" };
+            }
+        }
+
+
+
+        // Fonction pour récupérer la date de la plongée à partir de l'ID de la plongée
+        async function getPlongeeDate(plongeeId) {
+            try {
+                const response = await fetch(`/api/get-plongee-date?plongeeId=${plongeeId}`);
+                if (!response.ok) {
+                    throw new Error(`Erreur serveur lors de la récupération de la date de la plongée (${response.status})`);
+                }
+
+                const data = await response.json();
+                return data.date;  // Retourner la date de la plongée récupérée
+            } catch (error) {
+                console.error("❌ Erreur lors de la récupération de la date de la plongée :", error);
+                alert("Erreur lors de la récupération de la date de la plongée.");
+                return null;  // Retourner null en cas d'erreur
+            }
+        }
+
+        // Fonction pour fermer la modal
+        document.getElementById('close-modal').addEventListener('click', function () {
+            document.getElementById('dp-modal').classList.add('hidden');
+        });
+
+
+        // Charger les plongées et ajouter les gestionnaires d'événements
+        chargerPlongees();
+    </script>
+    <!-- IndexedDB and App Scripts -->
+    <!--<script src="/js/indexeddb.js"></script>
+    <script src="/js/client.js"></script>-->
+</body>
+
+</html>

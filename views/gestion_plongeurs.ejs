@@ -3,297 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gestion des Plongeurs</title>
+    <title>Gestion des Plongeurs | Palanquee Pro</title>
+    
+    <!-- TailwindCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            light: '#5E9DFF',
+                            DEFAULT: '#2A70E0',
+                            dark: '#1A4A9C',
+                        },
+                        secondary: {
+                            light: '#4FD1C5',
+                            DEFAULT: '#38B2AC',
+                            dark: '#2C7A7B',
+                        },
+                        accent: {
+                            light: '#F6AD55',
+                            DEFAULT: '#ED8936',
+                            dark: '#DD6B20',
+                        },
+                        dark: {
+                            light: '#2D3748',
+                            DEFAULT: '#1A202C',
+                            dark: '#171923',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Fichier CSS externe -->
+    <link rel="stylesheet" href="/style.css">
+
+    <!-- Manifest & Service Worker -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1A4A9C">
     <link rel="icon" type="image/x-icon" href="/icons/favicon.ico">
+
 </head>
-<body class="bg-gray-900 text-white flex flex-col items-center min-h-screen">
-        <!-- Bouton de retour en haut à gauche -->
-        <button onclick="window.history.back()" class="absolute top-4 left-4 text-white hover:text-gray-300 text-2xl">
-            ←
+<body class="bg-gradient-to-b from-dark-dark to-dark-light text-white font-sans min-h-screen pb-16">
+
+    <!-- Header -->
+    <div class="w-full max-w-3xl mx-auto p-4 sm:p-6 relative">
+        <!-- Bouton de retour -->
+        <button onclick="window.history.back()" class="absolute top-6 left-6 text-gray-300 hover:text-white transition-colors">
+            <i class="fas fa-arrow-left text-xl"></i>
         </button>
 
-    <div class="w-full max-w-md p-6 text-center flex flex-col flex-grow">
-        <h1 class="text-3xl font-bold mb-4">Gestion des Plongeurs</h1>
+        <!-- Titre -->
+        <div class="text-center mb-8">
+            <h1 class="text-2xl sm:text-3xl font-bold">
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary-light to-secondary-light">Gestion</span>
+                <span class="text-gray-300">des Plongeurs</span>
+            </h1>
+            <p class="text-gray-400 mt-2">Ajoutez et gérez vos membres</p>
+        </div>
 
-        <!-- Formulaire d'ajout de plongeur -->
-        <form action="/ajouter-plongeur" method="POST" class="bg-gray-800 p-4 rounded-lg shadow-md space-y-4">
-            <input type="text" id="nom" name="nom" placeholder="Nom du plongeur" required class="w-full p-2 bg-gray-700 text-white rounded-md border border-gray-600 focus:outline-none">
-            <div class="grid grid-cols-4 gap-2">
-                <% ["N1", "PE40", "N2", "N3", "GP", "E2", "E3", "E4"].forEach(niveau => { %>
-                    <button type="button" class="niveau-btn-create bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition" data-value="<%= niveau %>"><%= niveau %></button>
+        <!-- Formulaire d'ajout -->
+        <div class="bg-dark-light rounded-2xl p-6 shadow-lg border border-gray-700 mb-8">
+            <form action="/ajouter-plongeur" method="POST" class="space-y-4">
+                <div>
+                    <label for="nom" class="block text-sm font-medium text-gray-300 mb-1">Nom du plongeur</label>
+                    <input type="text" id="nom" name="nom" required 
+                           class="w-full p-3 bg-dark border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-light focus:border-transparent">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Niveau de certification</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <% ["N1", "PE40", "N2", "N3", "GP", "E2", "E3", "E4"].forEach(niveau => { %>
+                            <button type="button" class="niveau-btn-create bg-primary-dark hover:bg-primary-light text-white p-2 rounded-lg transition" 
+                                    data-value="<%= niveau %>"><%= niveau %></button>
+                        <% }) %>
+                    </div>
+                    <input type="hidden" id="niveau-create" name="niveau" value="">
+                </div>
+                
+                <button type="submit" class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 rounded-lg font-medium transition-all">
+                    <i class="fas fa-plus mr-2"></i> Ajouter Plongeur
+                </button>
+            </form>
+        </div>
+
+        <!-- Liste des plongeurs -->
+        <div class="bg-dark-light rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
+            <div class="p-4 border-b border-gray-700">
+                <h2 class="text-lg font-semibold text-gray-300">
+                    <i class="fas fa-users mr-2"></i> Liste des Plongeurs
+                </h2>
+            </div>
+            
+            <div class="overflow-y-auto max-h-96 no-scrollbar">
+                <% plongeurs.forEach(plongeur => { %>
+                    <div class="p-4 border-b border-gray-700 last:border-0 hover:bg-dark transition-colors flex justify-between items-center">
+                        <div>
+                            <h3 class="font-medium"><%= plongeur.nom %></h3>
+                            <span class="text-sm text-gray-400"><%= plongeur.niveau %></span>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button onclick="openEditPopup('<%= plongeur.id %>', '<%= plongeur.niveau %>')" 
+                                    class="text-yellow-400 hover:text-yellow-300 transition-colors">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deletePlongeur('<%= plongeur.id %>')" 
+                                    class="text-red-500 hover:text-red-400 transition-colors">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
                 <% }) %>
             </div>
-            <input type="hidden" id="niveau-create" name="niveau" value="">
-            <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-md transition">Ajouter Plongeur</button>
-        </form>
-
-         <h2 class="text-xl font-semibold mt-6 mb-2">Liste des Plongeurs</h2>
-        
-        <!-- Liste des plongeurs scrollable -->
-        <div class="overflow-y-auto max-h-80 w-full p-2 space-y-2 no-scrollbar">
-            <% plongeurs.forEach(plongeur => { %>
-                <div class="bg-[rgba(42,68,102,1)] p-3 rounded-lg flex justify-between items-center shadow-md">
-                    <span><%= plongeur.nom %> - <%= plongeur.niveau %></span>
-                    <div class="space-x-2">
-                        <button class="text-yellow-400 hover:text-yellow-300" onclick="openEditPopup('<%= plongeur.id %>', '<%= plongeur.niveau %>')">✏️</button>
-
-                        <button class="text-red-500 hover:text-red-400" onclick="deletePlongeur('<%= plongeur.id %>')">❌</button>
-                    </div>
-                </div>
-            <% }) %>
         </div>
     </div>
 
     <!-- Bottom Navigation -->
-    <div class="fixed bottom-0 left-0 w-full bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl">
-        <a href="/" class="text-gray-400 hover:text-blue-400 flex flex-col items-center">
-            <i class="fas fa-home text-xl"></i>
-            <span class="text-xs">🏠 Accueil</span>
+    <nav class="fixed bottom-0 left-0 w-full bg-dark-light bg-opacity-90 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl border-t border-gray-700 z-40">
+        <a href="/" class="nav-item text-primary-light flex flex-col items-center">
+            <i class="fas fa-home text-lg"></i>
+            <span class="text-xs mt-1">Accueil</span>
         </a>
-        <a href="/gestion-plongeurs" class="text-gray-400 hover:text-green-400 flex flex-col items-center">
-            <i class="fas fa-users text-xl"></i>
-            <span class="text-xs">👤 Plongeurs</span>
+        <a href="/gestion-plongeurs" class="nav-item active text-gray-400 flex flex-col items-center">
+            <i class="fas fa-user-group text-lg"></i>
+            <span class="text-xs mt-1">Plongeurs</span>
         </a>
-        <a href="/gestion-sorties" class="text-gray-400 hover:text-yellow-400 flex flex-col items-center">
-            <i class="far fa-calendar-alt text-xl"></i>
-            <span class="text-xs">🤿 Sorties</span>
+        <a href="/gestion-sorties" class="nav-item text-gray-400 flex flex-col items-center">
+            <i class="far fa-calendar-alt text-lg"></i>
+            <span class="text-xs mt-1">Sorties</span>
         </a>
-        <a href="/selection-sorties" class="text-gray-400 hover:text-orange-400 flex flex-col items-center">
-            <i class="fas fa-mask text-xl"></i>
-            <span class="text-xs">📋 Palanquées</span>
+        <a href="/selection-sorties" class="nav-item text-gray-400 flex flex-col items-center">
+            <i class="fas fa-layer-group text-lg"></i>
+            <span class="text-xs mt-1">Palanquées</span>
         </a>
+    </nav>
+
+    <!-- Popup d'édition -->
+    <div id="edit-popup" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 px-4">
+        <div class="bg-dark-light p-6 rounded-2xl max-w-sm w-full border border-gray-700">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-primary-light">Modifier le niveau</h2>
+                <button onclick="closePopup()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-4 gap-2 mb-6">
+                <% ["N1", "PE40", "N2", "N3", "GP", "E2", "E3", "E4"].forEach(niveau => { %>
+                    <button type="button" class="niveau-btn bg-primary-dark hover:bg-primary-light text-white p-2 rounded-lg transition" 
+                            data-value="<%= niveau %>"><%= niveau %></button>
+                <% }) %>
+            </div>
+            
+            <input type="hidden" id="edit-plongeur-id">
+            <input type="hidden" id="edit-niveau">
+        </div>
     </div>
 
     <script>
-        // Sélectionner tous les boutons de niveau pour la création
-        const niveauButtonsCreate = document.querySelectorAll('.niveau-btn-create');
-
-        niveauButtonsCreate.forEach(button => {
+        // Gestion des boutons de niveau (création)
+        document.querySelectorAll('.niveau-btn-create').forEach(button => {
             button.addEventListener('click', function() {
-                // Réinitialiser la classe "bg-green-500" pour tous les boutons
-                niveauButtonsCreate.forEach(btn => btn.classList.remove('bg-green-500'));
-
-                // Ajouter la classe "bg-green-500" au bouton cliqué
-                button.classList.add('bg-green-500');
-
-                // Mettre à jour l'input caché avec la valeur du niveau sélectionné
-                document.getElementById('niveau-create').value = button.dataset.value;
-            });
-        });
-        // Sélectionner tous les boutons de niveau
-        // Lors de l'ajout d'un plongeur, on ne doit pas déclencher immédiatement une requête, juste mettre à jour l'input caché.
-        const niveauButtons = document.querySelectorAll('.niveau-btn');
-
-        niveauButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                // Réinitialiser la classe "bg-green-500" pour tous les boutons
-                niveauButtons.forEach(btn => btn.classList.remove('bg-green-500'));
+                document.querySelectorAll('.niveau-btn-create').forEach(btn => 
+                    btn.classList.remove('bg-primary-light', 'ring-2', 'ring-white'));
                 
-                // Ajouter la classe "bg-green-500" au bouton cliqué
-                button.classList.add('bg-green-500');
-                
-                // Mettre à jour l'input caché avec la valeur du niveau sélectionné
-                document.getElementById('niveau').value = button.dataset.value;
+                this.classList.add('bg-primary-light', 'ring-2', 'ring-white');
+                document.getElementById('niveau-create').value = this.dataset.value;
             });
         });
 
-    
-       // Fonction pour ouvrir la popup d'édition
+        // Fonction pour ouvrir la popup d'édition
         function openEditPopup(plongeurId, currentNiveau) {
-            // Mettre l'ID du plongeur et le niveau actuel dans les champs cachés du formulaire
             document.getElementById('edit-plongeur-id').value = plongeurId;
             document.getElementById('edit-niveau').value = currentNiveau;
 
-            // Mettre à jour les boutons de niveau pour indiquer le niveau actuel
-            document.querySelectorAll('.niveau-btn').forEach(button => {
-                if (button.getAttribute('data-value') === currentNiveau) {
-                    button.classList.add('bg-green-500', 'text-white');
-                } else {
-                    button.classList.remove('bg-green-500', 'text-white');
+            // Mettre en surbrillance le niveau actuel
+            document.querySelectorAll('.niveau-btn').forEach(btn => {
+                btn.classList.remove('bg-primary-light', 'ring-2', 'ring-white');
+                if (btn.dataset.value === currentNiveau) {
+                    btn.classList.add('bg-primary-light', 'ring-2', 'ring-white');
                 }
             });
 
-            // Afficher la popup
             document.getElementById('edit-popup').classList.remove('hidden');
         }
-    
-        // Fonction pour fermer la popup
+
+        // Fermer la popup
         function closePopup() {
             document.getElementById('edit-popup').classList.add('hidden');
         }
-    
-        // Sélectionner tous les boutons de niveau dans la popup et ajouter un événement de clic pour enregistrer automatiquement
+
+        // Gestion des boutons de niveau (édition)
         document.querySelectorAll('.niveau-btn').forEach(button => {
             button.addEventListener('click', function() {
-                // Mettre à jour la valeur cachée du niveau
-                const niveau = this.getAttribute('data-value');
-                document.getElementById('edit-niveau').value = niveau;
-    
-                // Ajouter la classe de sélection (couleur verte) pour le bouton cliqué
-                document.querySelectorAll('.niveau-btn').forEach(btn => btn.classList.remove('bg-green-500', 'text-white'));
-                this.classList.add('bg-green-500', 'text-white');
-    
-                // Effectuer la requête pour mettre à jour le niveau du plongeur immédiatement
+                const niveau = this.dataset.value;
                 const plongeurId = document.getElementById('edit-plongeur-id').value;
-    
+
                 fetch(`/modifier-plongeur/${plongeurId}`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ niveau: niveau })
                 })
-                .then(response => {
-                    if (response.ok) {
-                        location.reload(); // Recharger la page pour afficher les changements
-                    } else {
-                        alert("Erreur lors de la modification");
-                    }
-                })
-                .catch(error => console.error("❌ Erreur :", error));
-    
-                // Fermer la popup après l'enregistrement
-                closePopup();
+                .then(response => response.ok ? location.reload() : alert("Erreur"))
+                .catch(error => console.error("Erreur:", error));
             });
         });
-    
+
+        // Suppression d'un plongeur
         function deletePlongeur(id) {
             if (confirm("Voulez-vous vraiment supprimer ce plongeur ?")) {
                 fetch(`/supprimer-plongeur/${id}`, { method: "DELETE" })
-                .then(response => response.ok ? location.reload() : alert("Erreur lors de la suppression"))
-                .catch(error => console.error("❌ Erreur :", error));
+                .then(response => response.ok ? location.reload() : alert("Erreur"))
+                .catch(error => console.error("Erreur:", error));
             }
         }
     </script>
-    
-
-    <style>
-        /* Cache la barre de défilement mais permet de scroller */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-    </style>
-    <!-- IndexedDB and App Scripts -->
-    <!--<script src="/js/indexeddb.js"></script>
-    <script src="/js/client.js"></script>-->
-    <!-- Popup d'édition du niveau -->
-<<div id="edit-popup" class="hidden fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
-    <div class="bg-gray-800 p-6 rounded-lg shadow-md w-80">
-        <h2 class="text-2xl text-white mb-4">Modifier le niveau du plongeur</h2>
-        <form id="edit-form" method="POST">
-            <input type="hidden" id="edit-plongeur-id" name="plongeur-id">
-            <input type="hidden" id="edit-niveau" name="niveau">
-
-            <!-- Choix du niveau -->
-            <div class="grid grid-cols-4 gap-2 mb-4">
-                <% ["N1", "PE40", "N2", "N3", "GP", "E2", "E3", "E4"].forEach(niveau => { %>
-                    <button type="button" class="niveau-btn bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition" data-value="<%= niveau %>"><%= niveau %></button>
-                <% }) %>
-            </div>
-
-        </form>
-        <button onclick="closePopup()" class="mt-4 text-red-500 hover:text-red-400">Fermer</button>
-    </div>
-</div>
-
-<script>
-    // Fonction pour ouvrir la popup d'édition
-function openEditPopup(plongeurId, currentNiveau) {
-    // Mettre l'ID du plongeur et le niveau actuel dans les champs cachés du formulaire
-    document.getElementById('edit-plongeur-id').value = plongeurId;
-    document.getElementById('edit-niveau').value = currentNiveau;
-
-    // Mettre à jour les boutons de niveau pour indiquer le niveau actuel
-    // Lors de la modification, on met à jour immédiatement le niveau et effectue une requête pour l'enregistrer.
-    document.querySelectorAll('.niveau-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            // Mettre à jour la valeur cachée du niveau
-            const niveau = this.getAttribute('data-value');
-            document.getElementById('edit-niveau').value = niveau;
-
-            // Ajouter la classe de sélection (couleur verte) pour le bouton cliqué
-            document.querySelectorAll('.niveau-btn').forEach(btn => btn.classList.remove('bg-green-500', 'text-white'));
-            this.classList.add('bg-green-500', 'text-white');
-
-            // Effectuer la requête pour mettre à jour le niveau du plongeur immédiatement
-            const plongeurId = document.getElementById('edit-plongeur-id').value;
-
-            fetch(`/modifier-plongeur/${plongeurId}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ niveau: niveau })
-            })
-            .then(response => {
-                if (response.ok) {
-                    location.reload(); // Recharger la page pour afficher les changements
-                } else {
-                    alert("Erreur lors de la modification");
-                }
-            })
-            .catch(error => console.error("❌ Erreur :", error));
-
-            // Fermer la popup après l'enregistrement
-            closePopup();
-        });
-    });
-
-
-    // Afficher la popup
-    document.getElementById('edit-popup').classList.remove('hidden');
-}
-
-// Fonction pour fermer la popup
-function closePopup() {
-    document.getElementById('edit-popup').classList.add('hidden');
-}
-
-// Sélectionner tous les boutons de niveau dans la popup et ajouter un événement de clic pour enregistrer automatiquement
-document.querySelectorAll('.niveau-btn').forEach(button => {
-    button.addEventListener('click', function() {
-        // Mettre à jour la valeur cachée du niveau
-        const niveau = this.getAttribute('data-value');
-        document.getElementById('edit-niveau').value = niveau;
-
-        // Ajouter la classe de sélection (couleur verte) pour le bouton cliqué
-        document.querySelectorAll('.niveau-btn').forEach(btn => btn.classList.remove('bg-green-500', 'text-white'));
-        this.classList.add('bg-green-500', 'text-white');
-
-        // Effectuer la requête pour mettre à jour le niveau du plongeur immédiatement
-        const plongeurId = document.getElementById('edit-plongeur-id').value;
-
-        fetch(`/modifier-plongeur/${plongeurId}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ niveau: niveau })
-        })
-        .then(response => {
-            if (response.ok) {
-                // Recharger la page pour afficher les changements
-                location.reload();
-            } else {
-                alert("Erreur lors de la modification");
-            }
-        })
-        .catch(error => console.error("❌ Erreur :", error));
-
-        // Fermer la popup après l'enregistrement
-        closePopup();
-    });
-});
-
-function deletePlongeur(id) {
-    if (confirm("Voulez-vous vraiment supprimer ce plongeur ?")) {
-        fetch(`/supprimer-plongeur/${id}`, { method: "DELETE" })
-        .then(response => response.ok ? location.reload() : alert("Erreur lors de la suppression"))
-        .catch(error => console.error("❌ Erreur :", error));
-    }
-}
-
-</script>
-
-
 </body>
 </html>

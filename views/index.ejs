@@ -3,78 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Palanquee</title>
+    <title>Palanquee Pro | Gestion des plongées</title>
 
     <!-- TailwindCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            light: '#5E9DFF',
+                            DEFAULT: '#2A70E0',
+                            dark: '#1A4A9C',
+                        },
+                        secondary: {
+                            light: '#4FD1C5',
+                            DEFAULT: '#38B2AC',
+                            dark: '#2C7A7B',
+                        },
+                        accent: {
+                            light: '#F6AD55',
+                            DEFAULT: '#ED8936',
+                            dark: '#DD6B20',
+                        },
+                        dark: {
+                            light: '#2D3748',
+                            DEFAULT: '#1A202C',
+                            dark: '#171923',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Fichier CSS externe -->
+    <link rel="stylesheet" href="/style.css">
 
     <!-- Manifest & Service Worker -->
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#1b263b">
+    <meta name="theme-color" content="#1A4A9C">
     <link rel="icon" type="image/x-icon" href="/icons/favicon.ico">
 
     <!-- Charger Supabase comme un module ES6 -->
     <script type="module" src="/script.js?v=<%= new Date().getTime() %>" defer></script>
 
 </head>
-<body class="bg-gray-900 text-white flex flex-col items-center min-h-screen">
+<body class="bg-gradient-dark text-white font-sans flex flex-col items-center min-h-screen pb-16">
 
-    <div class="w-full max-w-md p-6">
-        <h1 class="text-3xl font-bold text-center mb-6 text-white">Gestion des Palanquées</h1>
+    <div class="w-full max-w-3xl p-4 sm:p-6">
+        <!-- Header avec logo et titre -->
+        <header class="flex items-center justify-center mb-8">
+            <div class="flex items-center space-x-3">
+                <div class="bg-primary-dark p-3 rounded-xl shadow-lg">
+                    <i class="fas fa-water text-2xl text-primary-light"></i>
+                </div>
+                <h1 class="text-3xl font-bold">
+                    <span class="logo-text">Palanquee</span>
+                    <span class="text-gray-300">Pro</span>
+                </h1>
+            </div>
+        </header>
         
-        <div class="rounded-2xl overflow-hidden shadow-lg mb-6">
-            <img src="/images/plongeur.avif" alt="Plongée" class="w-full object-cover">
+        <!-- Hero section avec image et slogan -->
+        <div class="relative rounded-2xl overflow-hidden shadow-xl mb-8 h-48">
+            <img src="/images/plongeur.avif" alt="Plongée sous-marine" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-t from-dark-dark to-transparent flex items-end p-6">
+                <h2 class="text-xl font-semibold">Gérez vos plongées avec simplicité et professionnalisme</h2>
+            </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-            <a href="/gestion-plongeurs" class="bg-blue-500 p-6 rounded-2xl shadow-md text-center flex flex-col items-center">
-                <i class="fas fa-user text-3xl mb-2"></i>
-                <span class="text-lg font-semibold">Gestion des Plongeurs</span>
+        <!-- Grille de fonctionnalités -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+            <a href="/gestion-plongeurs" class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-primary-light animate-fade-in" style="animation-delay: 0.1s">
+                <div class="bg-primary-dark p-3 rounded-full mb-3">
+                    <i class="fas fa-user-group text-xl text-primary-light"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-1">Plongeurs</h3>
+                <p class="text-gray-400 text-sm">Gestion des membres et certifications</p>
             </a>
-            <a href="/gestion-sorties" class="bg-green-500 p-6 rounded-2xl shadow-md text-center flex flex-col items-center">
-                <i class="far fa-calendar-alt text-3xl mb-2"></i>
-                <span class="text-lg font-semibold">Gestion des Sorties</span>
+            
+            <a href="/gestion-sorties" class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-secondary-light animate-fade-in" style="animation-delay: 0.2s">
+                <div class="bg-secondary-dark p-3 rounded-full mb-3">
+                    <i class="far fa-calendar-check text-xl text-secondary-light"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-1">Sorties</h3>
+                <p class="text-gray-400 text-sm">Planification et organisation</p>
             </a>
-            <a href="/selection-sorties" class="bg-orange-500 p-6 rounded-2xl shadow-md text-center flex flex-col items-center">
-                <i class="fas fa-mask text-3xl mb-2"></i>
-                <span class="text-lg font-semibold">Gestion des Palanquées</span>
+            
+            <a href="/selection-sorties" class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-accent-light animate-fade-in" style="animation-delay: 0.3s">
+                <div class="bg-accent-dark p-3 rounded-full mb-3">
+                    <i class="fas fa-layer-group text-xl text-accent-light"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-1">Palanquées</h3>
+                <p class="text-gray-400 text-sm">Création et gestion des équipes</p>
             </a>
-            <a href="#" id="about-btn" class="bg-purple-500 p-6 rounded-2xl shadow-md text-center flex flex-col items-center">
-                <i class="fas fa-chart-line text-3xl mb-2"></i>
-                <span class="text-lg font-semibold">À propos</span>
+            
+            <a href="#" id="about-btn" class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-purple-400 animate-fade-in" style="animation-delay: 0.4s">
+                <div class="bg-purple-800 p-3 rounded-full mb-3">
+                    <i class="fas fa-info-circle text-xl text-purple-400"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-1">À propos</h3>
+                <p class="text-gray-400 text-sm">Découvrez Palanquee Pro</p>
             </a>
+        </div>
+
+        <!-- Section de stats rapides (optionnelle) -->
+        <div class="bg-dark-light rounded-2xl p-4 shadow-lg mb-8 border border-gray-700 animate-fade-in" style="animation-delay: 0.5s">
+            <h3 class="font-medium text-gray-300 mb-3">Votre activité récente</h3>
+            <div class="grid grid-cols-3 gap-2 text-center" id="stats-container">
+                <!-- Le contenu sera dynamiquement rempli par JavaScript -->
+            </div>
         </div>
     </div>
 
-    <!-- Modal -->
-    <div id="about-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-        <div class="bg-gray-800 p-6 rounded-2xl max-w-md w-full">
-            <h2 class="text-2xl font-bold mb-4">À propos</h2>
-            <p class="mb-4">Cette application aide à gérer les palanquées en plongée sous-marine.</p>
-            <button id="close-modal" class="bg-purple-500 text-white px-4 py-2 rounded-lg">Fermer</button>
+    <!-- Modal À propos -->
+    <div id="about-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 px-4">
+        <div class="bg-dark-light p-6 rounded-2xl max-w-md w-full border border-gray-700 transform transition-all duration-300 scale-95 opacity-0" id="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-primary-light">À propos de Palanquee Pro</h2>
+                <button id="close-modal" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <p class="text-gray-300">Palanquee Pro est une solution professionnelle pour la gestion des plongées sous-marines, conçue pour les clubs et centres de plongée.</p>
+                <div class="bg-dark-dark p-4 rounded-lg border border-gray-800">
+                    <h3 class="font-medium text-secondary-light mb-2">Fonctionnalités clés :</h3>
+                    <ul class="list-disc list-inside text-gray-400 space-y-1 text-sm">
+                        <li>Gestion centralisée des plongeurs</li>
+                        <li>Planification des sorties</li>
+                        <li>Création intelligente de palanquées</li>
+                        <li>Synchronisation multi-appareils</li>
+                        <li>Rapports et statistiques</li>
+                    </ul>
+                </div>
+                <div class="text-center pt-2">
+                    <button class="bg-primary-dark hover:bg-primary-light text-white px-4 py-2 rounded-lg transition-colors">En savoir plus</button>
+                </div>
+            </div>
         </div>
     </div>
-
 
     <!-- Bottom Navigation -->
-    <div class="fixed bottom-0 left-0 w-full bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl">
-        <a href="/" class="text-gray-400 hover:text-blue-400 flex flex-col items-center">
-            <i class="fas fa-home text-xl"></i>
-            <span class="text-xs">🏠 Accueil</span>
+    <nav class="fixed bottom-0 left-0 w-full bg-dark-light bg-opacity-90 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl border-t border-gray-700 z-40">
+        <a href="/" class="nav-item active text-primary-light flex flex-col items-center">
+            <i class="fas fa-home text-lg"></i>
+            <span class="text-xs mt-1">Accueil</span>
         </a>
-        <a href="/gestion-plongeurs" class="text-gray-400 hover:text-green-400 flex flex-col items-center">
-            <i class="fas fa-users text-xl"></i>
-            <span class="text-xs">👤 Plongeurs</span>
+        <a href="/gestion-plongeurs" class="nav-item text-gray-400 flex flex-col items-center">
+            <i class="fas fa-user-group text-lg"></i>
+            <span class="text-xs mt-1">Plongeurs</span>
         </a>
-        <a href="/gestion-sorties" class="text-gray-400 hover:text-yellow-400 flex flex-col items-center">
-            <i class="far fa-calendar-alt text-xl"></i>
-            <span class="text-xs">🤿 Sorties</span>
+        <a href="/gestion-sorties" class="nav-item text-gray-400 flex flex-col items-center">
+            <i class="far fa-calendar-alt text-lg"></i>
+            <span class="text-xs mt-1">Sorties</span>
         </a>
-        <a href="/selection-sorties" class="text-gray-400 hover:text-orange-400 flex flex-col items-center">
-            <i class="fas fa-mask text-xl"></i>
-            <span class="text-xs">📋 Palanquées</span>
+        <a href="/selection-sorties" class="nav-item text-gray-400 flex flex-col items-center">
+            <i class="fas fa-layer-group text-lg"></i>
+            <span class="text-xs mt-1">Palanquées</span>
         </a>
-    </div>
+    </nav>
 
     <!-- Enregistrement du Service Worker -->
     <script>
@@ -85,31 +186,102 @@
         }
     </script>
 
-    <!-- Gestion du modal -->
+    <!-- Gestion du modal avec animation -->
     <script>
-        document.getElementById('about-btn').addEventListener('click', () => document.getElementById('about-modal').classList.remove('hidden'));
-        document.getElementById('close-modal').addEventListener('click', () => document.getElementById('about-modal').classList.add('hidden'));
+        document.getElementById('about-btn').addEventListener('click', () => {
+            const modal = document.getElementById('about-modal');
+            const modalContent = document.getElementById('modal-content');
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        });
+
+        document.getElementById('close-modal').addEventListener('click', () => {
+            const modal = document.getElementById('about-modal');
+            const modalContent = document.getElementById('modal-content');
+            
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        });
     </script>
 
-<script>
-    // Définition de la fonction avant son appel
-    function synchroniserPlongeesAvecIndexedDB() {
-        //console.log("Synchronisation des plongées...");
-        // Logique de synchronisation ici
-    }
-
-    document.addEventListener("DOMContentLoaded", function () {
-        if (navigator.onLine) {
-            //console.log("🌐 En ligne, synchronisation en cours...");
-            synchroniserPlongeesAvecIndexedDB();
-        } else {
-            console.log("❌ Hors ligne, pas de synchronisation.");
+    <script>
+        // Définition de la fonction avant son appel
+        function synchroniserPlongeesAvecIndexedDB() {
+            //console.log("Synchronisation des plongées...");
+            // Logique de synchronisation ici
         }
-    });
-</script>
 
+        document.addEventListener("DOMContentLoaded", async function () {
+            // Vérifier la connexion
+            if (navigator.onLine) {
+                try {
+                    // 1. Synchronisation des données
+                    await synchroniserPlongeesAvecIndexedDB();
+                    
+                    // 2. Chargement des statistiques
+                    const stats = await chargerStats();
+                    mettreAJourStats(stats);
+                    
+                    // console.log("🌐 Synchronisation et chargement des stats réussis");
+                } catch (error) {
+                    console.error("❌ Erreur lors de la synchronisation :", error);
+                    // Fallback: essayer de charger depuis le cache
+                    const cachedStats = await getCachedStats();
+                    if (cachedStats) mettreAJourStats(cachedStats);
+                }
+            } else {
+                console.log("❌ Hors ligne - Mode dégradé activé");
+                // Charger les données depuis le cache
+                const cachedStats = await getCachedStats();
+                if (cachedStats) mettreAJourStats(cachedStats);
+            }
+        });
 
+        // Nouvelle fonction pour charger les stats
+        async function chargerStats() {
+            const response = await fetch('/api/stats');
+            if (!response.ok) throw new Error('Erreur réseau');
+            const stats = await response.json();
+            
+            // Mise en cache pour le mode hors ligne
+            localStorage.setItem('lastKnownStats', JSON.stringify(stats));
+            return stats;
+        }
 
+        // Fonction pour récupérer les stats en cache
+        async function getCachedStats() {
+            const cached = localStorage.getItem('lastKnownStats');
+            return cached ? JSON.parse(cached) : null;
+        }
 
+        // Fonction pour mettre à jour l'UI
+        function mettreAJourStats(stats) {
+            const container = document.getElementById('stats-container');
+            if (!container) return;
+            
+            container.innerHTML = `
+                <div class="p-2">
+                    <div class="text-primary-light text-2xl font-bold">${stats.plongeurs}</div>
+                    <div class="text-gray-400 text-xs">PLONGEURS</div>
+                </div>
+                <div class="p-2">
+                    <div class="text-secondary-light text-2xl font-bold">${stats.sorties}</div>
+                    <div class="text-gray-400 text-xs">SORTIES</div>
+                </div>
+                <div class="p-2">
+                    <div class="text-accent-light text-2xl font-bold">${stats.palanquees}</div>
+                    <div class="text-gray-400 text-xs">PALANQUÉES</div>
+                </div>
+            `;
+        }
+    </script>
 </body>
 </html>

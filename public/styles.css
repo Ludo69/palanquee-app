@@ -529,3 +529,44 @@ body {
   opacity: 0.7;
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.card-hover {
+  transition: all 0.3s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+}
+
+.niveau-btn {
+  transition: all 0.2s ease;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Animation pour le bouton + */
+.btn-ajout-plongeur {
+  transition: all 0.2s ease;
+}
+.btn-ajout-plongeur:hover {
+  transform: scale(1.1);
+}
+
+/* Pour masquer le point quand non actif */
+.nav-item:not(.active) > span.bg-primary-light {
+  display: none;
+}
+

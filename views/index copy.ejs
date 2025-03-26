@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Palanquee</title>
+
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Manifest & Service Worker -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1b263b">
+    <link rel="icon" type="image/x-icon" href="/icons/favicon.ico">
+
+    <!-- Charger Supabase comme un module ES6 -->
+    <script type="module" src="/script.js?v=<%= new Date().getTime() %>" defer></script>
+
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center min-h-screen">
+
+    <div class="w-full max-w-md p-6">
+        <h1 class="text-3xl font-bold text-center mb-6 text-white">Gestion des Palanquées</h1>
+        
+        <div class="rounded-2xl overflow-hidden shadow-lg mb-6">
+            <img src="/images/plongeur.avif" alt="Plongée" class="w-full object-cover">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <a href="/gestion-plongeurs" class="bg-blue-500 p-6 rounded-2xl shadow-md text-center flex flex-col items-center">
+                <i class="fas fa-user text-3xl mb-2"></i>
+                <span class="text-lg font-semibold">Gestion des Plongeurs</span>
+            </a>
+            <a href="/gestion-sorties" class="bg-green-500 p-6 rounded-2xl shadow-md text-center flex flex-col items-center">
+                <i class="far fa-calendar-alt text-3xl mb-2"></i>
+                <span class="text-lg font-semibold">Gestion des Sorties</span>
+            </a>
+            <a href="/selection-sorties" class="bg-orange-500 p-6 rounded-2xl shadow-md text-center flex flex-col items-center">
+                <i class="fas fa-mask text-3xl mb-2"></i>
+                <span class="text-lg font-semibold">Gestion des Palanquées</span>
+            </a>
+            <a href="#" id="about-btn" class="bg-purple-500 p-6 rounded-2xl shadow-md text-center flex flex-col items-center">
+                <i class="fas fa-chart-line text-3xl mb-2"></i>
+                <span class="text-lg font-semibold">À propos</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="about-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-gray-800 p-6 rounded-2xl max-w-md w-full">
+            <h2 class="text-2xl font-bold mb-4">À propos</h2>
+            <p class="mb-4">Cette application aide à gérer les palanquées en plongée sous-marine.</p>
+            <button id="close-modal" class="bg-purple-500 text-white px-4 py-2 rounded-lg">Fermer</button>
+        </div>
+    </div>
+
+
+    <!-- Bottom Navigation -->
+    <div class="fixed bottom-0 left-0 w-full bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl">
+        <a href="/" class="text-gray-400 hover:text-blue-400 flex flex-col items-center">
+            <i class="fas fa-home text-xl"></i>
+            <span class="text-xs">🏠 Accueil</span>
+        </a>
+        <a href="/gestion-plongeurs" class="text-gray-400 hover:text-green-400 flex flex-col items-center">
+            <i class="fas fa-users text-xl"></i>
+            <span class="text-xs">👤 Plongeurs</span>
+        </a>
+        <a href="/gestion-sorties" class="text-gray-400 hover:text-yellow-400 flex flex-col items-center">
+            <i class="far fa-calendar-alt text-xl"></i>
+            <span class="text-xs">🤿 Sorties</span>
+        </a>
+        <a href="/selection-sorties" class="text-gray-400 hover:text-orange-400 flex flex-col items-center">
+            <i class="fas fa-mask text-xl"></i>
+            <span class="text-xs">📋 Palanquées</span>
+        </a>
+    </div>
+
+    <!-- Enregistrement du Service Worker -->
+    <script>
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("/service-worker.js")
+                .then((registration) => console.log("✅ SW enregistré :", registration))
+                .catch((err) => console.error("❌ Erreur SW :", err));
+        }
+    </script>
+
+    <!-- Gestion du modal -->
+    <script>
+        document.getElementById('about-btn').addEventListener('click', () => document.getElementById('about-modal').classList.remove('hidden'));
+        document.getElementById('close-modal').addEventListener('click', () => document.getElementById('about-modal').classList.add('hidden'));
+    </script>
+
+<script>
+    // Définition de la fonction avant son appel
+    function synchroniserPlongeesAvecIndexedDB() {
+        //console.log("Synchronisation des plongées...");
+        // Logique de synchronisation ici
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        if (navigator.onLine) {
+            //console.log("🌐 En ligne, synchronisation en cours...");
+            synchroniserPlongeesAvecIndexedDB();
+        } else {
+            console.log("❌ Hors ligne, pas de synchronisation.");
+        }
+    });
+</script>
+
+
+
+
+</body>
+</html>

@@ -9,6 +9,7 @@ const app = express();
 const pdfDir = path.join(__dirname, "public", "pdf");
 const nodemailer = require("nodemailer");
 
+
 // Vérifier si le dossier existe, sinon le créer
 if (!fs.existsSync(pdfDir)) {
     console.log("📂 Dossier 'public/pdf' inexistant, création...");
@@ -123,28 +124,35 @@ app.get("/generate-pdf", async (req, res) => {
         for (let palanquee of palanquees) {
             const { data: palanqueesPlongeurs, error: plongeursError } = await supabase
                 .from("palanquees_plongeurs")
-                .select("plongeur_id")
+                .select("plongeur_id, niveau_plongeur_historique")  // Ajoute niveau_historique ici
                 .eq("palanquee_id", palanquee.id);
-
+        
             if (plongeursError) {
                 console.error("❌ Erreur lors de la récupération des plongeurs pour la palanquée :", plongeursError);
                 continue;
             }
-
-            // Récupérer les informations des plongeurs
+        
+            // Récupérer les informations des plongeurs (noms seulement)
             const plongeurIds = palanqueesPlongeurs.map(p => p.plongeur_id);
             if (plongeurIds.length > 0) {
                 const { data: plongeurs, error: plongeursDataError } = await supabase
                     .from("plongeurs")
-                    .select("nom, niveau")
+                    .select("id, nom")  // On ne prend plus le niveau actuel ici
                     .in("id", plongeurIds);
-
+        
                 if (plongeursDataError) {
                     console.error("❌ Erreur lors de la récupération des détails des plongeurs :", plongeursDataError);
                     continue;
                 }
-
-                palanquee.plongeurs = plongeurs;  // Ajouter les plongeurs à la palanquée
+        
+                // Fusionner les données: nom du plongeur + niveau historique
+                palanquee.plongeurs = plongeurs.map(plongeur => {
+                    const correspondance = palanqueesPlongeurs.find(p => p.plongeur_id === plongeur.id);
+                    return {
+                        ...plongeur,
+                        niveau: correspondance.niveau_plongeur_historique  // Utilise le niveau historique
+                    };
+                });
             }
         }
 
@@ -203,7 +211,7 @@ app.get("/generate-pdf", async (req, res) => {
         const rectHeight = 40; // Hauteur du rectangle (même que le logo pour alignement)
 
         // Dessiner le rectangle gris
-        doc.rect(rectX, rectY, rectWidth, rectHeight).fill("gray");
+        doc.rect(rectX, rectY, rectWidth, rectHeight).fill("blue");
 
         // Texte du titre
         const text = "FICHE DE SECURITE";
@@ -320,17 +328,32 @@ app.get("/generate-pdf", async (req, res) => {
             // 🟢 Colonne "Nom"
             doc.text(palanquee.nom || "-", 20, startY, { width: columnWidths[0], align: "center" });
 
-            // 🟢 Colonne "Plongeurs" (non modifiée)
-            let plongeurY = startY;
-            if (palanquee.plongeurs && palanquee.plongeurs.length > 0) {
-                palanquee.plongeurs.forEach(plongeur => {
-                    doc.text(`${plongeur.nom || "-"} (${plongeur.niveau || "-"})`, 130, plongeurY, { width: columnWidths[1], align: "left" });
+            // 🟢 Colonne "Plongeurs" (avec les guides en premier)
+                let plongeurY = startY;
+                if (palanquee.plongeurs && palanquee.plongeurs.length > 0) {
+                    // Trier les plongeurs: d'abord les guides (GP, E2-E4), puis les autres
+                    const plongeursTries = [...palanquee.plongeurs].sort((a, b) => {
+                        const isGuideA = ['GP', 'E2', 'E3', 'E4'].includes(a.niveau);
+                        const isGuideB = ['GP', 'E2', 'E3', 'E4'].includes(b.niveau);
+                        
+                        if (isGuideA && !isGuideB) return -1; // a (guide) avant b
+                        if (!isGuideA && isGuideB) return 1;  // b (guide) avant a
+                        return 0; // ordre égal
+                    });
+
+                    plongeursTries.forEach(plongeur => {
+                        // Ajoute un symbole (★) si c'est un guide
+                        const isGuide = ['GP', 'E2', 'E3', 'E4'].includes(plongeur.niveau);
+                        const prefix = isGuide ? '* ' : '';
+                        doc.text(`${prefix}${plongeur.nom || "-"} (${plongeur.niveau || "-"})`, 
+                                130, plongeurY, 
+                                { width: columnWidths[1], align: "left" });
+                        plongeurY += 14;
+                    });
+                } else {
+                    doc.text("Aucun plongeur", 130, plongeurY, { width: columnWidths[1], align: "left" });
                     plongeurY += 14;
-                });
-            } else {
-                doc.text("Aucun plongeur", 130, plongeurY, { width: columnWidths[1], align: "left" });
-                plongeurY += 14;
-            }
+                }
 
             // 📌 Ajustement de la hauteur de fin pour éviter les chevauchements
             let endY = Math.max(startY + 20, plongeurY);
@@ -412,8 +435,11 @@ app.get("/gestion-plongeurs", async (req, res) => {
         // Trier les plongeurs par ordre alphabétique sur le nom
         data.sort((a, b) => a.nom.localeCompare(b.nom));
 
-        // Passer la liste triée à la vue
-        res.render("gestion_plongeurs", { plongeurs: data });
+        // Passer la liste triée ET le nombre de plongeurs à la vue
+        res.render("gestion_plongeurs", { 
+            plongeurs: data,
+            nombrePlongeurs: data.length // Ajout du comptage
+        });
     } catch (error) {
         console.error("Erreur lors de la récupération des plongeurs:", error);
         res.status(500).send("Erreur serveur");
@@ -966,10 +992,6 @@ try {
         return res.status(400).json({ error: "ID et site requis" });
     }
 
-    console.log(
-        `🔄 Mise à jour du site pour la plongée ${id} -> Nouveau site: ${site}`,
-    );
-
     // Mise à jour dans Supabase
     const { data, error } = await supabase
         .from("plongees") // Remplace par le bon nom de la table
@@ -991,12 +1013,7 @@ try {
 });
 
 app.post("/api/update-site", async (req, res) => {
-    console.log("🔍 Requête reçue pour mise à jour :", req.body);
 const { plongeeId, site } = req.body;
-
-console.log(
-    `🔄 Mise à jour du site pour la plongée ${plongeeId} -> Nouveau site: ${site}`,
-);
 
 try {
     const { data, error } = await supabase
@@ -1008,7 +1025,7 @@ try {
         throw error;
     }
 
-    console.log("✅ Mise à jour réussie !");
+    //console.log("✅ Mise à jour réussie !");
     res.status(200).json({ success: true, data });
 } catch (err) {
     console.error("❌ Erreur mise à jour site:", err);
@@ -1191,7 +1208,6 @@ app.get("/get_palanquees/:plongee_id", async (req, res) => {
 app.post("/enregistrer_palanquee", async (req, res) => {
     //console.log("On entre dans enregistrer_palanquee");
     const palanquees = req.body;
-
     //console.log("Données reçues :", JSON.stringify(palanquees, null, 2));
 
     if (!Array.isArray(palanquees) || palanquees.length === 0) {
@@ -1205,6 +1221,7 @@ app.post("/enregistrer_palanquee", async (req, res) => {
     if (!plongee_id) {
         return res.status(400).json({ error: "Plongée ID manquant" });
     }
+    
 
     try {
         // 🔍 Charger toutes les palanquées existantes pour cette plongée
@@ -1224,7 +1241,7 @@ app.post("/enregistrer_palanquee", async (req, res) => {
         // 🔄 Traiter les palanquées reçues
         const updatedPalanquees = [];
         for (const palanqueeData of palanquees) {
-            //console.log("palanqueeData : ", palanqueeData);
+            //console.log("Palanquée reçue : ", palanqueeData);
             let { id, nom, profondeur, duree, paliers, plongeurs } = palanqueeData;
             //console.log("ID après palanqueeData", id);
 
@@ -1504,7 +1521,7 @@ app.post("/sauvegarder_parametres", async (req, res) => {
             return res.status(500).json({ error: "Erreur serveur lors de la mise à jour." });
         }
 
-        console.log(`✅ Paramètres de la palanquée ${id} mis à jour avec succès.`);
+        //console.log(`✅ Paramètres de la palanquée ${id} mis à jour avec succès.`);
         res.json({ success: true, message: "Paramètres enregistrés avec succès !" });
     } catch (error) {
         console.error("❌ Erreur serveur :", error);
@@ -1840,6 +1857,35 @@ app.post("/api/lancer-plongee", async (req, res) => {
     } catch (error) {
         console.error("Erreur lors de la mise à jour de l'heure de début :", error);
         res.status(500).json({ error: "Erreur serveur" });
+    }
+});
+
+// Ajoutez cette nouvelle route dans votre fichier de routes (server.js ou app.js)
+app.get('/api/stats', async (req, res) => {
+    try {
+        // Récupération du nombre réel de plongeurs
+        const { count: plongeursCount } = await supabase
+            .from('plongeurs')
+            .select('*', { count: 'exact', head: true });
+
+        // Récupération du nombre réel de sorties (adaptez selon votre table)
+        const { count: sortiesCount } = await supabase
+            .from('sorties')
+            .select('*', { count: 'exact', head: true });
+
+        // Récupération du nombre réel de palanquées (adaptez selon votre table)
+        const { count: palanqueesCount } = await supabase
+            .from('palanquees')
+            .select('*', { count: 'exact', head: true });
+
+        res.json({
+            plongeurs: plongeursCount || 0,
+            sorties: sortiesCount || 0,
+            palanquees: palanqueesCount || 0
+        });
+    } catch (error) {
+        console.error('Erreur stats:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
     }
 });
 
