@@ -44,7 +44,7 @@
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/style.css">
 </head>
 
 <body class="bg-gradient-to-b from-dark-dark to-dark-light text-white font-sans min-h-screen pb-16">
@@ -85,10 +85,26 @@
                 <% palanquees.forEach(function(palanquee) { %>
                     <div class="bg-dark-light rounded-2xl p-6 shadow-lg border border-gray-700 mb-6">
                         <!-- En-tête -->
-                        <div class="text-center mb-4">
-                            <h2 class="text-lg font-bold text-primary-light">
-                                <%= palanquee.nom %>
-                            </h2>
+                        <div class="text-center mb-4 relative">
+                            <div class="flex justify-center items-center">  <!-- Modification ici -->
+                                <h2 class="text-lg font-bold text-primary-light inline-block mr-2">  <!-- Ajout de inline-block et mr-2 -->
+                                    <%= palanquee.nom %>
+                                </h2>
+                                <!-- Bouton rond pour mise à l'eau -->
+                                <button class="mise-a-leau-btn absolute right-0 w-14 h-14 rounded-full <%= palanquee.heure_mise_a_leau ? 'bg-green-500' : 'bg-blue-500 hover:bg-blue-600' %> text-white flex items-center justify-center shadow-md transition-all group"
+                                    data-palanquee-id="<%= palanquee.id %>"
+                                    title="<%= palanquee.heure_mise_a_leau ? 'Mise à l\'eau effectuée' : 'Déclencher la mise à l\'eau' %>">
+                                <div class="relative w-6 h-6 flex items-center justify-center">
+                                    <% if (palanquee.heure_mise_a_leau) { %>
+                                        <i class="fas fa-check text-lg"></i>
+                                    <% } else { %>
+                                        <i class="fas fa-play text-lg"></i>
+                                        <span class="bubble bubble-1 absolute top-0 right-0 w-2 h-2 rounded-full bg-white opacity-70"></span>
+                                        <span class="bubble bubble-2 absolute bottom-0 left-0 w-1.5 h-1.5 rounded-full bg-white opacity-50"></span>
+                                    <% } %>
+                                </div>
+                            </button>
+                            </div>
                             <div class="flex flex-wrap justify-center gap-2 mt-2">
                                 <% if (palanquee.plongeurs && palanquee.plongeurs.length> 0) {
                                     palanquee.plongeurs.sort(function(a, b) {
@@ -509,14 +525,13 @@
 
                 let message = `🌊 *Compte-rendu Plongée* 🌊\n`;
                 message += `🤿 *Plongée n°1 - ${nomSitePlongee}*\n`;
-                message += `📅 *Date* : ${datePlongee} - ${heurePlongeeFormattee}\n`;
+                message += `📅 *Date* : ${datePlongee}\n`;
                 message += `👨‍💼 *Directeur de plongée* - ${nomDuDP} (${niveauDuDP})\n`;  // Ajout du niveau ici
-
-                message += `---------------------------------------- \n\n`;  // Ajout du niveau ici
-
+                message += `------------------------------ \n\n`; 
             <% palanquees.forEach(function (palanquee) { %>
                     // 🔵 Ajout des Consignes DP
                     message += `🔹 *Palanquée <%= palanquee.nom %>*\n`;
+                    message += `📏 *Heure de mise à l'eau* : <%= palanquee.heure_mise_a_leau || 'Non défini' %>\n`;
                     message += `📏 *Profondeur* : <%= palanquee.profondeur || 'Non défini' %> m\n`;
                     message += `⏳ *Durée* : <%= palanquee.duree || 'Non défini' %> min\n`;
                     message += `⚓ *Paliers* : <%= palanquee.paliers || 'Non définis' %>\n`;
@@ -607,6 +622,95 @@
             }
         }
 
+        // Fonction pour envoyer l'heure à Supabase
+        async function enregistrerMiseALeau(palanqueeId) {
+            const now = new Date();
+            const heures = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const secondes = String(now.getSeconds()).padStart(2, '0');
+            const heureComplete = `${heures}:${minutes}:${secondes}`;
+
+            try {
+                const response = await fetch('/api/palanquees/mise-a-leau', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        palanquee_id: palanqueeId,
+                        heure_mise_a_leau: heureComplete
+                    })
+                });
+
+                if (!response.ok) throw new Error('Erreur serveur');
+                
+                // Feedback visuel
+                const btn = document.querySelector(`[data-palanquee-id="${palanqueeId}"]`);
+                btn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                btn.classList.add('bg-green-500');
+                btn.innerHTML = `
+                    <div class="relative w-6 h-6 flex items-center justify-center">
+                        <i class="fas fa-check text-lg"></i>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert("Erreur lors de l'enregistrement");
+            }
+        }
+
+        // Écouteur d'événement amélioré pour le bouton de mise à l'eau
+        document.addEventListener('click', async function(e) {
+            const btn = e.target.closest('.mise-a-leau-btn');
+            if (!btn || btn.classList.contains('bg-green-500')) return; // Sort si bouton déjà validé
+            
+            // Bloque les clics multiples pendant le traitement
+            if (btn.dataset.processing === 'true') return;
+            btn.dataset.processing = 'true';
+            
+            try {
+                const palanqueeId = btn.dataset.palanqueeId;
+                const heureComplete = new Date().toLocaleTimeString('fr-FR', { 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    second: '2-digit',
+                    hour12: false 
+                }); // Format "14:30:45"
+
+                // Feedback visuel immédiat
+                btn.classList.add('opacity-75', 'cursor-wait');
+                
+                const response = await fetch('/api/palanquees/mise-a-leau', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        palanquee_id: palanqueeId, 
+                        heure_mise_a_leau: heureComplete 
+                    })
+                });
+
+                if (!response.ok) throw new Error(await response.text());
+                
+                // Mise à jour optimisée du bouton
+                btn.classList.replace('bg-blue-500', 'bg-green-500');
+                btn.classList.remove('opacity-75', 'cursor-wait', 'hover:bg-blue-600');
+                btn.innerHTML = `
+                    <div class="relative w-6 h-6 flex items-center justify-center">
+                        <i class="fas fa-check text-lg"></i>
+                    </div>
+                `;
+                btn.title = "Mise à l'eau effectuée à " + heureComplete;
+                
+            } catch (error) {
+                console.error('Erreur:', error);
+                showToast("Erreur lors de l'enregistrement", 'error'); // Remplace alert() par un toast si disponible
+                btn.classList.remove('opacity-75', 'cursor-wait');
+            } finally {
+                btn.dataset.processing = 'false';
+            }
+        });
+
 
     </script>
 
@@ -617,119 +721,3 @@
 </body>
 
 </html>
-
-<style>
-    /* Conteneur principal */
-    .palanquee-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        background-color: #1b263b;
-        border-radius: 10px;
-        padding: 20px;
-        width: 90%;
-        max-width: 600px;
-        min-height: 180px;
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
-        margin: 15px auto;
-        flex-wrap: wrap;
-        position: relative;
-        /* Permet un centrage absolu du bouton */
-    }
-
-    /* Colonne gauche */
-    .palanquee-left {
-        width: 50%;
-        text-align: left;
-    }
-
-    /* Colonne droite */
-    .palanquee-right {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-        width: 50%;
-    }
-
-    /* Case à cocher sans marges et padding supplémentaires */
-    .palanquee-right .paliers-checkbox {
-        margin: 0;
-        /* Retirer toute marge */
-        padding: 0;
-        /* Retirer tout padding */
-        width: 15px;
-        /* Définir la taille de la case à cocher (tu peux ajuster si nécessaire) */
-        height: 15px;
-        /* Définir la hauteur de la case à cocher */
-    }
-
-    /* Labels */
-    .palanquee-right label {
-        display: block;
-        font-size: 14px;
-        color: white;
-        margin-top: 5px;
-    }
-
-    /* Champs de saisie */
-    .palanquee-right input {
-        width: 80%;
-        padding: 5px;
-        margin-top: 3px;
-        border-radius: 5px;
-        border: none;
-        font-size: 14px;
-        background-color: white;
-        color: black;
-    }
-
-    /* Conteneur du bouton pour le centrer */
-    .btn-container {
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        /* 🔹 Centre le bouton */
-        position: absolute;
-        bottom: 20px;
-        /* 🔹 Ajuste la position en bas */
-    }
-
-    /* Bouton Enregistrer */
-    .btn-enregistrer {
-        padding: 10px 20px;
-        background-color: #28a745;
-        /* ✅ Vert */
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        text-align: center;
-        font-size: 14px;
-        font-weight: bold;
-    }
-
-    /* Bouton Enregistrer */
-    .btn-enregistrer-consignes {
-        padding: 10px 20px;
-        background-color: #28a745;
-        /* ✅ Vert */
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        text-align: center;
-        font-size: 14px;
-        font-weight: bold;
-    }
-
-    .btn-enregistrer:disabled {
-        background-color: gray;
-        cursor: not-allowed;
-    }
-
-    .btn-enregistrer-consignes:disabled {
-        background-color: gray;
-        cursor: not-allowed;
-    }
-</style>

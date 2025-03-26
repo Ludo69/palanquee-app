@@ -68,6 +68,28 @@ app.get("/", (req, res) => {
 
 // PDF
 app.get("/generate-pdf", async (req, res) => {
+    function formatHeurePDF(heure) {
+        try {
+            if (!heure) return "Non définie";
+            
+            // Convertit en string et nettoie
+            const heureStr = heure.toString().trim();
+            
+            // Vérifie les formats connus
+            if (/^\d{1,2}h\d{2}$/.test(heureStr)) {  // Si déjà formaté "XhXX"
+                return heureStr;
+            }
+            if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(heureStr)) {  // Format "XX:XX" ou "XX:XX:XX"
+                const [h, m] = heureStr.split(':');
+                return `${parseInt(h, 10)}h${m.padStart(2, '0')}`;
+            }
+            
+            return "Format invalide";
+        } catch (error) {
+            console.error("Erreur formatage heure:", error);
+            return "Erreur";
+        }
+    }
     const { plongeeId } = req.query;
 
     if (!plongeeId) {
@@ -94,7 +116,7 @@ app.get("/generate-pdf", async (req, res) => {
         // Récupérer les palanquées associées à cette plongée
         const { data: palanquees, error: palanqueesError } = await supabase
             .from("palanquees")
-            .select("id, nom, profondeur, duree, paliers, prof_max, duree_max, type")
+            .select("id, nom, profondeur, duree, paliers, prof_max, duree_max, type, heure_mise_a_leau")
             .eq("plongee_id", plongeeId);
 
         if (palanqueesError) {
@@ -115,10 +137,6 @@ app.get("/generate-pdf", async (req, res) => {
             heureFormattee = `${heures}h${minutes}`;
         }
         const dateEtHeure = `${dateFormatee} - ${heureFormattee}`;
-
-        console.log("Date formatée :", dateFormatee);
-        console.log("Heure formatée :", heureFormattee);
-
 
         // Récupérer les plongeurs pour chaque palanquée
         for (let palanquee of palanquees) {
@@ -158,11 +176,16 @@ app.get("/generate-pdf", async (req, res) => {
 
         // Construire les données du PDF
         const data = {
-            nomDP: plongee.plongeurs.nom,
-            qualificationDP: plongee.plongeurs.niveau,
+            nomDP: plongee.plongeurs?.nom || "Non défini",
+            qualificationDP: plongee.plongeurs?.niveau || "Non défini",
             site: plongee.site || "Site inconnu",
             date: dateEtHeure,
-            palanquees: palanquees || []
+            palanquees: palanquees.map(palanquee => ({  // Notez le nom complet 'palanquee' au lieu de 'p'
+                ...palanquee,
+                heureFormatee: palanquee.heure_mise_a_leau 
+                    ? palanquee.heure_mise_a_leau.substring(0, 5).replace(':', 'h')
+                    : "Non définie"
+            })) || []
         };
 
         // Création du document PDF
@@ -320,14 +343,32 @@ app.get("/generate-pdf", async (req, res) => {
 
         // 📌 Définition des positions X des traits verticaux
         const columnLines = [120, 270, 320, 365, 410, 460, 520, 590]; // 🆕 Ajustement des traits
-
+        console.log("Debug - Données palanquées:", JSON.stringify(data.palanquees, null, 2));
         // 📌 Boucle pour remplir le tableau des palanquées
         data.palanquees.forEach((palanquee) => {
             let startY = doc.y; // Position initiale
 
             // 🟢 Colonne "Nom"
-            doc.text(palanquee.nom || "-", 20, startY, { width: columnWidths[0], align: "center" });
-
+            //doc.text(palanquee.nom || "-", 20, startY, { width: columnWidths[0], align: "center" });
+            // Nom de la palanquée (taille 10)
+            doc.fontSize(10)
+            .text(palanquee.nom, 20, startY, {
+                width: columnWidths[0],
+                align: "center"
+            });
+            
+            // Heure formatée (taille 8)
+            const heureFormatee = palanquee.heure_mise_a_leau 
+                ? palanquee.heure_mise_a_leau.substring(0, 5).replace(':', 'h')
+                : "Non définie";
+            
+            doc.fontSize(8)
+            .text(`Départ : ${heureFormatee}`, 20, startY + 12, { // +12 pour l'espacement
+                width: columnWidths[0],
+                align: "center"
+            });
+            // Réinitialise la taille pour le reste
+            doc.fontSize(10);
             // 🟢 Colonne "Plongeurs" (avec les guides en premier)
                 let plongeurY = startY;
                 if (palanquee.plongeurs && palanquee.plongeurs.length > 0) {
@@ -1886,6 +1927,37 @@ app.get('/api/stats', async (req, res) => {
     } catch (error) {
         console.error('Erreur stats:', error);
         res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+app.post('/api/palanquees/mise-a-leau', async (req, res) => {
+    try {
+        const { palanquee_id, heure_mise_a_leau } = req.body;
+        
+        // Vérifie d'abord si l'heure existe déjà (optionnel)
+        const { data: existing, error: fetchError } = await supabase
+            .from('palanquees')
+            .select('heure_mise_a_leau')
+            .eq('id', palanquee_id)
+            .single();
+
+        if (fetchError) throw fetchError;
+        if (existing.heure_mise_a_leau) {
+            return res.status(400).json({ error: 'Heure déjà enregistrée' });
+        }
+
+        // Sinon, met à jour
+        const { data, error } = await supabase
+            .from('palanquees')
+            .update({ heure_mise_a_leau })
+            .eq('id', palanquee_id);
+            
+        if (error) throw error;
+        
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Erreur Supabase:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 

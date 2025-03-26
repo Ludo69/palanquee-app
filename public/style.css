@@ -141,3 +141,158 @@
     color: #8B5CF6 !important; /* Violet clair */
     font-weight: bold;
 }
+
+/* Conteneur principal */
+.palanquee-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background-color: #1b263b;
+    border-radius: 10px;
+    padding: 20px;
+    width: 90%;
+    max-width: 600px;
+    min-height: 180px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+    margin: 15px auto;
+    flex-wrap: wrap;
+    position: relative;
+    /* Permet un centrage absolu du bouton */
+}
+
+/* Colonne gauche */
+.palanquee-left {
+    width: 50%;
+    text-align: left;
+}
+
+/* Colonne droite */
+.palanquee-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    width: 50%;
+}
+
+/* Case à cocher sans marges et padding supplémentaires */
+.palanquee-right .paliers-checkbox {
+    margin: 0;
+    /* Retirer toute marge */
+    padding: 0;
+    /* Retirer tout padding */
+    width: 15px;
+    /* Définir la taille de la case à cocher (tu peux ajuster si nécessaire) */
+    height: 15px;
+    /* Définir la hauteur de la case à cocher */
+}
+
+/* Labels */
+.palanquee-right label {
+    display: block;
+    font-size: 14px;
+    color: white;
+    margin-top: 5px;
+}
+
+/* Champs de saisie */
+.palanquee-right input {
+    width: 80%;
+    padding: 5px;
+    margin-top: 3px;
+    border-radius: 5px;
+    border: none;
+    font-size: 14px;
+    background-color: white;
+    color: black;
+}
+
+/* Conteneur du bouton pour le centrer */
+.btn-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    /* 🔹 Centre le bouton */
+    position: absolute;
+    bottom: 20px;
+    /* 🔹 Ajuste la position en bas */
+}
+
+/* Bouton Enregistrer */
+.btn-enregistrer {
+    padding: 10px 20px;
+    background-color: #28a745;
+    /* ✅ Vert */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* Bouton Enregistrer */
+.btn-enregistrer-consignes {
+    padding: 10px 20px;
+    background-color: #28a745;
+    /* ✅ Vert */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.btn-enregistrer:disabled {
+    background-color: gray;
+    cursor: not-allowed;
+}
+
+.btn-enregistrer-consignes:disabled {
+    background-color: gray;
+    cursor: not-allowed;
+}
+
+.mise-a-leau-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: gray !important;
+}
+
+.mise-a-leau-btn {
+    min-width: 2rem;
+    min-height: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.mise-a-leau-btn.bg-green-500 {
+    cursor: default;
+    pointer-events: none;  /* Désactive les interactions */
+    opacity: 0.9;  /* Légère transparence optionnelle */
+}
+
+/* Animation des bulles */
+.bubble {
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: scale(1);
+}
+
+.group:hover .bubble-1 {
+    transform: translate(4px, -6px) scale(0.4);
+    opacity: 0;
+}
+
+.group:hover .bubble-2 {
+    transform: translate(-4px, 6px) scale(0.4);
+    opacity: 0;
+    transition-delay: 0.1s;
+}
+
+/* Animation de l'icône */
+.group:hover .fa-play {
+    transform: translateX(3px);
+}
