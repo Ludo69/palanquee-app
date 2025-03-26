@@ -1579,12 +1579,12 @@ app.get("/plongee_info", async (req, res) => {
     }
 
     try {
-        // Récupérer les données de la plongée
+        // Récupérer les données de la plongée, y compris l'URL de l'image
         let { data, error } = await supabase
             .from("plongees")
-            .select("date, site, nomdp, heure_debut") // Récupère date, site et nomdp (ID du DP)
+            .select("date, site, nomdp, heure_debut, image_url") // Ajout de 'image_url' à la sélection
             .eq("id", plongeeId)
-            .single();
+            .single(); // Récupérer une seule plongée
 
         if (error) throw error;
 
@@ -1592,7 +1592,7 @@ app.get("/plongee_info", async (req, res) => {
             return res.status(404).json({ error: "Plongée non trouvée." });
         }
 
-        // Récupérer les informations de la plongée
+        // Récupérer la date formatée et autres informations
         const dateFormattee = new Date(data.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
         const nomSitePlongee = data.site || "Site inconnu";
 
@@ -1616,19 +1616,21 @@ app.get("/plongee_info", async (req, res) => {
             }
         }
 
-        // Renvoyer les informations avec le nom et le niveau du DP
+        // Renvoyer les informations avec le nom et le niveau du DP, et l'URL de l'image
         res.json({
             date: dateFormattee,
             site: nomSitePlongee,
             nomdp: nomDuDP, // Inclure le nom du DP
-            niveaudp: niveauDP, // Inclure le niveaux du DP
-            heure_debut: data.heure_debut // Inclure l'heure de début
+            niveaudp: niveauDP, // Inclure le niveau du DP
+            heure_debut: data.heure_debut, // Inclure l'heure de début
+            image_url: data.image_url // Ajouter l'URL de l'image
         });
     } catch (err) {
         console.error("Erreur récupération plongée:", err);
         res.status(500).json({ error: "Erreur serveur." });
     }
 });
+
 
 
 
@@ -1961,6 +1963,48 @@ app.post('/api/palanquees/mise-a-leau', async (req, res) => {
     }
 });
 
+// Route POST pour gérer l'upload d'une image
+app.post('/upload-image', async (req, res) => {
+    try {
+        //console.log("Requête reçue pour l'upload d'image");
+        //console.log("Données reçues :", req.body);
+      const { imageData, plongeeId } = req.body;  // On reçoit l'image en base64 et l'ID de la plongée
+  
+      // Convertir l'image en fichier Blob
+      const buffer = Buffer.from(imageData.split(',')[1], 'base64');
+      const file = new Blob([buffer], { type: 'image/png' });
+  
+      // Nom du fichier unique
+      const filePath = `plongees-images/${Date.now()}_carte_plongee.png`;
+  
+      // Téléchargement du fichier dans Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('plongees-images')
+        .upload(filePath, file);
+  
+      if (error) {
+        return res.status(500).json({ error: 'Erreur lors de l\'upload de l\'image' });
+      }
+  
+      // Récupérer l'URL de l'image
+      const imageUrl = `${supabase.storageUrl}/plongees-images/${data.path}`;
+  
+      // Mettre à jour la table `plongees` avec l'URL de l'image
+      const { error: updateError } = await supabase
+        .from('plongees')
+        .update({ image_url: imageUrl })
+        .match({ id: plongeeId });
+  
+      if (updateError) {
+        return res.status(500).json({ error: 'Erreur lors de l\'enregistrement de l\'URL' });
+      }
+  
+      return res.json({ success: true, imageUrl });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Une erreur est survenue lors de l\'upload de l\'image' });
+    }
+  });
 
 
 // Démarrer le serveur HTTPS

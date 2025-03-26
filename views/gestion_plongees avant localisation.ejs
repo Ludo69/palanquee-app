@@ -5,17 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gestion des Plongées | Palanquee Pro</title>
     
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-    <!-- Inclure html2canvas -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-
-
-
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -119,12 +108,6 @@
                             <button class="edit-btn flex-1 min-w-[120px] bg-gradient-to-r from-secondary-light to-secondary-dark hover:from-secondary-dark hover:to-secondary-light text-white px-4 py-2 rounded-lg text-sm transition-all whitespace-nowrap">
                                 <i class="fas fa-map-marker-alt mr-1"></i> Saisir site
                             </button>
-
-                            <!-- Bouton 2.1 - Localiser bateau -->
-                            <button class="localiser-bateau-btn flex-1 min-w-[120px] bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-all whitespace-nowrap"
-                                data-plongee-id="<%= plongee.id %>">
-                                <i class="fas fa-map-pin mr-1"></i> Localiser bateau
-                            </button>
                         </div>
 
                         <!-- Boutons principaux -->
@@ -206,7 +189,7 @@
             const sortieDate = document.getElementById("selected-date").getAttribute("data-date");
 
             try {
-                //console.log("🔍 ID de la sortie :", sortieId, "| Date :", sortieDate);
+                console.log("🔍 ID de la sortie :", sortieId, "| Date :", sortieDate);
 
                 const response = await fetch(`/api/plongees/${sortieId}/${sortieDate}`);
 
@@ -215,7 +198,7 @@
                 }
                 const plongees = await response.json();
 
-                //console.log("✅ Plongées récupérées avec site et dp :", plongees);
+                console.log("✅ Plongées récupérées avec site et dp :", plongees);
 
                 const plongeesList = document.querySelector(".space-y-4");
                 plongeesList.innerHTML = "";
@@ -256,11 +239,6 @@
                                 
                                 <button class="edit-btn flex-1 min-w-[120px] bg-gradient-to-r from-secondary-light to-secondary-dark hover:from-secondary-dark hover:to-secondary-light text-white px-4 py-2 rounded-lg text-sm transition-all whitespace-nowrap">
                                     <i class="fas fa-map-marker-alt mr-1"></i> Saisir site
-                                </button>
-                                <!-- Bouton Localiser bateau -->
-                                <button class="localiser-bateau-btn flex-1 min-w-[120px] bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-all whitespace-nowrap"
-                                    data-plongee-id="${plongee.id}">
-                                    <i class="fas fa-map-pin mr-1"></i> Localiser bateau
                                 </button>
                             </div>
 
@@ -375,7 +353,7 @@
                             if (!response.ok) throw new Error(`Erreur serveur (${response.status})`);
 
                             const data = await response.json();
-                            //console.log("✅ Site mis à jour :", data);
+                            console.log("✅ Site mis à jour :", data);
                             siteNameSpan.textContent = newSiteName;
                         } catch (error) {
                             console.error("❌ Erreur lors de la mise à jour du site :", error);
@@ -424,7 +402,7 @@
                 if (!response.ok) throw new Error(`Erreur serveur (${response.status})`);
 
                 let plongeurs = await response.json();
-                //console.log("✅ Plongeurs récupérés :", plongeurs);
+                console.log("✅ Plongeurs récupérés :", plongeurs);
 
                 plongeurs = plongeurs.filter(plongeur => plongeur.niveau === "E3" || plongeur.niveau === "E4");
 
@@ -457,7 +435,7 @@
                             if (!updateResponse.ok) throw new Error(`Erreur serveur (${updateResponse.status})`);
 
                             const updateData = await updateResponse.json();
-                            //console.log("✅ Plongée mise à jour avec le DP :", updateData);
+                            console.log("✅ Plongée mise à jour avec le DP :", updateData);
                             window.location.reload();
                         } catch (error) {
                             console.error("❌ Erreur lors de la mise à jour de la plongée :", error);
@@ -513,7 +491,7 @@
                         if (!response.ok) throw new Error(`Erreur serveur (${response.status})`);
 
                         const data = await response.json();
-                        //console.log("✅ Réponse serveur :", data);
+                        console.log("✅ Réponse serveur :", data);
                         chargerPlongees();
                     } catch (error) {
                         console.error("❌ Erreur lors de l'ajout :", error);
@@ -526,122 +504,8 @@
                 document.getElementById('dp-modal').classList.add('hidden');
             });
 
-            let map; // Variable globale pour stocker la carte
-
-            document.body.addEventListener("click", function(event) {
-                if (event.target.closest(".localiser-bateau-btn")) {
-                    const button = event.target.closest(".localiser-bateau-btn");
-                    const plongeeId = button.getAttribute("data-plongee-id");  // Utilise 'button' ici, pas 'this'
-                    //console.log("Plongée ID récupéré :", plongeeId); // Vérifie si l'ID apparaît bien
-
-                    // Stocke l'ID dans la modal
-                    document.getElementById("modalCarte").setAttribute("data-plongee-id", plongeeId);
-
-                    if (navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition(
-                            function(position) {
-                                const latitude = position.coords.latitude;
-                                const longitude = position.coords.longitude;
-
-                                // Afficher la modal
-                                document.getElementById("modalCarte").classList.remove("hidden");
-
-                                // Initialiser ou mettre à jour la carte
-                                setTimeout(() => {
-                                    // Vérifie si la carte est déjà initialisée
-                                    if (!map) {
-                                        map = L.map('map').setView([latitude, longitude], 15);
-                                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                            attribution: '&copy; OpenStreetMap contributors'
-                                        }).addTo(map);
-                                    } else {
-                                        map.setView([latitude, longitude], 15); // Se déplacer sur la carte si elle existe déjà
-                                    }
-
-                                    // Ajouter le marqueur du bateau avec une icône personnalisée sans popup
-                                    L.marker([latitude, longitude], {
-                                        icon: L.icon({
-                                            iconUrl: '/images/pin.png', // Chemin relatif vers ton icône "pin.png" dans le dossier "images"
-                                            iconSize: [40, 40],  // Ajuste la taille de l'icône si nécessaire
-                                            iconAnchor: [25, 50], // Ancrage de l'icône (au bas de l'icône pour qu'elle "pointe")
-                                            popupAnchor: [0, -50] // Position du popup par rapport à l'icône
-                                        })
-                                    }).addTo(map);
-
-
-                                }, 200);
-                            },
-                            function(error) {
-                                alert("Impossible de récupérer la position GPS : " + error.message);
-                            }
-                        );
-                    } else {
-                        alert("La géolocalisation n'est pas supportée par ce navigateur.");
-                    }
-                }
-            });
-
-            // Capture de l'image et envoi au serveur
-            document.getElementById("captureCarte").addEventListener("click", function() {
-                if (map) {  // Vérifie si la carte est initialisée
-                    html2canvas(document.getElementById("map"), { useCORS: true }).then(canvas => {
-                        //console.log("Capture réussie");  // Vérifie si la capture a réussi
-                        const imageData = canvas.toDataURL("image/jpeg", 0.7);
-
-                        const plongeeId = document.getElementById("modalCarte").getAttribute("data-plongee-id");
-                        //console.log("Plongée ID récupéré :", plongeeId); // Affichez l'ID pour vérifier
-
-                        // Envoi de l'image au serveur via une requête POST
-                        fetch('/upload-image', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                imageData,   // L'image capturée en base64
-                                plongeeId    // L'ID de la plongée
-                            }),
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                alert("Image uploadée avec succès !");
-                            } else {
-                                alert("Erreur lors de l'upload de l'image");
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error uploading image:', error);
-                            alert("Une erreur est survenue.");
-                        });
-                    }).catch(error => {
-                        console.error("Erreur lors de la capture avec html2canvas", error);
-                        alert("Erreur lors de la capture de l'image.");
-                    });
-                } else {
-                    console.log("Carte non initialisée");
-                }
-            });
-
-
-            // Bouton pour fermer la modal
-            document.getElementById("fermerModal").addEventListener("click", function() {
-                document.getElementById("modalCarte").classList.add("hidden");
-            });
-
-
             chargerPlongees();
         });
     </script>
-    <!-- Modal pour afficher la carte -->
-    <div id="modalCarte" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-        <div class="bg-white rounded-lg shadow-lg p-4 w-11/12 max-w-lg">
-            <h2 class="text-xl font-semibold mb-2">Position du bateau</h2>
-            <div id="map" class="w-full h-64"></div>
-            <button id="captureCarte" class="mt-3 w-full bg-green-500 text-white px-4 py-2 rounded">Capturer la carte</button>
-            <button id="fermerModal" class="mt-3 w-full bg-red-500 text-white px-4 py-2 rounded">Fermer</button>
-        </div>
-    </div>
-
 </body>
 </html>

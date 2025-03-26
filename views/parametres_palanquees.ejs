@@ -498,37 +498,40 @@
                 // Afficher l'objet complet sous forme de chaîne formatée
                 console.log("📅 Data (avec JSON.stringify) :", JSON.stringify(data, null, 2));
 
+                    // Récupérer l'URL de l'image
+                    let imageUrl = data.image_url; // On suppose que l'URL de l'image est dans 'image_url'
+
+                    // Vérifie si l'URL ne contient pas 'object/public' et l'ajoute si nécessaire
+                    if (imageUrl && !imageUrl.includes('object/public')) {
+                        imageUrl = imageUrl.replace('storage/v1/', 'storage/v1/object/public/');
+                    }
+
                 // Afficher l'objet sous forme de tableau
                 console.table(data);
 
                 let heurePlongee = data.heure_debut;
-                console.log("Heure originale : " + heurePlongee);
                 let heurePlongeeFormattee = "Heure inconnue";
                 if (heurePlongee) {
-                    // Diviser la chaîne en utilisant le caractère ":"
                     let [heures, minutes] = heurePlongee.split(":");
-                    // Reconstituer la chaîne au format "HHhMM"
                     heurePlongeeFormattee = `${heures}h${minutes}`;
-                    console.log("Heure formatée : " + heurePlongeeFormattee);
                 }
+
                 let datePlongee = data.date;
                 if (!datePlongee || datePlongee.toLowerCase().includes("invalid")) {
-                    console.error("❌ Erreur : Date invalide ->", data.date);
                     datePlongee = "Date inconnue";
                 }
 
                 let nomSitePlongee = data.site || "Site inconnu";
                 let nomDuDP = data.nomdp || "DP non trouvé";
                 let niveauDuDP = data.niveaudp || "Niveau non trouvé";
-                console.log("DP et niveau : " + nomSitePlongee + ", " + nomDuDP + ", " + niveauDuDP);
 
                 let message = `🌊 *Compte-rendu Plongée* 🌊\n`;
                 message += `🤿 *Plongée n°1 - ${nomSitePlongee}*\n`;
                 message += `📅 *Date* : ${datePlongee}\n`;
-                message += `👨‍💼 *Directeur de plongée* - ${nomDuDP} (${niveauDuDP})\n`;  // Ajout du niveau ici
-                message += `------------------------------ \n\n`; 
-            <% palanquees.forEach(function (palanquee) { %>
-                    // 🔵 Ajout des Consignes DP
+                message += `👨‍💼 *Directeur de plongée* - ${nomDuDP} (${niveauDuDP})\n`;
+                message += `------------------------------ \n\n`;
+
+                <% palanquees.forEach(function (palanquee) { %>
                     message += `🔹 *Palanquée <%= palanquee.nom %>*\n`;
                     message += `📏 *Heure de mise à l'eau* : <%= palanquee.heure_mise_a_leau || 'Non défini' %>\n`;
                     message += `📏 *Profondeur* : <%= palanquee.profondeur || 'Non défini' %> m\n`;
@@ -541,19 +544,27 @@
                         message += `   - <%= plongeur.nom %> (<%= plongeur.niveau_plongeur_historique %>)\n`;
                     <% }); %>
                 <% } else { %>
-                        message += `   Aucun plongeur dans cette palanquée.\n`;
+                    message += `   Aucun plongeur dans cette palanquée.\n`;
                 <% } %>
 
-                        message += "\n"; // Ligne vide pour séparer
-            <% }); %>
+                    message += "\n"; // Ligne vide pour séparer
+                <% }); %>
 
-                    let url = "https://wa.me/?text=" + encodeURIComponent(message);
+                // Si une image existe, on l'ajoute dans le message
+                if (imageUrl) {
+                    message += `📸 *Image de la plongée* : ${imageUrl}\n`; // Insérer l'URL de l'image ici
+                }
+
+
+
+                let url = "https://wa.me/?text=" + encodeURIComponent(message);
                 window.location.href = url; // Redirection directe au lieu d'une pop-up
             } catch (error) {
                 console.error("❌ Erreur récupération plongée:", error);
                 alert("Impossible de récupérer les informations de la plongée.");
             }
         }
+
 
         async function sendWhatsApp() {
             const plongeeId = "<%= typeof plongeeId !== 'undefined' ? plongeeId : '' %>";
