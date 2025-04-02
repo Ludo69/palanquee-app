@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Palanquee Pro | Inscription Club</title>
+
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            light: '#5E9DFF',
+                            DEFAULT: '#2A70E0',
+                            dark: '#1A4A9C',
+                        },
+                        secondary: {
+                            light: '#4FD1C5',
+                            DEFAULT: '#38B2AC',
+                            dark: '#2C7A7B',
+                        },
+                        accent: {
+                            light: '#F6AD55',
+                            DEFAULT: '#ED8936',
+                            dark: '#DD6B20',
+                        },
+                        dark: {
+                            light: '#2D3748',
+                            DEFAULT: '#1A202C',
+                            dark: '#171923',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Fichier CSS externe -->
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body class="bg-gradient-dark text-white font-sans flex flex-col min-h-screen">
+    <div class="flex-grow w-full max-w-3xl mx-auto p-4 sm:p-6">
+        <!-- Header avec logo et titre -->
+        <header class="flex items-center justify-center mb-8">
+            <a href="/" class="flex items-center space-x-3">
+                <div class="bg-primary-dark p-3 rounded-xl shadow-lg">
+                    <i class="fas fa-water text-2xl text-primary-light"></i>
+                </div>
+                <h1 class="text-3xl font-bold">
+                    <span class="logo-text">Palanquee</span>
+                    <span class="text-gray-300">Pro</span>
+                </h1>
+            </a>
+        </header>
+
+        <!-- Formulaire d'inscription -->
+        <div class="bg-dark-light rounded-2xl p-6 shadow-xl border border-gray-700 mb-8 animate-fade-in">
+            <h2 class="text-2xl font-bold mb-6 text-center text-primary-light">Créer un compte club</h2>
+            
+            <form id="signup-form" class="space-y-6">
+                <!-- Informations du club -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-medium text-secondary-light flex items-center">
+                        <i class="fas fa-building mr-2"></i>Informations du club
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="club-name" class="block text-gray-400 text-sm mb-1">Nom du club *</label>
+                            <input type="text" id="club-name" required
+                                class="w-full bg-dark-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-primary-light focus:outline-none">
+                        </div>
+                        
+                        <div>
+                            <label for="club-number" class="block text-gray-400 text-sm mb-1">Numéro d'affiliation</label>
+                            <input type="text" id="club-number" 
+                                class="w-full bg-dark-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-primary-light focus:outline-none">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="club-address" class="block text-gray-400 text-sm mb-1">Adresse</label>
+                        <input type="text" id="club-address" 
+                            class="w-full bg-dark-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-primary-light focus:outline-none">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="club-postal" class="block text-gray-400 text-sm mb-1">Code postal</label>
+                            <input type="text" id="club-postal" 
+                                class="w-full bg-dark-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-primary-light focus:outline-none">
+                        </div>
+                        
+                        <div class="md:col-span-2">
+                            <label for="club-city" class="block text-gray-400 text-sm mb-1">Ville</label>
+                            <input type="text" id="club-city" 
+                                class="w-full bg-dark-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-primary-light focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Informations administrateur -->
+                <div class="space-y-4 pt-2">
+                    <h3 class="text-lg font-medium text-secondary-light flex items-center">
+                        <i class="fas fa-user-shield mr-2"></i>Compte administrateur
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="admin-firstname" class="block text-gray-400 text-sm mb-1">Prénom *</label>
+                            <input type="text" id="admin-firstname" required
+                                class="w-full bg-dark-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-primary-light focus:outline-none">
+                        </div>
+                        
+                        <div>
+                            <label for="admin-lastname" class="block text-gray-400 text-sm mb-1">Nom *</label>
+                            <input type="text" id="admin-lastname" required
+                                class="w-full bg-dark-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-primary-light focus:outline-none">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="admin-email" class="block text-gray-400 text-sm mb-1">Email *</label>
+                        <input type="email" id="admin-email" required
+                            class="w-full bg-dark-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-primary-light focus:outline-none">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="admin-password" class="block text-gray-400 text-sm mb-1">Mot de passe *</label>
+                            <input type="password" id="admin-password" required
+                                class="w-full bg-dark-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-primary-light focus:outline-none">
+                        </div>
+                        
+                        <div>
+                            <label for="admin-password-confirm" class="block text-gray-400 text-sm mb-1">Confirmation *</label>
+                            <input type="password" id="admin-password-confirm" required
+                                class="w-full bg-dark-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-primary-light focus:outline-none">
+                        </div>
+                    </div>
+                    
+                    <div class="bg-dark-dark p-4 rounded-lg border border-gray-800">
+                        <p class="text-sm text-gray-400">
+                            Le compte administrateur vous permet de gérer tous les aspects de votre club sur Palanquee Pro, y compris les utilisateurs, 
+                            les sorties et les paramètres. Vous pourrez ajouter d'autres administrateurs ultérieurement.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Conditions d'utilisation -->
+                <div class="space-y-4">
+                    <div class="flex items-start">
+                        <input type="checkbox" id="terms-checkbox" required
+                            class="mt-1 bg-dark-dark border border-gray-700 rounded focus:ring-primary-light">
+                        <label for="terms-checkbox" class="ml-2 text-sm text-gray-400">
+                            J'accepte les <a href="/terms" class="text-primary-light hover:underline">conditions d'utilisation</a> 
+                            et la <a href="/privacy" class="text-primary-light hover:underline">politique de confidentialité</a> de Palanquee Pro.
+                        </label>
+                    </div>
+                </div>
+                
+                <div id="signup-error" class="text-red-400 text-sm hidden mt-2 p-3 bg-red-900 bg-opacity-30 rounded-lg"></div>
+                
+                <div class="flex justify-between items-center pt-2">
+                    <a href="/" class="text-gray-400 hover:text-white flex items-center">
+                        <i class="fas fa-arrow-left mr-2"></i>Retour
+                    </a>
+                    <button type="submit"
+                        class="bg-primary-dark hover:bg-primary-light text-white py-3 px-6 rounded-lg transition-colors flex items-center">
+                        <span>Créer mon compte</span>
+                        <i class="fas fa-check ml-2"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="w-full bg-dark-light py-4 border-t border-gray-800">
+        <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+            <p>© 2025 Palanquee Pro - Tous droits réservés</p>
+        </div>
+    </footer>
+
+    <!-- Script pour gérer le formulaire -->
+    <script type="module">
+        // Importer le SDK Supabase
+        let supabase;
+
+        async function initSupabase() {
+            try {
+                // Récupère uniquement supabaseUrl depuis le serveur
+                const response = await fetch('/supabase-config');
+                if (!response.ok) throw new Error('Erreur réseau');
+
+                const config = await response.json();
+                if (!config.supabaseUrl) {
+                    throw new Error('Configuration Supabase incomplète');
+                }
+
+                // Chargement dynamique du SDK Supabase
+                const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+
+                // Initialisation avec la clé publique
+                supabase = createClient(config.supabaseUrl, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvaXl6aXBoeGZrZnhmYXdjYWZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAwODQ3MTMsImV4cCI6MjA1NTY2MDcxM30.tY-3BgdAtSuv1ScGOgnimQEsLnk1mbnN9A2jYatsaNE');
+
+                console.log('Supabase initialisé');
+                return true;
+            } catch (error) {
+                console.error("Erreur d'initialisation de Supabase:", error);
+                return false;
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", async function() {
+            // Initialiser Supabase
+            await initSupabase();
+            
+            // Gestionnaire de soumission du formulaire
+            const signupForm = document.getElementById('signup-form');
+            const errorElement = document.getElementById('signup-error');
+            
+            signupForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                errorElement.classList.add('hidden');
+                
+                // Validation côté client
+                const password = document.getElementById('admin-password').value;
+                const passwordConfirm = document.getElementById('admin-password-confirm').value;
+                
+                if (password !== passwordConfirm) {
+                    errorElement.textContent = "Les mots de passe ne correspondent pas.";
+                    errorElement.classList.remove('hidden');
+                    return;
+                }
+
+                if (password.length < 8) {
+                    errorElement.textContent = "Le mot de passe doit contenir au moins 8 caractères.";
+                    errorElement.classList.remove('hidden');
+                    return;
+                }
+                
+                try {
+                    // Récupération des données du formulaire
+                    const clubData = {
+                        name: document.getElementById('club-name').value,
+                        number: document.getElementById('club-number').value,
+                        address: document.getElementById('club-address').value,
+                        postal_code: document.getElementById('club-postal').value,
+                        city: document.getElementById('club-city').value
+                    };
+                    
+                    const adminData = {
+                        email: document.getElementById('admin-email').value,
+                        password: password,
+                        first_name: document.getElementById('admin-firstname').value,
+                        last_name: document.getElementById('admin-lastname').value
+                    };
+                    
+                    // 1. Créer l'utilisateur dans Supabase Auth
+                    const { data: authData, error: authError } = await supabase.auth.signUp({
+                        email: adminData.email,
+                        password: adminData.password,
+                        options: {
+                            data: {
+                                first_name: adminData.first_name,
+                                last_name: adminData.last_name
+                            }
+                        }
+                    });
+                    
+                    if (authError) throw authError;
+                    
+                    // 2. Créer le club et associer l'administrateur
+                    if (authData && authData.user) {
+                        const userId = authData.user.id;
+                        console.log("User : ", userId);
+                        
+                        // Insérer le club dans la table clubs
+                        const { data: clubInsertData, error: clubError } = await supabase
+                            .from('clubs')
+                            .insert([
+                                { 
+                                    name: clubData.name,
+                                    affiliation_number: clubData.number,
+                                    address: clubData.address,
+                                    postal_code: clubData.postal_code,
+                                    city: clubData.city,
+                                }
+                            ])
+                            .select();
+                        
+                        if (clubError) throw clubError;
+                        
+                        // Associer l'utilisateur au club comme administrateur
+                        if (clubInsertData && clubInsertData[0]) {
+                            const clubId = clubInsertData[0].id;
+                            
+                            const { error: userError } = await supabase
+                                .from('users')
+                                .insert([
+                                    {
+                                        id: userId,
+                                        club_id: clubId,
+                                        first_name: adminData.first_name,
+                                        last_name: adminData.last_name,
+                                        email: adminData.email,
+                                        role: 'admin'
+                                    }
+                                ]);
+                            
+                            if (userError) throw userError;
+                            
+                            // Tout est bon, rediriger vers la page d'accueil
+                            window.location.href = '/?registered=true';
+                        }
+                    }
+                } catch (error) {
+                    console.error("Erreur lors de l'inscription:", error);
+                    errorElement.textContent = error.message || "Une erreur est survenue lors de l'inscription. Veuillez réessayer.";
+                    errorElement.classList.remove('hidden');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

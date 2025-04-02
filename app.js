@@ -8,7 +8,17 @@ const path = require("path");
 const app = express();
 const pdfDir = path.join(__dirname, "public", "pdf");
 const nodemailer = require("nodemailer");
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
+const session = require('express-session');
 
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } // Mettre true si HTTPS est utilisé
+}));
 
 // Vérifier si le dossier existe, sinon le créer
 if (!fs.existsSync(pdfDir)) {
@@ -17,10 +27,17 @@ if (!fs.existsSync(pdfDir)) {
 }
 
 // Configuration de Supabase
-const supabaseUrl = "https://xoiyziphxfkfxfawcafm.supabase.co";
-const supabaseKey =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvaXl6aXBoeGZrZnhmYXdjYWZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAwODQ3MTMsImV4cCI6MjA1NTY2MDcxM30.tY-3BgdAtSuv1ScGOgnimQEsLnk1mbnN9A2jYatsaNE";
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Initialisation
+const supabase = createClient(
+    process.env.SUPABASE_URL, 
+    process.env.SUPABASE_SERVICE_ROLE_KEY,  // Vérifie bien que cette variable est correcte !
+    { auth: { persistSession: false } }
+);
+
+//const supabaseUrl = "https://xoiyziphxfkfxfawcafm.supabase.co";
+//const supabaseKey ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvaXl6aXBoeGZrZnhmYXdjYWZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAwODQ3MTMsImV4cCI6MjA1NTY2MDcxM30.tY-3BgdAtSuv1ScGOgnimQEsLnk1mbnN9A2jYatsaNE";
+//const supabase = createClient(supabaseUrl, supabaseKey);
+//const supabase = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE);
 
 // Charger les variables d'environnement en fonction de l'environnement
 if (process.env.NODE_ENV === 'production') {
@@ -38,23 +55,10 @@ const options = {
 const host = '0.0.0.0'; // Utiliser '0.0.0.0' pour écouter sur toutes les interfaces
 const port = process.env.PORT || 3000;
 
-console.log('Variables d\'environnement au démarrage :', JSON.stringify(process.env, null, 2));
-// Vérifiez que les variables d'environnement sont bien chargées
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('SSL_KEY_PATH:', process.env.SSL_KEY_PATH);
-console.log('SSL_CERT_PATH:', process.env.SSL_CERT_PATH);
-console.log('HOST:', process.env.HOST);
-console.log('PORT:', process.env.PORT);
-
 // Middleware
 app.use(bodyParser.json({ limit: '10mb' })); // Pour JSON
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true })); // Pour les URL-encodées
-app.use((req, res, next) => {
-    //console.log("Requête reçue:", req.method, req.url);
-    //console.log("Headers:", req.headers);
-    //console.log("Body brut:", req.body); 
-    next();
-});
+
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
@@ -67,15 +71,182 @@ app.get("/", (req, res) => {
     res.render("index");
 });
 
+app.post('/login', async (req, res) => {
+    console.log("Requête reçue sur /login", req.body); // ✅ DEBUG
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        console.log("⛔ Champs manquants !");
+        return res.status(400).json({ message: "Veuillez fournir un email et un mot de passe." });
+    }
+
+    try {
+        // Connexion avec Supabase
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+        console.log("🔎 Réponse Supabase:", data, error); // ✅ DEBUG
+
+        if (error) {
+            return res.status(401).json({ message: "Email ou mot de passe incorrect." });
+        }
+
+        req.session.user = {
+            id: data.user.id,
+            email: data.user.email
+        };
+
+        console.log("✅ Utilisateur connecté :", req.session.user); // ✅ DEBUG
+        res.json({ message: "Connexion réussie", user: req.session.user });
+
+    } catch (err) {
+        console.error("🚨 Erreur serveur:", err);
+        res.status(500).json({ message: "Erreur interne du serveur" });
+    }
+});
+
+
+
+
+
+// Côté serveur (Node.js, Express, etc.)
+app.get('/api/supabase-auth', async (req, res) => {
+    // Génération d'un token de session temporaire côté serveur
+    // Les clés sont stockées en variables d'environnement serveur
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    // Configuration sécurisée uniquement pour le client authentifié
+    res.json({
+      sessionToken: temporaryToken,
+      expiresAt: expirationTime
+    });
+  });
+  
+// Route pour la config
+app.get('/supabase-config', (req, res) => {
+    res.json({
+        supabaseUrl: process.env.SUPABASE_URL,
+        supabaseKey: process.env.SUPABASE_KEY
+    });
+});
+
+app.use(cookieParser());
+
+// Route pour la page admin
+app.get('/admin', async (req, res) => {
+    const token = req.query.token || req.cookies.token;
+    if (!token) {
+        console.log("Token manquant");
+        return res.redirect('/');
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.SUPABASE_JWT_SECRET);
+        const userId = decoded.sub;
+
+        // Récupération de l'utilisateur pour obtenir l'ID du club
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('club_id')
+            .eq('id', userId)
+            .single();
+
+        if (userError) {
+            console.error("Erreur lors de la récupération de l'utilisateur:", userError);
+            return res.status(500).send('Erreur serveur');
+        }
+
+        const clubId = user.club_id;
+
+        // Récupération des membres du même club
+        const { data: members, error: membersError } = await supabase
+            .from('users')
+            .select('id, email, role, first_name, last_name, created_at, clubs (name)')
+            .eq('club_id', clubId);
+
+        if (membersError) {
+            console.error('Erreur lors de la récupération des membres:', membersError);
+            return res.status(500).send('Erreur serveur');
+        }
+
+        res.render('admin', { members, clubId });
+    } catch (error) {
+        console.error("Erreur lors de la vérification du token:", error);
+        return res.redirect('/');
+    }
+});
+
+app.post('/add-member', async (req, res) => {
+    const { firstName, lastName, email, role, club_id } = req.body;
+
+    try {
+        // 1️⃣ Créer l'utilisateur dans auth.users avec un mot de passe temporaire
+        const { data, error: createError } = await supabase.auth.admin.createUser({
+            email,
+            password: 'Pass123*',  // Mot de passe temporaire
+            user_metadata: { role },  // Ajouter le rôle dans les métadonnées
+            email_confirm: true       // Confirmer l'email automatiquement
+        });
+
+        if (createError) {
+            console.error('❌ Erreur lors de la création de l\'utilisateur:', createError);
+            return res.status(400).send('Impossible de créer l\'utilisateur.');
+        }
+
+        console.log('🚀 Utilisateur créé avec UUID:', data.user.id);
+
+        // 2️⃣ Ajouter l'utilisateur dans la table `users`
+        const { error: insertError } = await supabase
+            .from('users')
+            .insert([{ id: data.user.id, email, role, first_name: firstName, last_name: lastName, club_id }]);
+
+        if (insertError) {
+            console.error('❌ Erreur lors de l\'ajout en base:', insertError);
+            return res.status(500).send('Utilisateur créé mais erreur lors de l\'ajout en base.');
+        }
+
+        res.status(200).send(`✅ Utilisateur ajouté avec succès.`);
+    } catch (err) {
+        console.error('❌ Erreur serveur:', err);
+        res.status(500).send('Erreur serveur.');
+    }
+});
+
+
+app.get('/get-clubs', async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('clubs').select('id, name');
+
+        if (error) {
+            console.error('Erreur lors de la récupération des clubs:', error);
+            return res.status(500).json({ error: 'Erreur lors de la récupération des clubs' });
+        }
+
+        res.json(data);
+    } catch (err) {
+        console.error('Erreur serveur:', err);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+
+
+
+
+
+
+
+
+
 // PDF
 app.get("/generate-pdf", async (req, res) => {
     function formatHeurePDF(heure) {
         try {
             if (!heure) return "Non définie";
-            
+
             // Convertit en string et nettoie
             const heureStr = heure.toString().trim();
-            
+
             // Vérifie les formats connus
             if (/^\d{1,2}h\d{2}$/.test(heureStr)) {  // Si déjà formaté "XhXX"
                 return heureStr;
@@ -84,7 +255,7 @@ app.get("/generate-pdf", async (req, res) => {
                 const [h, m] = heureStr.split(':');
                 return `${parseInt(h, 10)}h${m.padStart(2, '0')}`;
             }
-            
+
             return "Format invalide";
         } catch (error) {
             console.error("Erreur formatage heure:", error);
@@ -145,12 +316,12 @@ app.get("/generate-pdf", async (req, res) => {
                 .from("palanquees_plongeurs")
                 .select("plongeur_id, niveau_plongeur_historique")  // Ajoute niveau_historique ici
                 .eq("palanquee_id", palanquee.id);
-        
+
             if (plongeursError) {
                 console.error("❌ Erreur lors de la récupération des plongeurs pour la palanquée :", plongeursError);
                 continue;
             }
-        
+
             // Récupérer les informations des plongeurs (noms seulement)
             const plongeurIds = palanqueesPlongeurs.map(p => p.plongeur_id);
             if (plongeurIds.length > 0) {
@@ -158,12 +329,12 @@ app.get("/generate-pdf", async (req, res) => {
                     .from("plongeurs")
                     .select("id, nom")  // On ne prend plus le niveau actuel ici
                     .in("id", plongeurIds);
-        
+
                 if (plongeursDataError) {
                     console.error("❌ Erreur lors de la récupération des détails des plongeurs :", plongeursDataError);
                     continue;
                 }
-        
+
                 // Fusionner les données: nom du plongeur + niveau historique
                 palanquee.plongeurs = plongeurs.map(plongeur => {
                     const correspondance = palanqueesPlongeurs.find(p => p.plongeur_id === plongeur.id);
@@ -183,7 +354,7 @@ app.get("/generate-pdf", async (req, res) => {
             date: dateEtHeure,
             palanquees: palanquees.map(palanquee => ({  // Notez le nom complet 'palanquee' au lieu de 'p'
                 ...palanquee,
-                heureFormatee: palanquee.heure_mise_a_leau 
+                heureFormatee: palanquee.heure_mise_a_leau
                     ? palanquee.heure_mise_a_leau.substring(0, 5).replace(':', 'h')
                     : "Non définie"
             })) || []
@@ -195,10 +366,10 @@ app.get("/generate-pdf", async (req, res) => {
         const now = new Date();
         datePlongeePDF.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
 
-        
+
         // 🔹 Création du document PDF
         const doc = new PDFDocument({ margin: 40 });
-                const formattedDate = datePlongeePDF.toLocaleString("fr-FR", {
+        const formattedDate = datePlongeePDF.toLocaleString("fr-FR", {
             year: "2-digit",
             month: "2-digit",
             day: "2-digit",
@@ -206,10 +377,10 @@ app.get("/generate-pdf", async (req, res) => {
             minute: "2-digit",
             second: "2-digit"
         }).replace(/\D/g, "-"); // Remplace les séparateurs par des tirets
-        const fileName = `parametres_plongee_${formattedDate}.pdf`; 
+        const fileName = `parametres_plongee_${formattedDate}.pdf`;
         const filePath = path.join(__dirname, "public", "pdf", fileName);
 
-       // const filePath = path.join(__dirname, "public", fileName); // ✅ filePath défini AVANT utilisation
+        // const filePath = path.join(__dirname, "public", fileName); // ✅ filePath défini AVANT utilisation
 
         const stream = fs.createWriteStream(filePath); // ✅ Maintenant, filePath est bien défini
 
@@ -219,7 +390,7 @@ app.get("/generate-pdf", async (req, res) => {
 
 
         // Ajouter le logo (assure-toi que le chemin est correct)
-        const logoPath = __dirname + "/public/images/scc28.jpeg"; 
+        const logoPath = __dirname + "/public/images/scc28.jpeg";
 
         const logoWidth = 100;  // Largeur du logo
         const logoHeight = 40;  // Hauteur du logo
@@ -241,15 +412,15 @@ app.get("/generate-pdf", async (req, res) => {
         const text = "FICHE DE SECURITE";
 
         // Centrage vertical (ajuster selon la hauteur du texte)
-        const textY = rectY + (rectHeight / 3); 
+        const textY = rectY + (rectHeight / 3);
 
         // Ajouter le texte bien centré dans le rectangle
         doc.fillColor("white")
-        .fontSize(20) // Taille ajustée pour éviter de dépasser
-        .text(text, rectX, textY, { align: "center", width: rectWidth }); // Centrage parfait
+            .fontSize(20) // Taille ajustée pour éviter de dépasser
+            .text(text, rectX, textY, { align: "center", width: rectWidth }); // Centrage parfait
 
-        
-        
+
+
 
         // Réinitialiser la couleur du texte à noir pour le reste du document
         doc.fillColor("black");  // Texte noir pour le reste du document
@@ -353,49 +524,49 @@ app.get("/generate-pdf", async (req, res) => {
             //doc.text(palanquee.nom || "-", 20, startY, { width: columnWidths[0], align: "center" });
             // Nom de la palanquée (taille 10)
             doc.fontSize(10)
-            .text(palanquee.nom, 20, startY, {
-                width: columnWidths[0],
-                align: "center"
-            });
-            
+                .text(palanquee.nom, 20, startY, {
+                    width: columnWidths[0],
+                    align: "center"
+                });
+
             // Heure formatée (taille 8)
-            const heureFormatee = palanquee.heure_mise_a_leau 
+            const heureFormatee = palanquee.heure_mise_a_leau
                 ? palanquee.heure_mise_a_leau.substring(0, 5).replace(':', 'h')
                 : "Non définie";
-            
+
             doc.fontSize(8)
-            .text(`Départ : ${heureFormatee}`, 20, startY + 12, { // +12 pour l'espacement
-                width: columnWidths[0],
-                align: "center"
-            });
+                .text(`Départ : ${heureFormatee}`, 20, startY + 12, { // +12 pour l'espacement
+                    width: columnWidths[0],
+                    align: "center"
+                });
             // Réinitialise la taille pour le reste
             doc.fontSize(10);
             // 🟢 Colonne "Plongeurs" (avec les guides en premier)
-                let plongeurY = startY;
-                if (palanquee.plongeurs && palanquee.plongeurs.length > 0) {
-                    // Trier les plongeurs: d'abord les guides (GP, E2-E4), puis les autres
-                    const plongeursTries = [...palanquee.plongeurs].sort((a, b) => {
-                        const isGuideA = ['GP', 'E2', 'E3', 'E4'].includes(a.niveau);
-                        const isGuideB = ['GP', 'E2', 'E3', 'E4'].includes(b.niveau);
-                        
-                        if (isGuideA && !isGuideB) return -1; // a (guide) avant b
-                        if (!isGuideA && isGuideB) return 1;  // b (guide) avant a
-                        return 0; // ordre égal
-                    });
+            let plongeurY = startY;
+            if (palanquee.plongeurs && palanquee.plongeurs.length > 0) {
+                // Trier les plongeurs: d'abord les guides (GP, E2-E4), puis les autres
+                const plongeursTries = [...palanquee.plongeurs].sort((a, b) => {
+                    const isGuideA = ['GP', 'E2', 'E3', 'E4'].includes(a.niveau);
+                    const isGuideB = ['GP', 'E2', 'E3', 'E4'].includes(b.niveau);
 
-                    plongeursTries.forEach(plongeur => {
-                        // Ajoute un symbole (★) si c'est un guide
-                        const isGuide = ['GP', 'E2', 'E3', 'E4'].includes(plongeur.niveau);
-                        const prefix = isGuide ? '* ' : '';
-                        doc.text(`${prefix}${plongeur.nom || "-"} (${plongeur.niveau || "-"})`, 
-                                130, plongeurY, 
-                                { width: columnWidths[1], align: "left" });
-                        plongeurY += 14;
-                    });
-                } else {
-                    doc.text("Aucun plongeur", 130, plongeurY, { width: columnWidths[1], align: "left" });
+                    if (isGuideA && !isGuideB) return -1; // a (guide) avant b
+                    if (!isGuideA && isGuideB) return 1;  // b (guide) avant a
+                    return 0; // ordre égal
+                });
+
+                plongeursTries.forEach(plongeur => {
+                    // Ajoute un symbole (★) si c'est un guide
+                    const isGuide = ['GP', 'E2', 'E3', 'E4'].includes(plongeur.niveau);
+                    const prefix = isGuide ? '* ' : '';
+                    doc.text(`${prefix}${plongeur.nom || "-"} (${plongeur.niveau || "-"})`,
+                        130, plongeurY,
+                        { width: columnWidths[1], align: "left" });
                     plongeurY += 14;
-                }
+                });
+            } else {
+                doc.text("Aucun plongeur", 130, plongeurY, { width: columnWidths[1], align: "left" });
+                plongeurY += 14;
+            }
 
             // 📌 Ajustement de la hauteur de fin pour éviter les chevauchements
             let endY = Math.max(startY + 20, plongeurY);
@@ -424,7 +595,7 @@ app.get("/generate-pdf", async (req, res) => {
 
 
 
-         
+
 
         doc.end();
 
@@ -464,7 +635,7 @@ app.get("/generate-pdf", async (req, res) => {
 
 
 
-// Gestion des plongeurs
+/*// Gestion des plongeurs
 app.get("/gestion-plongeurs", async (req, res) => {
     try {
         const { data, error } = await supabase.from("plongeurs").select("*");
@@ -478,7 +649,35 @@ app.get("/gestion-plongeurs", async (req, res) => {
         data.sort((a, b) => a.nom.localeCompare(b.nom));
 
         // Passer la liste triée ET le nombre de plongeurs à la vue
-        res.render("gestion_plongeurs", { 
+        res.render("gestion_plongeurs", {
+            plongeurs: data,
+            nombrePlongeurs: data.length // Ajout du comptage
+        });
+    } catch (error) {
+        console.error("Erreur lors de la récupération des plongeurs:", error);
+        res.status(500).send("Erreur serveur");
+    }
+});*/
+app.get("/gestion-plongeurs", async (req, res) => {
+    try {
+        const userClubId = req.user.club_id; // Récupérez le club_id de l'utilisateur connecté
+
+        // Filtrer les plongeurs par club_id
+        const { data, error } = await supabase
+            .from("plongeurs")
+            .select("*")
+            .eq("club_id", userClubId); // Ajouter la condition de filtrage
+
+        if (error) {
+            console.error("Erreur lors de la récupération des plongeurs:", error);
+            return res.status(500).send("Erreur serveur");
+        }
+
+        // Trier les plongeurs par ordre alphabétique sur le nom
+        data.sort((a, b) => a.nom.localeCompare(b.nom));
+
+        // Passer la liste triée ET le nombre de plongeurs à la vue
+        res.render("gestion_plongeurs", {
             plongeurs: data,
             nombrePlongeurs: data.length // Ajout du comptage
         });
@@ -788,7 +987,7 @@ app.get("/gestion-palanquees", async (req, res) => {
 
         // Exécutez toutes les promesses et attendez les résultats
         const palanqueesResults = await Promise.all(palanqueesPromises);
-        
+
         // Aplatir le tableau des résultats pour avoir une liste de palanquées
         const palanquees = palanqueesResults.flatMap(result => result.data || []);
 
@@ -1027,126 +1226,126 @@ app.get("/api/get-dp-name", async (req, res) => {
 
 
 app.post("/api/mettre-a-jour-site", async (req, res) => {
-try {
-    const { id, site } = req.body;
+    try {
+        const { id, site } = req.body;
 
-    if (!id || !site) {
-        return res.status(400).json({ error: "ID et site requis" });
+        if (!id || !site) {
+            return res.status(400).json({ error: "ID et site requis" });
+        }
+
+        // Mise à jour dans Supabase
+        const { data, error } = await supabase
+            .from("plongees") // Remplace par le bon nom de la table
+            .update({ site: site }) // Vérifie que la colonne "site" existe bien
+            .eq("id", id);
+
+        if (error) {
+            throw error;
+        }
+
+        console.log(`✅ Plongée ${id} mise à jour avec le site: ${site}`);
+        res.json({ success: true, data });
+    } catch (error) {
+        console.error("❌ Erreur mise à jour site:", error);
+        res.status(500).json({
+            error: "Erreur serveur lors de la mise à jour du site",
+        });
     }
-
-    // Mise à jour dans Supabase
-    const { data, error } = await supabase
-        .from("plongees") // Remplace par le bon nom de la table
-        .update({ site: site }) // Vérifie que la colonne "site" existe bien
-        .eq("id", id);
-
-    if (error) {
-        throw error;
-    }
-
-    console.log(`✅ Plongée ${id} mise à jour avec le site: ${site}`);
-    res.json({ success: true, data });
-} catch (error) {
-    console.error("❌ Erreur mise à jour site:", error);
-    res.status(500).json({
-        error: "Erreur serveur lors de la mise à jour du site",
-    });
-}
 });
 
 app.post("/api/update-site", async (req, res) => {
-const { plongeeId, site } = req.body;
+    const { plongeeId, site } = req.body;
 
-try {
-    const { data, error } = await supabase
-        .from("plongees")
-        .update({ site: site })
-        .eq("id", plongeeId);
+    try {
+        const { data, error } = await supabase
+            .from("plongees")
+            .update({ site: site })
+            .eq("id", plongeeId);
 
-    if (error) {
-        throw error;
+        if (error) {
+            throw error;
+        }
+
+        //console.log("✅ Mise à jour réussie !");
+        res.status(200).json({ success: true, data });
+    } catch (err) {
+        console.error("❌ Erreur mise à jour site:", err);
+        res.status(500).json({ error: err.message });
     }
-
-    //console.log("✅ Mise à jour réussie !");
-    res.status(200).json({ success: true, data });
-} catch (err) {
-    console.error("❌ Erreur mise à jour site:", err);
-    res.status(500).json({ error: err.message });
-}
 });
 
 app.get("/gestion_palanquees", async (req, res) => {
-const plongeeId = req.query.id; // ID de la plongée
+    const plongeeId = req.query.id; // ID de la plongée
 
-if (!plongeeId) {
-    return res.status(400).send("ID de plongée manquant");
-}
-
-try {
-    // 1. Trouver l'ID de la sortie associée à cette plongée
-    const { data: plongee, error: plongeeError } = await supabase
-        .from("plongees")
-        .select("sortie_id")
-        .eq("id", plongeeId)
-        .single();
-
-    if (plongeeError || !plongee) {
-        return res.status(404).send("Plongée non trouvée.");
+    if (!plongeeId) {
+        return res.status(400).send("ID de plongée manquant");
     }
 
-    const sortieId = plongee.sortie_id;
+    try {
+        // 1. Trouver l'ID de la sortie associée à cette plongée
+        const { data: plongee, error: plongeeError } = await supabase
+            .from("plongees")
+            .select("sortie_id")
+            .eq("id", plongeeId)
+            .single();
 
-    // 2. Récupérer les informations de la sortie (lieu)
-    const { data: sortie, error: sortieError } = await supabase
-        .from("sorties")
-        .select("id, lieu")
-        .eq("id", sortieId)
-        .single();
+        if (plongeeError || !plongee) {
+            return res.status(404).send("Plongée non trouvée.");
+        }
 
-    if (sortieError || !sortie) {
-        return res.status(404).send("Sortie non trouvée.");
+        const sortieId = plongee.sortie_id;
+
+        // 2. Récupérer les informations de la sortie (lieu)
+        const { data: sortie, error: sortieError } = await supabase
+            .from("sorties")
+            .select("id, lieu")
+            .eq("id", sortieId)
+            .single();
+
+        if (sortieError || !sortie) {
+            return res.status(404).send("Sortie non trouvée.");
+        }
+
+        // 3. Récupérer les plongeurs de cette sortie
+        const { data: plongeursSortie, error: plongeursError } = await supabase
+            .from("plongeurs_sorties")
+            .select("plongeur_id")
+            .eq("sortie_id", sortieId);
+
+        if (plongeursError) {
+            return res
+                .status(500)
+                .send("Erreur lors de la récupération des plongeurs.");
+        }
+
+        if (!plongeursSortie.length) {
+            return res
+                .status(404)
+                .send("Aucun plongeur trouvé pour cette sortie.");
+        }
+
+        // 4. Récupérer les détails des plongeurs
+        const plongeurIds = plongeursSortie.map((p) => p.plongeur_id);
+
+        const { data: plongeurs, error: detailsError } = await supabase
+            .from("plongeurs")
+            .select("id, nom, niveau")
+            .in("id", plongeurIds);
+
+        if (detailsError) {
+            return res
+                .status(500)
+                .send(
+                    "Erreur lors de la récupération des détails des plongeurs.",
+                );
+        }
+
+        // 5. Envoyer les données à la vue
+        res.render("gestion_palanquees", { plongee: sortie, plongeurs });
+    } catch (error) {
+        console.error("Erreur serveur:", error);
+        res.status(500).send("Erreur interne du serveur.");
     }
-
-    // 3. Récupérer les plongeurs de cette sortie
-    const { data: plongeursSortie, error: plongeursError } = await supabase
-        .from("plongeurs_sorties")
-        .select("plongeur_id")
-        .eq("sortie_id", sortieId);
-
-    if (plongeursError) {
-        return res
-            .status(500)
-            .send("Erreur lors de la récupération des plongeurs.");
-    }
-
-    if (!plongeursSortie.length) {
-        return res
-            .status(404)
-            .send("Aucun plongeur trouvé pour cette sortie.");
-    }
-
-    // 4. Récupérer les détails des plongeurs
-    const plongeurIds = plongeursSortie.map((p) => p.plongeur_id);
-
-    const { data: plongeurs, error: detailsError } = await supabase
-        .from("plongeurs")
-        .select("id, nom, niveau")
-        .in("id", plongeurIds);
-
-    if (detailsError) {
-        return res
-            .status(500)
-            .send(
-                "Erreur lors de la récupération des détails des plongeurs.",
-            );
-    }
-
-    // 5. Envoyer les données à la vue
-    res.render("gestion_palanquees", { plongee: sortie, plongeurs });
-} catch (error) {
-    console.error("Erreur serveur:", error);
-    res.status(500).send("Erreur interne du serveur.");
-}
 });
 
 /*// Route pour récupérer les palanquées associées à une plongée
@@ -1183,12 +1382,12 @@ app.get("/get_palanquees/:plongee_id", async (req, res) => {
 
         // Récupérer les palanquées pour la plongée donnée
         const { data: palanquees, error: palanqueesError } = await supabase
-        .from("palanquees")
-        .select(`
+            .from("palanquees")
+            .select(`
             id, nom, profondeur, duree, paliers,
             palanquees_plongeurs (plongeur_id, niveau_plongeur_historique, plongeurs (id, nom, niveau))
         `)
-        .eq("plongee_id", plongee_id);
+            .eq("plongee_id", plongee_id);
 
         if (palanqueesError) throw new Error(palanqueesError.message);
 
@@ -1263,7 +1462,7 @@ app.post("/enregistrer_palanquee", async (req, res) => {
     if (!plongee_id) {
         return res.status(400).json({ error: "Plongée ID manquant" });
     }
-    
+
 
     try {
         // 🔍 Charger toutes les palanquées existantes pour cette plongée
@@ -1340,12 +1539,12 @@ app.post("/enregistrer_palanquee", async (req, res) => {
                 .from("palanquees_plongeurs")
                 .delete()
                 .eq("palanquee_id", id);
-        
+
             if (deleteError) {
                 erreurs.push({ palanquee: palanquee.nom, message: deleteError.message });
                 continue;
             }
-        
+
             if (plongeurs.length > 0) {
                 const plongeursData = await Promise.all(plongeurs.map(async (plongeur_id) => {
                     // Récupérer les informations du plongeur (nom, niveau, et niveau historique)
@@ -1354,12 +1553,12 @@ app.post("/enregistrer_palanquee", async (req, res) => {
                         .select("nom, niveau")
                         .eq("id", plongeur_id)
                         .single();
-        
+
                     if (plongeurError) {
                         erreurs.push({ plongeur: plongeur_id, message: plongeurError.message });
                         return null; // On saute ce plongeur si une erreur se produit
                     }
-        
+
                     // Retourner les données pour l'insertion dans palanquees_plongeurs
                     return {
                         palanquee_id: id,
@@ -1369,21 +1568,21 @@ app.post("/enregistrer_palanquee", async (req, res) => {
                         niveau_plongeur_historique: plongeur.niveau // Conserver l'historique du niveau
                     };
                 }));
-        
+
                 // Filtrer les valeurs nulles si une erreur s'est produite
                 const plongeursDataValid = plongeursData.filter(data => data !== null);
-        
+
                 // Insérer les plongeurs dans la table palanquees_plongeurs
                 const { error: plongeursError } = await supabase
                     .from("palanquees_plongeurs")
                     .insert(plongeursDataValid);
-        
+
                 if (plongeursError) {
                     erreurs.push({ palanquee: palanquee.nom, message: plongeursError.message });
                 }
             }
         }
-        
+
 
         if (erreurs.length > 0) {
             console.log("Certaines palanquées ont rencontré des erreurs : ", erreurs);
@@ -1431,34 +1630,34 @@ app.delete("/supprimer_palanquee/:id", async (req, res) => {
 
 // Récupérer les palanquées avec leurs plongeurs
 app.get("/palanquees", async (req, res) => {
-try {
-    let { data: palanquees, error } = await supabase
-        .from("palanquees")
-        .select("*");
+    try {
+        let { data: palanquees, error } = await supabase
+            .from("palanquees")
+            .select("*");
 
-    if (error) throw error;
+        if (error) throw error;
 
-    for (let palanquee of palanquees) {
-        let { data: palanqueesPlongeurs } = await supabase
-            .from("palanquees_plongeurs")
-            .select("plongeur_id")
-            .eq("palanquee_id", palanquee.id);
+        for (let palanquee of palanquees) {
+            let { data: palanqueesPlongeurs } = await supabase
+                .from("palanquees_plongeurs")
+                .select("plongeur_id")
+                .eq("palanquee_id", palanquee.id);
 
-        let plongeurIds = palanqueesPlongeurs.map(p => p.plongeur_id);
+            let plongeurIds = palanqueesPlongeurs.map(p => p.plongeur_id);
 
-        let { data: plongeurs } = await supabase
-            .from("plongeurs")
-            .select("*")
-            .in("id", plongeurIds);
+            let { data: plongeurs } = await supabase
+                .from("plongeurs")
+                .select("*")
+                .in("id", plongeurIds);
 
-        palanquee.plongeurs = plongeurs;
+            palanquee.plongeurs = plongeurs;
+        }
+
+        res.render("palanquees", { palanquees });
+    } catch (error) {
+        console.error("Erreur:", error);
+        res.status(500).send("Erreur serveur");
     }
-
-    res.render("palanquees", { palanquees });
-} catch (error) {
-    console.error("Erreur:", error);
-    res.status(500).send("Erreur serveur");
-}
 });
 
 // Récupérer les paramètres des palanquées
@@ -1636,64 +1835,64 @@ app.get("/plongee_info", async (req, res) => {
 
 
 app.get("/modif_palanquee/:id", async (req, res) => {
-const palanqueeId = req.params.id;
-console.log("Chargement de la palanquée avec ID :", palanqueeId);
+    const palanqueeId = req.params.id;
+    console.log("Chargement de la palanquée avec ID :", palanqueeId);
 
-try {
-    let { data: palanquee, error: palanqueeError } = await supabase
-        .from("palanquees")
-        .select("*")
-        .eq("id", palanqueeId)
-        .single();
+    try {
+        let { data: palanquee, error: palanqueeError } = await supabase
+            .from("palanquees")
+            .select("*")
+            .eq("id", palanqueeId)
+            .single();
 
-    if (palanqueeError) {
-        console.error("Erreur lors de la récupération de la palanquée:", palanqueeError);
-        throw palanqueeError;
+        if (palanqueeError) {
+            console.error("Erreur lors de la récupération de la palanquée:", palanqueeError);
+            throw palanqueeError;
+        }
+
+        console.log("Palanquée trouvée :", palanquee);
+
+        // Récupérer la liste des plongeurs
+        let { data: plongeurs, error: plongeursError } = await supabase
+            .from("palanquees_plongeurs")
+            .select("plongeurs (id, nom, niveau)")
+            .eq("palanquee_id", palanqueeId);
+
+        if (plongeursError) {
+            console.error("Erreur lors de la récupération des plongeurs:", plongeursError);
+            throw plongeursError;
+        }
+
+        const plongeursListe = plongeurs.map(p => p.plongeurs);
+
+        res.render("modif_palanquee", { palanquee, plongeurs: plongeursListe });
+    } catch (error) {
+        console.error("Erreur lors du chargement de la palanquée:", error);
+        res.status(500).send("Erreur serveur.");
     }
-
-    console.log("Palanquée trouvée :", palanquee);
-
-    // Récupérer la liste des plongeurs
-    let { data: plongeurs, error: plongeursError } = await supabase
-        .from("palanquees_plongeurs")
-        .select("plongeurs (id, nom, niveau)")
-        .eq("palanquee_id", palanqueeId);
-
-    if (plongeursError) {
-        console.error("Erreur lors de la récupération des plongeurs:", plongeursError);
-        throw plongeursError;
-    }
-
-    const plongeursListe = plongeurs.map(p => p.plongeurs);
-
-    res.render("modif_palanquee", { palanquee, plongeurs: plongeursListe });
-} catch (error) {
-    console.error("Erreur lors du chargement de la palanquée:", error);
-    res.status(500).send("Erreur serveur.");
-}
 });
 
 
 app.post('/supprimer_palanquee', async (req, res) => {
-const { palanqueeId } = req.body;
+    const { palanqueeId } = req.body;
 
-// Supprimer les plongeurs associés
-await supabase
-    .from('palanquees_plongeurs')
-    .delete()
-    .eq('palanquee_id', palanqueeId);
+    // Supprimer les plongeurs associés
+    await supabase
+        .from('palanquees_plongeurs')
+        .delete()
+        .eq('palanquee_id', palanqueeId);
 
-// Supprimer la palanquée
-const { error } = await supabase
-    .from('palanquees')
-    .delete()
-    .eq('id', palanqueeId);
+    // Supprimer la palanquée
+    const { error } = await supabase
+        .from('palanquees')
+        .delete()
+        .eq('id', palanqueeId);
 
-if (error) {
-    return res.status(500).send("Erreur lors de la suppression de la palanquée.");
-}
+    if (error) {
+        return res.status(500).send("Erreur lors de la suppression de la palanquée.");
+    }
 
-res.send("Palanquée et plongeurs supprimés avec succès.");
+    res.send("Palanquée et plongeurs supprimés avec succès.");
 });
 
 app.post("/ajouter-plongee", async (req, res) => {
@@ -1936,7 +2135,7 @@ app.get('/api/stats', async (req, res) => {
 app.post('/api/palanquees/mise-a-leau', async (req, res) => {
     try {
         const { palanquee_id, heure_mise_a_leau } = req.body;
-        
+
         // Vérifie d'abord si l'heure existe déjà (optionnel)
         const { data: existing, error: fetchError } = await supabase
             .from('palanquees')
@@ -1954,9 +2153,9 @@ app.post('/api/palanquees/mise-a-leau', async (req, res) => {
             .from('palanquees')
             .update({ heure_mise_a_leau })
             .eq('id', palanquee_id);
-            
+
         if (error) throw error;
-        
+
         res.json({ success: true });
     } catch (error) {
         console.error('Erreur Supabase:', error);
@@ -1969,42 +2168,98 @@ app.post('/upload-image', async (req, res) => {
     try {
         //console.log("Requête reçue pour l'upload d'image");
         //console.log("Données reçues :", req.body);
-      const { imageData, plongeeId } = req.body;  // On reçoit l'image en base64 et l'ID de la plongée
-  
-      // Convertir l'image en fichier Blob
-      const buffer = Buffer.from(imageData.split(',')[1], 'base64');
-      const file = new Blob([buffer], { type: 'image/png' });
-  
-      // Nom du fichier unique
-      const filePath = `plongees-images/${Date.now()}_carte_plongee.png`;
-  
-      // Téléchargement du fichier dans Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('plongees-images')
-        .upload(filePath, file);
-  
-      if (error) {
-        return res.status(500).json({ error: 'Erreur lors de l\'upload de l\'image' });
-      }
-  
-      // Récupérer l'URL de l'image
-      const imageUrl = `${supabase.storageUrl}/plongees-images/${data.path}`;
-  
-      // Mettre à jour la table `plongees` avec l'URL de l'image
-      const { error: updateError } = await supabase
-        .from('plongees')
-        .update({ image_url: imageUrl })
-        .match({ id: plongeeId });
-  
-      if (updateError) {
-        return res.status(500).json({ error: 'Erreur lors de l\'enregistrement de l\'URL' });
-      }
-  
-      return res.json({ success: true, imageUrl });
+        const { imageData, plongeeId } = req.body;  // On reçoit l'image en base64 et l'ID de la plongée
+
+        // Convertir l'image en fichier Blob
+        const buffer = Buffer.from(imageData.split(',')[1], 'base64');
+        const file = new Blob([buffer], { type: 'image/png' });
+
+        // Nom du fichier unique
+        const filePath = `plongees-images/${Date.now()}_carte_plongee.png`;
+
+        // Téléchargement du fichier dans Supabase Storage
+        const { data, error } = await supabase.storage
+            .from('plongees-images')
+            .upload(filePath, file);
+
+        if (error) {
+            return res.status(500).json({ error: 'Erreur lors de l\'upload de l\'image' });
+        }
+
+        // Récupérer l'URL de l'image
+        const imageUrl = `${supabase.storageUrl}/plongees-images/${data.path}`;
+
+        // Mettre à jour la table `plongees` avec l'URL de l'image
+        const { error: updateError } = await supabase
+            .from('plongees')
+            .update({ image_url: imageUrl })
+            .match({ id: plongeeId });
+
+        if (updateError) {
+            return res.status(500).json({ error: 'Erreur lors de l\'enregistrement de l\'URL' });
+        }
+
+        return res.json({ success: true, imageUrl });
     } catch (error) {
-      console.error(error);
-      return res.status(500).json({ error: 'Une erreur est survenue lors de l\'upload de l\'image' });
+        console.error(error);
+        return res.status(500).json({ error: 'Une erreur est survenue lors de l\'upload de l\'image' });
     }
+});
+
+app.post('/api/membres', async (req, res) => {
+    const { email, role } = req.body;
+
+    try {
+        // Créer un utilisateur dans Supabase Auth
+        const { data, error } = await supabase.auth.admin.createUser({
+            email,
+            password: Math.random().toString(36).slice(-8), // Mot de passe temporaire
+            email_confirm: true,
+        });
+
+        if (error) throw error;
+
+        // Ajouter l'utilisateur dans la table "users"
+        await supabase.from('users').insert([{ id: data.user.id, email, role }]);
+
+        res.status(201).json({ message: 'Utilisateur ajouté avec succès' });
+    } catch (error) {
+        console.error('Erreur lors de l’ajout du membre:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+app.get('/api/membres', async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('users').select('*');
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        console.error('Erreur lors de la récupération des membres:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+app.delete('/api/membres/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Supprimer de Supabase Auth
+        await supabase.auth.admin.deleteUser(id);
+
+        // Supprimer de la table users
+        await supabase.from('users').delete().eq('id', id);
+
+        res.json({ message: 'Utilisateur supprimé' });
+    } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+// Route pour afficher la page de signup-club
+app.get('/signup-club', (req, res) => {
+    res.render('signup-club');  // Charge la vue signup-club.ejs
   });
 
 

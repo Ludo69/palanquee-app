@@ -295,13 +295,18 @@
 }
 
 .btn-enregistrer:disabled {
-    background-color: gray;
+    background: #9ca3af !important; /* Couleur grise */
+    background-image: none !important; /* Supprime le dégradé */
     cursor: not-allowed;
+    opacity: 0.8;
 }
 
+/* CSS à ajouter */
 .btn-enregistrer-consignes:disabled {
-    background-color: gray;
+    background: #9ca3af !important; /* Couleur grise */
+    background-image: none !important; /* Supprime le dégradé */
     cursor: not-allowed;
+    opacity: 0.8;
 }
 
 .mise-a-leau-btn:disabled {
@@ -356,4 +361,18 @@
         transform: translateY(-100vh) scale(1);
         opacity: 0;
     }
+}
+
+/* Pour éviter les conflits avec Tailwind */
+[data-role-loading] {
+    @apply cursor-wait;
+}
+
+[data-role-action="hide"][data-role-loading] {
+    @apply hidden;
+}
+
+/* Pour rendre le bouton interactif dans le conteneur non-interactif */
+.bubble-container #login-button {
+    pointer-events: auto;
 }

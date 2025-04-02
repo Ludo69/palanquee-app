@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gestion des Plongeurs | Palanquee Pro</title>
-    
+
     <!-- TailwindCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -58,19 +59,21 @@
     <link rel="icon" type="image/x-icon" href="/icons/favicon.ico">
 
 </head>
-<body class="bg-gradient-to-b from-dark-dark to-dark-light text-white font-sans min-h-screen pb-16">
 
-    <!-- Header -->
+<body class="bg-gradient-to-b from-dark-dark to-dark-light text-white font-sans min-h-screen pb-16 hidden">
+   <!-- Header -->
     <div class="w-full max-w-3xl mx-auto p-4 sm:p-6 relative">
         <!-- Bouton de retour -->
-        <button onclick="window.history.back()" class="absolute top-6 left-6 text-gray-300 hover:text-white transition-colors">
+        <button onclick="window.history.back()"
+            class="absolute top-6 left-6 text-gray-300 hover:text-white transition-colors">
             <i class="fas fa-arrow-left text-xl"></i>
         </button>
 
         <!-- Titre -->
         <div class="text-center mb-8">
             <h1 class="text-2xl sm:text-3xl font-bold">
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary-light to-secondary-light">Gestion</span>
+                <span
+                    class="text-transparent bg-clip-text bg-gradient-to-r from-primary-light to-secondary-light">Gestion</span>
                 <span class="text-gray-300">des Plongeurs</span>
             </h1>
             <p class="text-gray-400 mt-2">Ajoutez et gérez vos membres</p>
@@ -81,22 +84,29 @@
             <form action="/ajouter-plongeur" method="POST" class="space-y-4">
                 <div>
                     <label for="nom" class="block text-sm font-medium text-gray-300 mb-1">Nom du plongeur</label>
-                    <input type="text" id="nom" name="nom" required 
-                           class="w-full p-3 bg-dark border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-light focus:border-transparent">
+                    <input type="text" id="nom" name="nom" required
+                        class="w-full p-3 bg-dark border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-light focus:border-transparent">
                 </div>
-                
+
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Niveau de certification</label>
                     <div class="grid grid-cols-4 gap-2">
-                        <% ["N1", "PE40", "N2", "N3", "GP", "E2", "E3", "E4"].forEach(niveau => { %>
-                            <button type="button" class="niveau-btn-create bg-primary-dark hover:bg-primary-light text-white p-2 rounded-lg transition" 
-                                    data-value="<%= niveau %>"><%= niveau %></button>
-                        <% }) %>
+                        <% ["N1", "PE40" , "N2" , "N3" , "GP" , "E2" , "E3" , "E4" ].forEach(niveau=> { %>
+                            <button type="button"
+                                class="niveau-btn-create bg-primary-dark hover:bg-primary-light text-white p-2 rounded-lg transition"
+                                data-value="<%= niveau %>">
+                                <%= niveau %>
+                            </button>
+                            <% }) %>
                     </div>
                     <input type="hidden" id="niveau-create" name="niveau" value="">
                 </div>
-                
-                <button type="submit" class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 rounded-lg font-medium transition-all">
+
+                <button type="submit"
+                    class="w-full bg-gradient-to-r from-green-400 to-green-500 text-white py-3 rounded-lg font-medium opacity-50 cursor-not-allowed"
+                    disabled
+                    data-role-access="admin responsable"
+                    data-role-loading>
                     <i class="fas fa-plus mr-2"></i> Ajouter Plongeur
                 </button>
             </form>
@@ -109,32 +119,44 @@
                     <i class="fas fa-users mr-2"></i> Liste des Plongeurs
                 </h2>
             </div>
-            
+
             <div class="overflow-y-auto max-h-96 no-scrollbar">
-                <% plongeurs.forEach(plongeur => { %>
-                    <div class="p-4 border-b border-gray-700 last:border-0 hover:bg-dark transition-colors flex justify-between items-center">
+                <% plongeurs.forEach(plongeur=> { %>
+                    <div
+                        class="p-4 border-b border-gray-700 last:border-0 hover:bg-dark transition-colors flex justify-between items-center">
                         <div>
-                            <h3 class="font-medium"><%= plongeur.nom %></h3>
-                            <span class="text-sm text-gray-400"><%= plongeur.niveau %></span>
+                            <h3 class="font-medium">
+                                <%= plongeur.nom %>
+                            </h3>
+                            <span class="text-sm text-gray-400">
+                                <%= plongeur.niveau %>
+                            </span>
                         </div>
                         <div class="flex space-x-3">
-                            <button onclick="openEditPopup('<%= plongeur.id %>', '<%= plongeur.niveau %>')" 
-                                    class="text-yellow-400 hover:text-yellow-300 transition-colors">
+                            <button onclick="openEditPopup('<%= plongeur.id %>', '<%= plongeur.niveau %>')"
+                                class="text-yellow-400 hover:text-yellow-300 transition-colors hidden"
+                                data-role-access="admin responsable"
+                                data-role-loading
+                                data-role-action="hide">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button onclick="deletePlongeur('<%= plongeur.id %>')" 
-                                    class="text-red-500 hover:text-red-400 transition-colors">
+                            <button onclick="deletePlongeur('<%= plongeur.id %>')"
+                                class="text-red-500 hover:text-red-400 transition-colors hidden"
+                                data-role-access="admin responsable"
+                                data-role-loading
+                                data-role-action="hide">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         </div>
                     </div>
-                <% }) %>
+                    <% }) %>
             </div>
         </div>
     </div>
 
     <!-- Bottom Navigation -->
-    <nav class="fixed bottom-0 left-0 w-full bg-dark-light bg-opacity-90 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl border-t border-gray-700 z-40">
+    <nav
+        class="fixed bottom-0 left-0 w-full bg-dark-light bg-opacity-90 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl border-t border-gray-700 z-40">
         <a href="/" class="nav-item text-gray-400 flex flex-col items-center">
             <i class="fas fa-home text-lg"></i>
             <span class="text-xs mt-1">Accueil</span>
@@ -162,14 +184,17 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            
+
             <div class="grid grid-cols-4 gap-2 mb-6">
-                <% ["N1", "PE40", "N2", "N3", "GP", "E2", "E3", "E4"].forEach(niveau => { %>
-                    <button type="button" class="niveau-btn bg-primary-dark hover:bg-primary-light text-white p-2 rounded-lg transition" 
-                            data-value="<%= niveau %>"><%= niveau %></button>
-                <% }) %>
+                <% ["N1", "PE40" , "N2" , "N3" , "GP" , "E2" , "E3" , "E4" ].forEach(niveau=> { %>
+                    <button type="button"
+                        class="niveau-btn bg-primary-dark hover:bg-primary-light text-white p-2 rounded-lg transition"
+                        data-value="<%= niveau %>">
+                        <%= niveau %>
+                    </button>
+                    <% }) %>
             </div>
-            
+
             <input type="hidden" id="edit-plongeur-id">
             <input type="hidden" id="edit-niveau">
         </div>
@@ -178,10 +203,10 @@
     <script>
         // Gestion des boutons de niveau (création)
         document.querySelectorAll('.niveau-btn-create').forEach(button => {
-            button.addEventListener('click', function() {
-                document.querySelectorAll('.niveau-btn-create').forEach(btn => 
+            button.addEventListener('click', function () {
+                document.querySelectorAll('.niveau-btn-create').forEach(btn =>
                     btn.classList.remove('bg-primary-light', 'ring-2', 'ring-white'));
-                
+
                 this.classList.add('bg-primary-light', 'ring-2', 'ring-white');
                 document.getElementById('niveau-create').value = this.dataset.value;
             });
@@ -210,7 +235,7 @@
 
         // Gestion des boutons de niveau (édition)
         document.querySelectorAll('.niveau-btn').forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function () {
                 const niveau = this.dataset.value;
                 const plongeurId = document.getElementById('edit-plongeur-id').value;
 
@@ -219,8 +244,8 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ niveau: niveau })
                 })
-                .then(response => response.ok ? location.reload() : alert("Erreur"))
-                .catch(error => console.error("Erreur:", error));
+                    .then(response => response.ok ? location.reload() : alert("Erreur"))
+                    .catch(error => console.error("Erreur:", error));
             });
         });
 
@@ -228,10 +253,12 @@
         function deletePlongeur(id) {
             if (confirm("Voulez-vous vraiment supprimer ce plongeur ?")) {
                 fetch(`/supprimer-plongeur/${id}`, { method: "DELETE" })
-                .then(response => response.ok ? location.reload() : alert("Erreur"))
-                .catch(error => console.error("Erreur:", error));
+                    .then(response => response.ok ? location.reload() : alert("Erreur"))
+                    .catch(error => console.error("Erreur:", error));
             }
         }
     </script>
+    <script src="/js/auth.js"></script>
 </body>
+
 </html>

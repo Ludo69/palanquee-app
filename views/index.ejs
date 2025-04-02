@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -61,6 +62,7 @@
     <script type="module" src="/script.js?v=<%= new Date().getTime() %>" defer></script>
 
 </head>
+
 <body class="bg-gradient-dark text-white font-sans flex flex-col items-center min-h-screen pb-16">
 
 
@@ -78,43 +80,54 @@
                 </h1>
             </div>
         </header>
-        
-        <!-- Hero section avec image et slogan -->
+
+        <!-- Hero section avec image, slogan et bouton de connexion -->
         <div class="relative rounded-2xl overflow-hidden shadow-xl mb-8 h-48 bubble-container pointer-events-none">
             <img src="/images/plongeur.avif" alt="Plongée sous-marine" class="w-full h-full object-cover">
-            <div class="absolute inset-0 bg-gradient-to-t from-dark-dark to-transparent flex items-end p-6">
-                <h2 class="text-xl font-semibold">Gérez vos plongées avec simplicité et professionnalisme</h2>
+            <div class="absolute inset-0 bg-gradient-to-t from-dark-dark to-transparent flex flex-col justify-end p-6">
+                <h2 class="text-xl font-semibold mb-3">Gérez vos plongées avec simplicité et professionnalisme</h2>
+                <!-- Bouton de connexion -->
+                <button id="login-button"
+                    class="pointer-events-auto w-auto self-start bg-primary hover:bg-primary-light text-white py-2 px-4 rounded-lg transition-all transform hover:scale-105 flex items-center space-x-2 shadow-lg">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Connectez-vous</span>
+                </button>
             </div>
         </div>
 
 
         <!-- Grille de fonctionnalités -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-            <a href="/gestion-plongeurs" class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-primary-light animate-fade-in" style="animation-delay: 0.1s">
+            <div class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-primary-light animate-fade-in cursor-pointer"
+                style="animation-delay: 0.1s" onclick="handleFeatureClick('/gestion-plongeurs')">
                 <div class="bg-primary-dark p-3 rounded-full mb-3">
                     <i class="fas fa-user-group text-xl text-primary-light"></i>
                 </div>
                 <h3 class="text-lg font-semibold mb-1">Plongeurs</h3>
                 <p class="text-gray-400 text-sm">Gestion des membres et niveaux</p>
-            </a>
-            
-            <a href="/gestion-sorties" class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-secondary-light animate-fade-in" style="animation-delay: 0.2s">
+            </div>
+
+            <div class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-secondary-light animate-fade-in"
+                style="animation-delay: 0.2s" onclick="handleFeatureClick('/gestion-sorties')">
                 <div class="bg-secondary-dark p-3 rounded-full mb-3">
-                    <i class="far fa-calendar-check text-xl text-secondary-light"></i>
+                    <i class="fas fa-user-group text-xl text-primary-light"></i>
                 </div>
                 <h3 class="text-lg font-semibold mb-1">Sorties</h3>
                 <p class="text-gray-400 text-sm">Planification et organisation</p>
-            </a>
-            
-            <a href="/selection-sorties" class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-accent-light animate-fade-in" style="animation-delay: 0.3s">
+            </div>
+
+            <div class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-accent-light animate-fade-in"
+                style="animation-delay: 0.3s" onclick="handleFeatureClick('/selection-sorties')">
                 <div class="bg-accent-dark p-3 rounded-full mb-3">
                     <i class="fas fa-layer-group text-xl text-accent-light"></i>
                 </div>
                 <h3 class="text-lg font-semibold mb-1">Palanquées</h3>
                 <p class="text-gray-400 text-sm">Création et gestion des palanquées</p>
-            </a>
-            
-            <a href="#" id="about-btn" class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-purple-400 animate-fade-in" style="animation-delay: 0.4s">
+            </div>
+
+            <a href="#" id="about-btn"
+                class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-purple-400 animate-fade-in"
+                style="animation-delay: 0.4s">
                 <div class="bg-purple-800 p-3 rounded-full mb-3">
                     <i class="fas fa-info-circle text-xl text-purple-400"></i>
                 </div>
@@ -123,18 +136,42 @@
             </a>
         </div>
 
+
         <!-- Section de stats rapides (optionnelle) -->
-        <div class="bg-dark-light rounded-2xl p-4 shadow-lg mb-8 border border-gray-700 animate-fade-in" style="animation-delay: 0.5s">
+        <div class="bg-dark-light rounded-2xl p-4 shadow-lg mb-8 border border-gray-700 animate-fade-in"
+            style="animation-delay: 0.5s">
             <h3 class="font-medium text-gray-300 mb-3">Votre activité récente</h3>
             <div class="grid grid-cols-3 gap-2 text-center" id="stats-container">
                 <!-- Le contenu sera dynamiquement rempli par JavaScript -->
             </div>
         </div>
+        <div class="flex justify-center mt-8 space-x-4">
+            <!-- Bouton Accès Administration -->
+            <button id="admin-btn"
+                class="hidden bg-dark-light rounded-2xl p-4 shadow-lg border border-gray-700 transition-transform transform hover:scale-105 flex items-center">
+                <i class="fas fa-user-shield text-lg mr-3"></i> Accès Administration
+            </button>
+            <!-- Bouton Déconnexion -->
+            <button id="logout-btn" onclick="logout()"
+                class="hidden bg-red-500 text-white rounded-2xl p-4 shadow-lg border border-gray-700 transition-transform transform hover:scale-105 flex items-center">
+                <i class="fas fa-sign-out-alt mr-2"></i> Déconnexion
+            </button>
+            <button id="changePasswordButton"
+                class="hidden bg-primary-light text-white py-2 px-4 rounded-lg hover:bg-primary-dark transition flex items-center">
+                <i class="fas fa-key mr-2"></i> Modifier le mot de passe
+            </button>
+        </div>
+
+
+
+
     </div>
 
     <!-- Modal À propos -->
-    <div id="about-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 px-4">
-        <div class="bg-dark-light p-6 rounded-2xl max-w-md w-full border border-gray-700 transform transition-all duration-300 scale-95 opacity-0" id="modal-content">
+    <div id="about-modal"
+        class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 px-4">
+        <div class="bg-dark-light p-6 rounded-2xl max-w-md w-full border border-gray-700 transform transition-all duration-300 scale-95 opacity-0"
+            id="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold text-primary-light">À propos de Palanquee Pro</h2>
                 <button id="close-modal" class="text-gray-400 hover:text-white">
@@ -142,7 +179,8 @@
                 </button>
             </div>
             <div class="space-y-4">
-                <p class="text-gray-300">Palanquee Pro est une solution professionnelle pour la gestion des plongées sous-marines, conçue pour les clubs et centres de plongée.</p>
+                <p class="text-gray-300">Palanquee Pro est une solution professionnelle pour la gestion des plongées
+                    sous-marines, conçue pour les clubs et centres de plongée.</p>
                 <div class="bg-dark-dark p-4 rounded-lg border border-gray-800">
                     <h3 class="font-medium text-secondary-light mb-2">Fonctionnalités clés :</h3>
                     <ul class="list-disc list-inside text-gray-400 space-y-1 text-sm">
@@ -160,8 +198,47 @@
         </div>
     </div>
 
+    <!-- Modal Authentification (avec formulaire) -->
+    <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 px-4">
+        <div class="bg-dark-light p-6 rounded-2xl max-w-md w-full border border-gray-700 transform transition-all duration-300 scale-95 opacity-0"
+            id="auth-modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-primary-light">Connexion</h2>
+                <button id="close-auth-modal" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Formulaire de connexion -->
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="login-email" class="block text-gray-400 text-sm mb-1">Email</label>
+                    <input type="email" id="login-email" required
+                        class="w-full bg-dark-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-primary-light focus:outline-none">
+                </div>
+                <div>
+                    <label for="login-password" class="block text-gray-400 text-sm mb-1">Mot de passe</label>
+                    <input type="password" id="login-password" required
+                        class="w-full bg-dark-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-primary-light focus:outline-none">
+                </div>
+                <div id="login-error" class="text-red-400 text-sm hidden mt-2"></div>
+                <button type="submit"
+                    class="w-full bg-primary-dark hover:bg-primary-light text-white py-2 px-4 rounded-lg transition-colors">
+                    Se connecter
+                </button>
+            </form>
+
+            <!-- Lien vers la création de compte -->
+            <div class="mt-4 text-center">
+                <p class="text-gray-400 text-sm">Nouveau club ? <a href="/signup-club"
+                        class="text-secondary-light hover:underline">Créez un compte</a></p>
+            </div>
+        </div>
+    </div>
+
     <!-- Bottom Navigation -->
-    <nav class="fixed bottom-0 left-0 w-full bg-dark-light bg-opacity-90 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl border-t border-gray-700 z-40">
+    <nav
+        class="fixed bottom-0 left-0 w-full bg-dark-light bg-opacity-90 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl border-t border-gray-700 z-40">
         <a href="/" class="nav-item active text-primary-light flex flex-col items-center">
             <i class="fas fa-home text-lg"></i>
             <span class="text-xs mt-1">Accueil</span>
@@ -179,6 +256,39 @@
             <span class="text-xs mt-1">Palanquées</span>
         </a>
     </nav>
+    <!-- Modal de modification du mot de passe -->
+    <div id="changePasswordModal" class="fixed z-10 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title"
+        role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div
+                class="inline-block align-bottom bg-dark-light rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-dark-light px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <h3 class="text-lg leading-6 font-medium text-white" id="modal-title">
+                        Modifier le mot de passe
+                    </h3>
+                    <div class="mt-2">
+                        <label for="newPassword" class="block text-sm font-medium text-gray-300">Nouveau mot de
+                            passe</label>
+                        <input type="password" id="newPassword"
+                            class="mt-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg w-full"
+                            placeholder="Entrer le nouveau mot de passe">
+                    </div>
+                </div>
+                <div class="bg-dark-light px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button id="savePasswordButton"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-light text-base font-medium text-white hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-light sm:ml-3 sm:w-auto sm:text-sm">
+                        Enregistrer
+                    </button>
+                    <button id="cancelButton"
+                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-gray-600 text-base font-medium text-gray-300 hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 sm:mt-0 sm:w-auto sm:text-sm">
+                        Annuler
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Enregistrement du Service Worker -->
     <script>
@@ -194,7 +304,7 @@
         document.getElementById('about-btn').addEventListener('click', () => {
             const modal = document.getElementById('about-modal');
             const modalContent = document.getElementById('modal-content');
-            
+
             modal.classList.remove('hidden');
             setTimeout(() => {
                 modalContent.classList.remove('scale-95', 'opacity-0');
@@ -205,10 +315,10 @@
         document.getElementById('close-modal').addEventListener('click', () => {
             const modal = document.getElementById('about-modal');
             const modalContent = document.getElementById('modal-content');
-            
+
             modalContent.classList.remove('scale-100', 'opacity-100');
             modalContent.classList.add('scale-95', 'opacity-0');
-            
+
             setTimeout(() => {
                 modal.classList.add('hidden');
             }, 200);
@@ -216,69 +326,142 @@
     </script>
 
     <script>
+        let supabase;
+
+        async function initSupabase() {
+            try {
+                // Récupère uniquement supabaseUrl depuis le serveur
+                const response = await fetch('/supabase-config');
+                if (!response.ok) throw new Error('Erreur réseau');
+
+                const config = await response.json();
+                if (!config.supabaseUrl) {
+                    throw new Error('Configuration Supabase incomplète');
+                }
+
+                // Chargement dynamique du SDK Supabase
+                const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+
+                // Initialisation avec la clé publique (GÉRÉE PAR SUPABASE)
+                supabase = createClient(config.supabaseUrl, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvaXl6aXBoeGZrZnhmYXdjYWZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAwODQ3MTMsImV4cCI6MjA1NTY2MDcxM30.tY-3BgdAtSuv1ScGOgnimQEsLnk1mbnN9A2jYatsaNE');
+
+                console.log('Supabase initialisé');
+                return true;
+            } catch (error) {
+                console.error("Erreur d'initialisation de Supabase:", error);
+                return false;
+            }
+        }
+
+
+        async function logout() {
+            try {
+                const { error } = await supabase.auth.signOut();
+                if (error) throw error;
+                console.log("Déconnexion réussie");
+                window.location.reload(); // Rafraîchit la page
+            } catch (error) {
+                console.error("Erreur de déconnexion:", error);
+            }
+        }
         // Définition de la fonction avant son appel
         function synchroniserPlongeesAvecIndexedDB() {
             //console.log("Synchronisation des plongées...");
             // Logique de synchronisation ici
         }
-
         document.addEventListener("DOMContentLoaded", async function () {
-            // Vérifier la connexion
-            if (navigator.onLine) {
-                try {
-                    // 1. Synchronisation des données
-                    await synchroniserPlongeesAvecIndexedDB();
-                    
-                    // 2. Chargement des statistiques
-                    const stats = await chargerStats();
-                    mettreAJourStats(stats);
-                    
-                    // console.log("🌐 Synchronisation et chargement des stats réussis");
-                } catch (error) {
-                    console.error("❌ Erreur lors de la synchronisation :", error);
-                    // Fallback: essayer de charger depuis le cache
-                    const cachedStats = await getCachedStats();
-                    if (cachedStats) mettreAJourStats(cachedStats);
-                }
-            } else {
-                console.log("❌ Hors ligne - Mode dégradé activé");
-                // Charger les données depuis le cache
-                const cachedStats = await getCachedStats();
-                if (cachedStats) mettreAJourStats(cachedStats);
+    await initSupabase();
+
+    // Vérifie la session avec Supabase
+    const { data: { session } } = await supabase.auth.getSession();
+    const isLoggedIn = session !== null;
+
+    if (isLoggedIn) {
+        console.log("Utilisateur connecté, session active");
+
+        const logoutBtn = document.getElementById("logout-btn");
+        const changePasswordBtn = document.getElementById("changePasswordButton");
+
+        if (logoutBtn) logoutBtn.classList.remove("hidden");
+        if (changePasswordBtn) changePasswordBtn.classList.remove("hidden");
+
+        // Récupérer l'utilisateur actuel
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { data, error } = await supabase
+                .from("users")
+                .select("role")
+                .eq("id", user.id)
+                .single();
+
+            if (data && data.role === "admin") {
+                document.getElementById("admin-btn").classList.remove("hidden");
+            } else if (error) {
+                console.error("Erreur lors de la récupération du rôle :", error);
             }
+        }
+    } else {
+        console.log("Utilisateur non connecté");
+    }
 
-            const bubbleContainer = document.querySelector(".bubble-container");
-        
-            function createBubble() {
-    const bubble = document.createElement("div");
-    bubble.classList.add("bubble");
+    // Vérifier la connexion réseau
+    if (navigator.onLine) {
+        try {
+            await synchroniserPlongeesAvecIndexedDB();
+            const stats = await chargerStats();
+            mettreAJourStats(stats);
+        } catch (error) {
+            console.error("❌ Erreur lors de la synchronisation :", error);
+            const cachedStats = await getCachedStats();
+            if (cachedStats) mettreAJourStats(cachedStats);
+        }
+    } else {
+        console.log("❌ Hors ligne - Mode dégradé activé");
+        const cachedStats = await getCachedStats();
+        if (cachedStats) mettreAJourStats(cachedStats);
+    }
 
-    let size = Math.random() * 40 + 10; // Taille aléatoire entre 10px et 50px
-    bubble.style.width = `${size}px`;
-    bubble.style.height = `${size}px`;
-    bubble.style.left = `${Math.random() * 100}%`; // Position horizontale aléatoire
+    // Effet de bulles
+    const bubbleContainer = document.querySelector(".bubble-container");
 
-    bubbleContainer.appendChild(bubble);
+    function createBubble() {
+        const bubble = document.createElement("div");
+        bubble.classList.add("bubble");
 
-    // Supprimer la bulle après l'animation
-    setTimeout(() => bubble.remove(), 5000); // Supprime après 5 secondes
-}
+        let size = Math.random() * 40 + 10;
+        bubble.style.width = `${size}px`;
+        bubble.style.height = `${size}px`;
+        bubble.style.left = `${Math.random() * 100}%`;
 
-// Créer une bulle toutes les 500ms
-setInterval(createBubble, 300);
+        bubbleContainer.appendChild(bubble);
+        setTimeout(() => bubble.remove(), 5000);
+    }
+
+    setInterval(createBubble, 300);
+
+    // Gestionnaire pour le bouton de connexion
+    const loginButton = document.getElementById('login-button');
+    if (loginButton) {
+        if (isLoggedIn) {
+            loginButton.classList.add('hidden');
+        } else {
+            loginButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openAuthModal();
+            });
+        }
+    }
+});
 
 
 
-
-
-        });
 
         // Nouvelle fonction pour charger les stats
         async function chargerStats() {
             const response = await fetch('/api/stats');
             if (!response.ok) throw new Error('Erreur réseau');
             const stats = await response.json();
-            
+
             // Mise en cache pour le mode hors ligne
             localStorage.setItem('lastKnownStats', JSON.stringify(stats));
             return stats;
@@ -294,7 +477,7 @@ setInterval(createBubble, 300);
         function mettreAJourStats(stats) {
             const container = document.getElementById('stats-container');
             if (!container) return;
-            
+
             container.innerHTML = `
                 <div class="p-2">
                     <div class="text-primary-light text-2xl font-bold">${stats.plongeurs}</div>
@@ -310,6 +493,216 @@ setInterval(createBubble, 300);
                 </div>
             `;
         }
+
+        async function isUserLoggedIn() {
+            try {
+                if (!supabase) return false;
+                const { data, error } = await supabase.auth.getSession();
+                if (error) throw error;
+                return !!data.session;
+            } catch (error) {
+                console.error("Erreur de vérification de session:", error);
+                return false;
+            }
+        }
+
+        // Gestion du clic sur les fonctionnalités protégées
+        async function handleFeatureClick(redirectUrl) {
+            try {
+                const isLoggedIn = await isUserLoggedIn();
+                if (isLoggedIn) window.location.href = redirectUrl;
+                else openAuthModal();
+            } catch (error) {
+                console.error("Erreur dans handleFeatureClick:", error);
+                openAuthModal(); // Fallback sécurisé
+            }
+        }
+
+        // Ouverture de la modale d'authentification
+        function openAuthModal() {
+            const modal = document.getElementById('auth-modal');
+            const modalContent = document.getElementById('auth-modal-content');
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        // Fermeture de la modale d'authentification
+        document.getElementById('close-auth-modal').addEventListener('click', () => {
+            const modal = document.getElementById('auth-modal');
+            const modalContent = document.getElementById('auth-modal-content');
+
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        });
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();  // Empêche la soumission classique du formulaire
+
+    // Vider les erreurs précédentes
+    const errorElement = document.getElementById('login-error');
+    if (errorElement) {
+        errorElement.textContent = '';
+        errorElement.classList.add('hidden');
+    }
+
+    // Récupérer les valeurs des champs email et mot de passe
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value.trim();
+
+    try {
+        // Appel du serveur pour s'authentifier
+        const response = await fetch("/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || "Erreur inconnue");
+        }
+
+        // Stocker le token dans le localStorage après une connexion réussie
+        localStorage.setItem('supabase_token', data.sessionToken);
+
+        // Fermer la modale d'authentification
+        closeAuthModal();
+
+        // Afficher un message de succès
+        const successMessage = document.createElement('div');
+        successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded';
+        successMessage.textContent = 'Connexion réussie !';
+        document.body.appendChild(successMessage);
+
+        // Mettre à jour l'interface utilisateur
+        updateUIForLoggedInUser();
+
+        // Rediriger vers la page d'accueil après un court délai
+        setTimeout(() => {
+            window.location.href = '/';  // Utiliser href au lieu de reload
+        }, 3500);
+
+    } catch (error) {
+        console.error("Erreur de connexion:", error);
+        const errorElement = document.getElementById('login-error');
+        errorElement.textContent = error.message;
+        errorElement.classList.remove('hidden');
+    }
+});
+
+
+// Nouvelle fonction pour mettre à jour l'interface utilisateur après connexion
+async function updateUIForLoggedInUser() {
+    // Masquer le bouton de connexion
+    const loginButton = document.getElementById('login-button');
+    if (loginButton) loginButton.classList.add('hidden');
+    
+    // Afficher les boutons de déconnexion et changement de mot de passe
+    const logoutBtn = document.getElementById("logout-btn");
+    const changePasswordBtn = document.getElementById("changePasswordButton");
+    if (logoutBtn) logoutBtn.classList.remove("hidden");
+    if (changePasswordBtn) changePasswordBtn.classList.remove("hidden");
+    
+    // Vérifier si l'utilisateur est admin
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+        const { data, error } = await supabase
+            .from("users")
+            .select("role")
+            .eq("id", user.id)
+            .single();
+
+        if (data && data.role === "admin") {
+            document.getElementById("admin-btn").classList.remove("hidden");
+        }
+    }
+}
+
+
+
+        document.getElementById('admin-btn').addEventListener('click', async () => {
+            const { data: session, error: sessionError } = await supabase.auth.getSession();
+            if (sessionError) {
+                console.error("Erreur lors de la récupération de la session:", sessionError);
+                return;
+            }
+
+            if (session) {
+                const token = session.session.access_token;
+                if (token) {
+                    console.log("Token JWT envoyé:", token); // Log pour vérifier le token
+                    window.location.href = `/admin?token=${token}`;
+                } else {
+                    console.error("Token JWT manquant ou invalide.");
+                }
+            }
+        });
+
+        // Remplacez la gestion d'erreur par :
+        showAdminToast('Accès réservé aux administrateurs');
+
+        // Ajoutez cette fonction :
+        function showAdminToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function showAdminError() {
+            const errorElement = document.createElement('div');
+            errorElement.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded';
+            errorElement.textContent = 'Accès réservé aux administrateurs';
+            document.body.appendChild(errorElement);
+
+            setTimeout(() => {
+                errorElement.remove();
+            }, 3000);
+        }
+
+        document.getElementById('changePasswordButton').addEventListener('click', () => {
+            document.getElementById('changePasswordModal').classList.remove('hidden');
+        });
+
+        document.getElementById('cancelButton').addEventListener('click', () => {
+            document.getElementById('changePasswordModal').classList.add('hidden');
+        });
+
+        document.getElementById('savePasswordButton').addEventListener('click', async () => {
+            const newPassword = document.getElementById('newPassword').value;
+
+            if (!newPassword) {
+                alert('Veuillez entrer un nouveau mot de passe.');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase.auth.updateUser({
+                    password: newPassword
+                });
+
+                if (error) throw error;
+                
+                alert('Mot de passe modifié avec succès !');
+                document.getElementById('changePasswordModal').classList.add('hidden');
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert(error.message || 'Erreur lors de la modification du mot de passe.');
+            }
+        });
     </script>
+
 </body>
+
 </html>

@@ -13,18 +13,18 @@ let db;
 
 // ✅ Ouvrir IndexedDB et récupérer les plongées au chargement
 document.addEventListener("DOMContentLoaded", async () => {
-    console.log("✅ Initialisation en cours...");
+    //console.log("✅ Initialisation en cours...");
 
     const enLigne = verifierConnexionInternet();
-    console.log(`🌐 Mode : ${enLigne ? "En ligne" : "Hors ligne"}`);
+    //console.log(`🌐 Mode : ${enLigne ? "En ligne" : "Hors ligne"}`);
 
-    console.log("📂 Ouverture IndexedDB...");
+    //console.log("📂 Ouverture IndexedDB...");
     await ouvrirIndexedDB(); 
 
-    console.log("⬇️ Récupération des plongées...");
+    //console.log("⬇️ Récupération des plongées...");
     await recupererPlongees(); 
 
-    console.log("🎉 Initialisation terminée !");
+    //console.log("🎉 Initialisation terminée !");
 });
 
 
@@ -66,7 +66,7 @@ async function ouvrirIndexedDB() {
                 store.createIndex("niveau_plongeur_historique", "niveau_plongeur_historique", { unique: false });
             }
 
-            console.log("✅ Structure IndexedDB mise à jour !");
+            //console.log("✅ Structure IndexedDB mise à jour !");
         };
 
         request.onsuccess = (event) => {
@@ -109,7 +109,7 @@ async function recupererPlongeesDepuisSupabase() {
         const { data, error } = await supabase.from("plongees").select("*");
 
         if (error) throw error;
-        console.log("✅ Plongées récupérées depuis Supabase :", data); // ➜ Vérifie si Supabase retourne bien des données !
+        //console.log("✅ Plongées récupérées depuis Supabase :", data); // ➜ Vérifie si Supabase retourne bien des données !
 
         if (data.length === 0) {
             console.warn("⚠️ Aucune plongée trouvée dans Supabase !");
@@ -138,7 +138,7 @@ async function recupererPlongeesDepuisIndexedDB() {
         const getRequest = store.getAll();
 
         getRequest.onsuccess = () => {
-            console.log("📂 Contenu actuel de la table 'plongees' dans IndexedDB :", getRequest.result);
+            //console.log("📂 Contenu actuel de la table 'plongees' dans IndexedDB :", getRequest.result);
             resolve(getRequest.result);
         };
         getRequest.onerror = () => reject("❌ Erreur lors de la récupération depuis IndexedDB");
@@ -158,7 +158,7 @@ async function enregistrerPlongeesDansIndexedDB(plongees) {
         plongees.forEach(plongee => store.put(plongee));
 
         transaction.oncomplete = () => {
-            console.log(`✅ ${plongees.length} plongée(s) enregistrée(s) dans IndexedDB !`);
+            //(`✅ ${plongees.length} plongée(s) enregistrée(s) dans IndexedDB !`);
             resolve();
         };
         transaction.onerror = () => reject("❌ Erreur lors de l'enregistrement en IndexedDB");

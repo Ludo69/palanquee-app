@@ -47,7 +47,7 @@
     <link rel="stylesheet" href="/style.css">
 </head>
 
-<body class="bg-gradient-to-b from-dark-dark to-dark-light text-white font-sans min-h-screen pb-16">
+<body class="bg-gradient-to-b from-dark-dark to-dark-light text-white font-sans min-h-screen pb-16 hidden">
 
     <!-- Conteneur principal -->
     <div class="w-full max-w-3xl mx-auto p-4 sm:p-6 relative">
@@ -68,13 +68,19 @@
         <!-- Boutons d'action -->
         <div class="flex justify-center gap-4 mb-6">
             <a href="javascript:void(0);" onclick="envoyerParWhatsApp()"
-                class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-lg flex items-center">
+                class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-lg flex items-center opacity-50 cursor-not-allowed"
+                disabled
+                data-role-access="admin responsable"
+                data-role-loading>
                 <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/WhatsApp_icon.png" alt="WhatsApp"
                     class="w-5 h-5 mr-2">
                 Partager
             </a>
             <button onclick="sendWhatsApp()"
-                class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-lg flex items-center">
+                class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-lg flex items-center opacity-50 cursor-not-allowed"
+                disabled
+                data-role-access="admin responsable"
+                data-role-loading>
                 <img src="/icons/iconPDF.png" alt="PDF" class="w-5 h-5 mr-2">
                 PDF
             </button>
@@ -136,21 +142,35 @@
                                     class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1 sm:gap-y-2 items-center mb-2 sm:mb-3">
                                     <input type="hidden" name="palanquee_id" value="<%= palanquee.id %>">
 
-                                    <label
-                                        class="text-xs sm:text-sm text-left sm:text-right text-primary-light/80 font-medium mt-1 sm:mt-0">Profondeur
-                                        :</label>
-                                    <input type="number" name="prof_max"
-                                        class="prof-max w-full p-1 sm:p-2 text-xs sm:text-sm rounded-lg bg-white/5 backdrop-blur-sm border border-primary-light/15 text-white focus:border-primary-light focus:ring-2 focus:ring-primary-light/30 transition"
-                                        value="<%= palanquee.prof_max || '' %>" <%=palanquee.prof_max ? 'disabled' : ''
-                                        %> required inputmode="numeric">
+                                    <!-- Profondeur Max -->
+<label class="text-xs sm:text-sm text-left sm:text-right text-primary-light/80 font-medium mt-1 sm:mt-0">
+    Profondeur :
+</label>
+<input type="number" name="prof_max"
+       class="prof-max w-full p-1 sm:p-2 text-xs sm:text-sm rounded-lg border transition
+              <%= palanquee.prof_max ? 
+                  'bg-white/5 backdrop-blur-sm border-primary-light/15 text-white' : 
+                  'bg-white text-black border-gray-300' %>
+              focus:border-primary-light focus:ring-2 focus:ring-primary-light/30"
+       value="<%= palanquee.prof_max || '' %>" 
+       <%= palanquee.prof_max ? 'disabled' : '' %>
+       required 
+       inputmode="numeric">
 
-                                    <label
-                                        class="text-xs sm:text-sm text-left sm:text-right text-primary-light/80 font-medium mt-1 sm:mt-0">Durée
-                                        :</label>
-                                    <input type="number" name="duree_max"
-                                        class="duree-max w-full p-1 sm:p-2 text-xs sm:text-sm rounded-lg bg-white/5 backdrop-blur-sm border border-primary-light/15 text-white focus:border-primary-light focus:ring-2 focus:ring-primary-light/30 transition"
-                                        value="<%= palanquee.duree_max || '' %>" <%=palanquee.duree_max ? 'disabled'
-                                        : '' %> required inputmode="numeric">
+<!-- Durée Max -->
+<label class="text-xs sm:text-sm text-left sm:text-right text-primary-light/80 font-medium mt-1 sm:mt-0">
+    Durée :
+</label>
+<input type="number" name="duree_max"
+       class="duree-max w-full p-1 sm:p-2 text-xs sm:text-sm rounded-lg border transition
+              <%= palanquee.duree_max ? 
+                  'bg-white/5 backdrop-blur-sm border-primary-light/15 text-white' : 
+                  'bg-white text-black border-gray-300' %>
+              focus:border-primary-light focus:ring-2 focus:ring-primary-light/30"
+       value="<%= palanquee.duree_max || '' %>" 
+       <%= palanquee.duree_max ? 'disabled' : '' %>
+       required 
+       inputmode="numeric">
                                 </form>
 
                                 <!-- Bouton en bas du bloc -->
@@ -176,29 +196,49 @@
                                     class="palanquee-form grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1 sm:gap-y-2 items-center mb-2 sm:mb-3">
                                     <input type="hidden" name="palanquee_id" value="<%= palanquee.id %>">
 
-                                    <label
-                                        class="text-xs sm:text-sm text-left sm:text-right text-secondary-light/80 font-medium mt-1 sm:mt-0">Profondeur
-                                        :</label>
-                                    <input type="number" name="profondeur"
-                                        class="profondeur w-full p-1 sm:p-2 text-xs sm:text-sm rounded-lg bg-white/5 backdrop-blur-sm border border-secondary-light/15 text-white focus:border-secondary-light focus:ring-2 focus:ring-secondary-light/30 transition"
-                                        value="<%= palanquee.profondeur || '' %>" <%=palanquee.profondeur ? 'disabled'
-                                        : '' %> required inputmode="numeric">
+                                    <!-- Profondeur -->
+<label class="text-xs sm:text-sm text-left sm:text-right text-secondary-light/80 font-medium mt-1 sm:mt-0">
+    Profondeur :
+</label>
+<input type="number" name="profondeur"
+       class="profondeur w-full p-1 sm:p-2 text-xs sm:text-sm rounded-lg border transition
+              <%= palanquee.profondeur ? 
+                  'bg-white/5 backdrop-blur-sm border-secondary-light/15 text-white' : 
+                  'bg-white text-black border-gray-300' %>
+              focus:border-secondary-light focus:ring-2 focus:ring-secondary-light/30"
+       value="<%= palanquee.profondeur || '' %>" 
+       <%= palanquee.profondeur ? 'disabled' : '' %>
+       required 
+       inputmode="numeric">
 
-                                    <label
-                                        class="text-xs sm:text-sm text-left sm:text-right text-secondary-light/80 font-medium mt-1 sm:mt-0">Durée
-                                        :</label>
-                                    <input type="number" name="duree"
-                                        class="duree w-full p-1 sm:p-2 text-xs sm:text-sm rounded-lg bg-white/5 backdrop-blur-sm border border-secondary-light/15 text-white focus:border-secondary-light focus:ring-2 focus:ring-secondary-light/30 transition"
-                                        value="<%= palanquee.duree || '' %>" <%=palanquee.duree ? 'disabled' : '' %>
-                                    required inputmode="numeric">
+<!-- Durée -->
+<label class="text-xs sm:text-sm text-left sm:text-right text-secondary-light/80 font-medium mt-1 sm:mt-0">
+    Durée :
+</label>
+<input type="number" name="duree"
+       class="duree w-full p-1 sm:p-2 text-xs sm:text-sm rounded-lg border transition
+              <%= palanquee.duree ? 
+                  'bg-white/5 backdrop-blur-sm border-secondary-light/15 text-white' : 
+                  'bg-white text-black border-gray-300' %>
+              focus:border-secondary-light focus:ring-2 focus:ring-secondary-light/30"
+       value="<%= palanquee.duree || '' %>" 
+       <%= palanquee.duree ? 'disabled' : '' %>
+       required 
+       inputmode="numeric">
 
-                                    <label
-                                        class="text-xs sm:text-sm text-left sm:text-right text-secondary-light/80 font-medium mt-1 sm:mt-0">Paliers
-                                        :</label>
-                                    <input type="text" name="paliers"
-                                        class="paliers w-full p-1 sm:p-2 text-xs sm:text-sm rounded-lg bg-white/5 backdrop-blur-sm border border-secondary-light/15 text-white focus:border-secondary-light focus:ring-2 focus:ring-secondary-light/30 transition"
-                                        value="<%= palanquee.paliers || '' %>" <%=palanquee.paliers ? 'disabled' : '' %>
-                                    required>
+<!-- Paliers -->
+<label class="text-xs sm:text-sm text-left sm:text-right text-secondary-light/80 font-medium mt-1 sm:mt-0">
+    Paliers :
+</label>
+<input type="text" name="paliers"
+       class="paliers w-full p-1 sm:p-2 text-xs sm:text-sm rounded-lg border transition
+              <%= palanquee.paliers ? 
+                  'bg-white/5 backdrop-blur-sm border-secondary-light/15 text-white' : 
+                  'bg-white text-black border-gray-300' %>
+              focus:border-secondary-light focus:ring-2 focus:ring-secondary-light/30"
+       value="<%= palanquee.paliers || '' %>" 
+       <%= palanquee.paliers ? 'disabled' : '' %>
+       required>
 
                                     <!-- Checkbox alignée -->
                                     <div class="col-span-1 sm:col-span-2 flex items-center gap-2 mt-1">
@@ -725,9 +765,7 @@
     </script>
 
 
-    <!-- IndexedDB and App Scripts -->
-    <!--<script src="/js/indexeddb.js"></script>
-    <script src="/js/client.js"></script>-->
+<script src="/js/auth.js"></script>
 </body>
 
 </html>

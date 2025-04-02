@@ -133,3 +133,4 @@ dist
 .breakpoints
 nohup.out
 
+.env
