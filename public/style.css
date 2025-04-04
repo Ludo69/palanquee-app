@@ -1,7 +1,14 @@
 /* style.css */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .animate-fade-in {
@@ -54,16 +61,20 @@
     .features-grid {
         grid-template-columns: repeat(2, 1fr) !important;
     }
+
     .feature-card {
         padding: 1rem !important;
     }
+
     .feature-icon {
         padding: 0.75rem !important;
         margin-bottom: 0.5rem !important;
     }
+
     .feature-card h3 {
         font-size: 1rem !important;
     }
+
     .feature-card p {
         font-size: 0.75rem !important;
     }
@@ -111,34 +122,46 @@
 .animate-fade-in {
     animation: fadeIn 0.3s ease-out forwards;
 }
+
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Fond de la case du jour actuel - Violet clair transparent */
 .fc-today {
-    background-color: rgba(168, 85, 247, 0.15) !important; /* violet-500 à 15% d'opacité */
+    background-color: rgba(168, 85, 247, 0.15) !important;
+    /* violet-500 à 15% d'opacité */
 
 }
 
 /* En-tête du jour actuel (dans la vue mois) */
 /* Style principal pour la date du jour */
 .fc-today {
-    background-color: rgba(204, 157, 248, 0.1) !important; /* Fond violet très léger */
-    border-left: 3px solid rgba(168, 85, 247, 0.8) !important; /* Trait violet à gauche */
+    background-color: rgba(204, 157, 248, 0.1) !important;
+    /* Fond violet très léger */
+    border-left: 3px solid rgba(168, 85, 247, 0.8) !important;
+    /* Trait violet à gauche */
 }
 
 /* Style pour l'en-tête du jour (vue mois) */
 .fc-day-header.fc-today {
     border-left: 3px solid rgba(168, 85, 247, 0.8) !important;
-    background-color:rgba(168, 85, 247, 0.1) !important;
+    background-color: rgba(168, 85, 247, 0.1) !important;
     color: white !important;
 }
 
 /* Texte de la date */
 .fc-day-top.fc-today {
-    color: #8B5CF6 !important; /* Violet clair */
+    color: #8B5CF6 !important;
+    /* Violet clair */
     font-weight: bold;
 }
 
@@ -212,47 +235,47 @@
 /* ========================= */
 
 .palanquees-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 15px;
-  padding: 20px;
-  justify-content: center;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    padding: 20px;
+    justify-content: center;
 }
 
 .palanquee-card {
-  background-color: #1b263b;
-  border-radius: 10px;
-  padding: 20px;
-  width: 90%;
-  max-width: 600px;
-  min-height: 140px;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
-  transition: transform 0.3s ease, background 0.3s ease;
-  margin: 15px auto;
+    background-color: #1b263b;
+    border-radius: 10px;
+    padding: 20px;
+    width: 90%;
+    max-width: 600px;
+    min-height: 140px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, background 0.3s ease;
+    margin: 15px auto;
 }
 
 .palanquee-card:hover {
-  background: #4ac2b4;
+    background: #4ac2b4;
 }
 
 .palanquee-nom {
-  color: #64dfdf;
-  font-size: 20px;
-  font-weight: bold;
+    color: #64dfdf;
+    font-size: 20px;
+    font-weight: bold;
 }
 
 .plongeurs-list {
-  list-style: none;
-  padding: 0;
+    list-style: none;
+    padding: 0;
 }
 
 .plongeur-item {
-  background-color: #007bff;
-  color: white;
-  padding: 5px 10px;
-  border-radius: 5px;
-  margin-top: 5px;
-  display: inline-block;
+    background-color: #007bff;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    margin-top: 5px;
+    display: inline-block;
 }
 
 /* Conteneur du bouton pour le centrer */
@@ -294,16 +317,6 @@
     font-weight: bold;
 }
 
-.btn-enregistrer:disabled {
-    background-color: gray;
-    cursor: not-allowed;
-}
-
-.btn-enregistrer-consignes:disabled {
-    background-color: gray;
-    cursor: not-allowed;
-}
-
 .mise-a-leau-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -319,8 +332,10 @@
 
 .mise-a-leau-btn.bg-green-500 {
     cursor: default;
-    pointer-events: none;  /* Désactive les interactions */
-    opacity: 0.9;  /* Légère transparence optionnelle */
+    pointer-events: none;
+    /* Désactive les interactions */
+    opacity: 0.9;
+    /* Légère transparence optionnelle */
 }
 
 /* Animation de l'icône */
@@ -332,18 +347,24 @@
 .bubble-container {
     position: relative;
     width: 100%;
-    height: 50vh; /* Ajuste la hauteur en fonction de l'écran */
+    height: 50vh;
+    /* Ajuste la hauteur en fonction de l'écran */
     overflow: hidden;
 }
 
 .bubble {
     position: absolute;
     bottom: 0;
-    background: rgba(255, 255, 255, 0.3); /* Rendre la couleur plus transparente */
-    border-radius: 50%; /* Assure que la bulle est parfaitement ronde */
-    box-shadow: 0 0 12px rgba(255, 255, 255, 0.6); /* Ombre douce pour l'effet de bulle */
-    opacity: 0.8; /* Réduction de l'opacité pour rendre les bulles moins visibles */
-    filter: blur(2px); /* Effet de flou plus léger */
+    background: rgba(255, 255, 255, 0.3);
+    /* Rendre la couleur plus transparente */
+    border-radius: 50%;
+    /* Assure que la bulle est parfaitement ronde */
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+    /* Ombre douce pour l'effet de bulle */
+    opacity: 0.8;
+    /* Réduction de l'opacité pour rendre les bulles moins visibles */
+    filter: blur(2px);
+    /* Effet de flou plus léger */
     animation: rise 5s linear infinite;
 }
 
@@ -352,8 +373,103 @@
         transform: translateY(0) scale(0.8);
         opacity: 0.8;
     }
+
     100% {
         transform: translateY(-100vh) scale(1);
         opacity: 0;
     }
+}
+
+.btn-enregistrer-consignes:disabled,
+.btn-enregistrer:disabled,
+.btn-enregistrer-consignes[disabled],
+.btn-enregistrer[disabled] {
+    opacity: 0.7;
+    filter: grayscale(50%) brightness(0.7);
+    cursor: not-allowed;
+}
+
+.draggable-item {
+    -webkit-user-select: none; /* Désactive la sélection sur iOS/Safari */
+    user-select: none;         /* Désactive la sélection sur les autres navigateurs */
+    touch-action: manipulation; /* Optimise pour les interactions tactiles */
+}
+
+/* Animation pour la modale */
+#loginModal {
+    transition: opacity 0.3s ease;
+  }
+  #loginModal:not(.hidden) {
+    display: flex;
+  }
+
+  /* Dans votre fichier CSS */
+.fa-spinner {
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    100% { transform: rotate(360deg); }
+  }
+  .hidden {
+    display: none;
+  }
+
+  /* Animation au survol */
+.fa-user-circle {
+    transition: transform 0.3s ease;
+}
+a:hover .fa-user-circle {
+    transform: scale(1.1);
+}
+
+
+.fa-spinner {
+animation: spin 1s linear infinite;
+}
+@keyframes spin {
+0% { transform: rotate(0deg); }
+100% { transform: rotate(360deg); }
+}
+
+.admin-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.admin-button:hover {
+    background-color: #45a049;
+}
+
+/* Classes de rôle */
+.role-active {
+    @apply bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white cursor-pointer;
+}
+
+.role-inactive {
+    @apply bg-gray-100 text-gray-400 cursor-not-allowed;
+    @apply border border-gray-200 border-dashed; /* Bordure en pointillés */
+    @apply opacity-80;
+    pointer-events: none;
+    position: relative;
+}
+
+.role-inactive::before {
+    content: "🔒";
+    @apply absolute right-2 top-1/2 transform -translate-y-1/2;
+    @apply text-gray-400 text-sm;
+}
+
+/* Classes de visibilité */
+.visible {
+    display: block;
+}
+
+.invisible {
+    display: none;
 }

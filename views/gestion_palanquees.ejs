@@ -87,11 +87,11 @@
                 class="flex-1 bg-gradient-to-r from-primary-light to-primary-dark hover:from-primary-dark hover:to-primary-light text-white py-3 rounded-lg font-medium transition-all">
                 <i class="fas fa-plus mr-2"></i> Nouvelle Palanquée
             </button>
-            <button id="genererPalanquees" class="flex-1 bg-gradient-to-r from-accent-light to-accent-dark hover:from-accent-dark hover:to-accent-light text-white py-3 rounded-lg font-medium transition-all">
+            <button id="genererPalanquees" class="flex-1 bg-gradient-to-r from-accent-light to-accent-dark hover:from-accent-dark hover:to-accent-light text-white py-3 rounded-lg font-medium transition-all <%= roleClasses.visibility %>">
                 <i class="fas fa-random mr-2"></i> Générer Aléatoirement
             </button>
             <button id="validerPalanquees"
-                class="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 rounded-lg font-medium transition-all">
+                class="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 rounded-lg font-medium transition-all <%= roleClasses.visibility %>">
                 <i class="fas fa-save mr-2"></i> Enregistrer
             </button>
         </div>
@@ -301,9 +301,7 @@
                 document.querySelectorAll(".palanquee-body").forEach(palanqueeBody => {
                     // Récupération DIRECTE du nom depuis le conteneur parent
                     const container = palanqueeBody.closest(".palanquee-container");
-                    //console.log("Container trouvé :", container);
-                    const nom = container?.dataset.nom;
-                    //console.log("Nom récupéré :", nom);  // Vérifie dans la console                 
+                    const nom = container?.dataset.nom;             
                     const plongeurs = [...palanqueeBody.querySelectorAll(".plongeur")];
                     const niveaux = plongeurs.map(p => extraireNiveau(p.textContent));
                     const n1Count = niveaux.filter(n => n === 'N1').length;
@@ -344,7 +342,7 @@
                 div.innerHTML = `
                     <div class="flex justify-between items-center">
                         <span class="text-lg font-semibold text-white">${nom}</span>
-                        <button class="delete-palanquee text-red-500 hover:text-red-700 text-lg">❌</button>
+                        <button class="delete-palanquee text-red-500 hover:text-red-700 text-lg <%= roleClasses.visibility %>">❌</button>
                     </div>
                     <div class="palanquee-body bg-gray-700 p-3 rounded-md min-h-[60px]" data-id="${id}"></div>
                     `;
@@ -537,7 +535,6 @@
                 document.querySelectorAll(".palanquee-body").forEach((palanqueeBody) => {
                     const container = palanqueeBody.closest(".palanquee-container");  // Trouver le conteneur de la palanquée
                     const nom = container?.dataset.nom;  // Récupérer le nom de la palanquée à partir du dataset du conteneur
-                    //console.log("Nom récupéré :", nom);  // Vérifier que tu récupères bien "Carpe" ou le bon nom
 
                     const id = palanqueeBody.dataset.id;  // Récupérer l'ID de la palanquée
                     const plongeurs = [...palanqueeBody.querySelectorAll(".plongeur")].map(p => p.dataset.id);  // Récupérer les plongeurs
@@ -554,11 +551,6 @@
                     }
                 });
 
-                //console.log("Données des palanquées envoyées :", JSON.stringify(palanqueesData, null, 2));  // Vérification des données envoyées
-
-
-
-
                 if (palanqueesData.length === 0) {
                     alert("Aucune palanquée valide à enregistrer !");
                     return;
@@ -567,10 +559,7 @@
                 // Envoi des données
 
                 try {
-                    //console.log("Données brutes des palanquées :", JSON.stringify(palanqueesData, null, 2));
-
                     const palanqueesDataFormatted = palanqueesData.map(p => {
-                        //console.log("Nom traité :", p.nom); // Ajoute ce log pour vérifier
                         return {
                             plongee_id: PLONGEE_ID,
                             id: isTemporaryId(p.id) ? null : p.id,
@@ -581,7 +570,6 @@
                             plongeurs: p.plongeurs
                         };
                     });
-                    //console.log("Données envoyées :", JSON.stringify(palanqueesDataFormatted, null, 2));
                     const response = await fetch("/enregistrer_palanquee", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },

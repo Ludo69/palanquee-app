@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -59,12 +60,9 @@
 
     <!-- Charger Supabase comme un module ES6 -->
     <script type="module" src="/script.js?v=<%= new Date().getTime() %>" defer></script>
-
 </head>
+
 <body class="bg-gradient-dark text-white font-sans flex flex-col items-center min-h-screen pb-16">
-
-
-
     <div class="w-full max-w-3xl p-4 sm:p-6">
         <!-- Header avec logo et titre -->
         <header class="flex items-center justify-center mb-8">
@@ -80,41 +78,98 @@
         </header>
         
         <!-- Hero section avec image et slogan -->
-        <div class="relative rounded-2xl overflow-hidden shadow-xl mb-8 h-48 bubble-container pointer-events-none">
+        <div class="relative rounded-2xl overflow-hidden shadow-xl mb-8 h-48 bubble-container">
             <img src="/images/plongeur.avif" alt="Plongée sous-marine" class="w-full h-full object-cover">
-            <div class="absolute inset-0 bg-gradient-to-t from-dark-dark to-transparent flex items-end p-6">
+            <div class="absolute inset-0 bg-gradient-to-t from-dark-dark to-transparent flex items-end p-6 pb-14">
                 <h2 class="text-xl font-semibold">Gérez vos plongées avec simplicité et professionnalisme</h2>
+            </div>
+
+            <!-- Boutons conditionnels -->
+            <div class="absolute bottom-4 left-4 flex gap-2 items-center">
+                <% if (typeof user==='undefined' || user===null) { %>
+                    <!-- Bouton Connexion -->
+                    <a href="/connexion" class="relative group">
+                        <div class="flex items-center gap-2 px-4 py-2 text-blue-600 font-medium rounded-md transition-all duration-200 hover:bg-blue-50 border border-blue-200 hover:border-blue-300">
+                            <i class="fas fa-sign-in-alt text-sm opacity-80"></i>
+                            <span class="text-sm">Connectez-vous</span>
+                        </div>
+                        <div class="absolute bottom-0 left-1/2 h-px bg-blue-400 transform -translate-x-1/2 scale-x-0 group-hover:scale-x-75 transition-transform duration-300 w-3/4"></div>
+                    </a>
+                    <% } else { %>
+                        <!-- Message de bienvenue -->
+                        <div class="text-white font-medium flex items-center gap-2">
+                            <i class="fas fa-user-circle text-lg"></i>
+                            <% if (user.first_name) { %>
+                                <span>Bonjour <%= user.first_name %> !</span>
+                                <% } else { %>
+                                    <span>Bonjour !</span>
+                                    <% } %>
+                        </div>
+
+                        <!-- Bouton Déconnexion -->
+                        <div class="flex items-center gap-3">
+                            <% if (user && user.role === 'admin') { %>
+                                <!-- Bouton Administration - Seulement pour les admins -->
+                                <a href="/administration" class="relative group">
+                                    <div class="flex items-center gap-2 px-3 py-1.5 text-blue-600 font-medium rounded-md transition-all duration-200 hover:bg-blue-50 border border-blue-200 hover:border-blue-300">
+                                        <i class="fas fa-user-shield text-sm opacity-80"></i>
+                                        <span class="text-sm">Admin</span>
+                                    </div>
+                                    <div class="absolute bottom-0 left-1/2 h-px bg-blue-400 transform -translate-x-1/2 scale-x-0 group-hover:scale-x-75 transition-transform duration-300 w-3/4"></div>
+                                </a>
+                            <% } %>
+                            
+                            <!-- Bouton Déconnexion - Toujours visible si connecté -->
+                            <% if (user) { %>
+                                <form action="/logout" method="POST" class="relative group">
+                                    <button type="submit" class="flex items-center gap-2 px-3 py-1.5 text-red-600 font-medium rounded-md transition-all duration-200 hover:bg-red-50 border border-red-200 hover:border-red-300">
+                                        <i class="fas fa-sign-out-alt text-sm opacity-80"></i>
+                                        <span class="text-sm">Déco</span>
+                                    </button>
+                                    <div class="absolute bottom-0 left-1/2 h-px bg-red-400 transform -translate-x-1/2 scale-x-0 group-hover:scale-x-75 transition-transform duration-300 w-3/4"></div>
+                                </form>
+                            <% } %>
+                        </div>
+                        <% } %>
             </div>
         </div>
 
 
         <!-- Grille de fonctionnalités -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-            <a href="/gestion-plongeurs" class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-primary-light animate-fade-in" style="animation-delay: 0.1s">
+            <a href="/gestion-plongeurs"
+                class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-primary-light animate-fade-in"
+                style="animation-delay: 0.1s">
                 <div class="bg-primary-dark p-3 rounded-full mb-3">
                     <i class="fas fa-user-group text-xl text-primary-light"></i>
                 </div>
                 <h3 class="text-lg font-semibold mb-1">Plongeurs</h3>
                 <p class="text-gray-400 text-sm">Gestion des membres et niveaux</p>
             </a>
-            
-            <a href="/gestion-sorties" class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-secondary-light animate-fade-in" style="animation-delay: 0.2s">
+
+            <a href="/gestion-sorties"
+                class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-secondary-light animate-fade-in"
+                style="animation-delay: 0.2s">
                 <div class="bg-secondary-dark p-3 rounded-full mb-3">
                     <i class="far fa-calendar-check text-xl text-secondary-light"></i>
                 </div>
                 <h3 class="text-lg font-semibold mb-1">Sorties</h3>
                 <p class="text-gray-400 text-sm">Planification et organisation</p>
             </a>
-            
-            <a href="/selection-sorties" class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-accent-light animate-fade-in" style="animation-delay: 0.3s">
+
+            <a href="/selection-sorties"
+                class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-accent-light animate-fade-in"
+                style="animation-delay: 0.3s">
                 <div class="bg-accent-dark p-3 rounded-full mb-3">
                     <i class="fas fa-layer-group text-xl text-accent-light"></i>
                 </div>
                 <h3 class="text-lg font-semibold mb-1">Palanquées</h3>
                 <p class="text-gray-400 text-sm">Création et gestion des palanquées</p>
             </a>
-            
-            <a href="#" id="about-btn" class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-purple-400 animate-fade-in" style="animation-delay: 0.4s">
+
+            <a href="#" id="about-btn"
+                class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-purple-400 animate-fade-in"
+                style="animation-delay: 0.4s">
                 <div class="bg-purple-800 p-3 rounded-full mb-3">
                     <i class="fas fa-info-circle text-xl text-purple-400"></i>
                 </div>
@@ -124,8 +179,9 @@
         </div>
 
         <!-- Section de stats rapides (optionnelle) -->
-        <div class="bg-dark-light rounded-2xl p-4 shadow-lg mb-8 border border-gray-700 animate-fade-in" style="animation-delay: 0.5s">
-            <h3 class="font-medium text-gray-300 mb-3">Votre activité récente</h3>
+        <div class="bg-dark-light rounded-2xl p-4 shadow-lg mb-8 border border-gray-700 animate-fade-in"
+            style="animation-delay: 0.5s">
+            <h3 class="font-medium text-gray-300 mb-3">Les données de votre club</h3>
             <div class="grid grid-cols-3 gap-2 text-center" id="stats-container">
                 <!-- Le contenu sera dynamiquement rempli par JavaScript -->
             </div>
@@ -133,8 +189,10 @@
     </div>
 
     <!-- Modal À propos -->
-    <div id="about-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 px-4">
-        <div class="bg-dark-light p-6 rounded-2xl max-w-md w-full border border-gray-700 transform transition-all duration-300 scale-95 opacity-0" id="modal-content">
+    <div id="about-modal"
+        class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 px-4">
+        <div class="bg-dark-light p-6 rounded-2xl max-w-md w-full border border-gray-700 transform transition-all duration-300 scale-95 opacity-0"
+            id="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold text-primary-light">À propos de Palanquee Pro</h2>
                 <button id="close-modal" class="text-gray-400 hover:text-white">
@@ -142,7 +200,8 @@
                 </button>
             </div>
             <div class="space-y-4">
-                <p class="text-gray-300">Palanquee Pro est une solution professionnelle pour la gestion des plongées sous-marines, conçue pour les clubs et centres de plongée.</p>
+                <p class="text-gray-300">Palanquee Pro est une solution professionnelle pour la gestion des plongées
+                    sous-marines, conçue pour les clubs et centres de plongée.</p>
                 <div class="bg-dark-dark p-4 rounded-lg border border-gray-800">
                     <h3 class="font-medium text-secondary-light mb-2">Fonctionnalités clés :</h3>
                     <ul class="list-disc list-inside text-gray-400 space-y-1 text-sm">
@@ -161,7 +220,8 @@
     </div>
 
     <!-- Bottom Navigation -->
-    <nav class="fixed bottom-0 left-0 w-full bg-dark-light bg-opacity-90 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl border-t border-gray-700 z-40">
+    <nav
+        class="fixed bottom-0 left-0 w-full bg-dark-light bg-opacity-90 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl border-t border-gray-700 z-40">
         <a href="/" class="nav-item active text-primary-light flex flex-col items-center">
             <i class="fas fa-home text-lg"></i>
             <span class="text-xs mt-1">Accueil</span>
@@ -180,6 +240,144 @@
         </a>
     </nav>
 
+    <!-- Modale de connexion -->
+    <div id="loginModal"
+        class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-dark-light border border-gray-700 rounded-2xl shadow-xl max-w-md w-full p-6 animate-fade-in">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-primary-light">Connexion</h3>
+                <button onclick="closeModal()"
+                    class="text-gray-400 hover:text-primary-light text-2xl transition-colors">
+                    &times;
+                </button>
+            </div>
+
+            <!-- Message d'erreur -->
+            <div id="loginError" class="hidden bg-red-900/50 text-red-300 text-sm p-3 rounded-lg mb-4"></div>
+
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-400 mb-1 text-sm">Email</label>
+                    <input type="email" id="loginEmail" required
+                        class="w-full px-3 py-2 bg-dark-dark border border-gray-700 rounded-lg focus:border-primary-light focus:ring-1 focus:ring-primary-light/50 placeholder-gray-500 transition-all">
+                </div>
+                <div>
+                    <label class="block text-gray-400 mb-1 text-sm">Mot de passe</label>
+                    <input type="password" id="loginPassword" required
+                        class="w-full px-3 py-2 bg-dark-dark border border-gray-700 rounded-lg focus:border-primary-light focus:ring-1 focus:ring-primary-light/50 placeholder-gray-500 transition-all">
+                </div>
+
+                <button type="submit" id="loginSubmit"
+                    class="w-full bg-primary-dark hover:bg-primary-light text-white py-2 px-4 rounded-lg transition-colors shadow-md mt-2 font-medium flex items-center justify-center gap-2">
+                    <span>Se connecter</span>
+                    <i id="loginSpinner" class="fas fa-spinner hidden animate-spin"></i>
+                </button>
+            </form>
+            <!-- Div pour les erreurs -->
+            <div id="loginError" class="hidden text-red-400 text-sm mt-2 p-2 bg-red-50 rounded"></div>
+
+            <div class="mt-4 text-center">
+                <a href="/inscription"
+                    class="text-gray-400 hover:text-primary-light text-sm underline underline-offset-2 transition-colors">
+                    Créer un nouveau club
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+    <script>
+        if (typeof supabase === 'undefined') {
+            console.error('Erreur: Supabase non initialisé!')
+            document.getElementById('loginError').textContent = 'Erreur technique - rechargez la page'
+            document.getElementById('loginError').classList.remove('hidden')
+        } else {
+            console.log('Supabase initialisé:', supabase)
+        }
+        // Gestion de la modale
+        function openModal() {
+            document.getElementById('loginModal').classList.remove('hidden');
+            document.getElementById('loginError').classList.add('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('loginModal').classList.add('hidden');
+        }
+
+        // Événements
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.addEventListener('submit', handleLogin);
+            } else {
+                console.warn('Formulaire de connexion non trouvé');
+            }
+            // Clic sur "Connectez-vous"
+            document.querySelector('a[href="/connexion"]')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                openModal();
+            });
+
+            // Fermer en cliquant à l'extérieur
+            document.getElementById('loginModal').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) closeModal();
+            });
+
+            // Soumission du formulaire
+            document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
+        });
+
+        async function handleLogin(event) {
+            event.preventDefault();
+
+            // Récupération des éléments avec vérification
+            console.log("handleLogin");
+            const form = event.currentTarget;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const errorDiv = document.getElementById('loginError');
+
+            if (!submitBtn || !errorDiv) {
+                console.error('Éléments du formulaire non trouvés');
+                return;
+            }
+
+            try {
+                // Activation du loading
+                submitBtn.disabled = true;
+                errorDiv.classList.add('hidden');
+
+                const email = form.querySelector('#loginEmail').value;
+                const password = form.querySelector('#loginPassword').value;
+
+                // Appel à l'API de connexion
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Erreur de connexion');
+                }
+
+                const data = await response.json();
+
+                // Redirection après connexion réussie
+                window.location.href = '/';
+
+            } catch (error) {
+                console.error('Erreur:', error);
+                errorDiv.textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                if (submitBtn) submitBtn.disabled = false;
+            }
+        }
+
+    </script>
+
     <!-- Enregistrement du Service Worker -->
     <script>
         if ("serviceWorker" in navigator) {
@@ -194,7 +392,7 @@
         document.getElementById('about-btn').addEventListener('click', () => {
             const modal = document.getElementById('about-modal');
             const modalContent = document.getElementById('modal-content');
-            
+
             modal.classList.remove('hidden');
             setTimeout(() => {
                 modalContent.classList.remove('scale-95', 'opacity-0');
@@ -205,10 +403,10 @@
         document.getElementById('close-modal').addEventListener('click', () => {
             const modal = document.getElementById('about-modal');
             const modalContent = document.getElementById('modal-content');
-            
+
             modalContent.classList.remove('scale-100', 'opacity-100');
             modalContent.classList.add('scale-95', 'opacity-0');
-            
+
             setTimeout(() => {
                 modal.classList.add('hidden');
             }, 200);
@@ -228,49 +426,42 @@
                 try {
                     // 1. Synchronisation des données
                     await synchroniserPlongeesAvecIndexedDB();
-                    
+
                     // 2. Chargement des statistiques
                     const stats = await chargerStats();
                     mettreAJourStats(stats);
-                    
-                    // console.log("🌐 Synchronisation et chargement des stats réussis");
+
                 } catch (error) {
-                    console.error("❌ Erreur lors de la synchronisation :", error);
+                    //console.error("❌ Erreur lors de la synchronisation :", error);
                     // Fallback: essayer de charger depuis le cache
                     const cachedStats = await getCachedStats();
                     if (cachedStats) mettreAJourStats(cachedStats);
                 }
             } else {
-                console.log("❌ Hors ligne - Mode dégradé activé");
                 // Charger les données depuis le cache
                 const cachedStats = await getCachedStats();
                 if (cachedStats) mettreAJourStats(cachedStats);
             }
 
             const bubbleContainer = document.querySelector(".bubble-container");
-        
+
             function createBubble() {
-    const bubble = document.createElement("div");
-    bubble.classList.add("bubble");
+                const bubble = document.createElement("div");
+                bubble.classList.add("bubble");
 
-    let size = Math.random() * 40 + 10; // Taille aléatoire entre 10px et 50px
-    bubble.style.width = `${size}px`;
-    bubble.style.height = `${size}px`;
-    bubble.style.left = `${Math.random() * 100}%`; // Position horizontale aléatoire
+                let size = Math.random() * 40 + 10; // Taille aléatoire entre 10px et 50px
+                bubble.style.width = `${size}px`;
+                bubble.style.height = `${size}px`;
+                bubble.style.left = `${Math.random() * 100}%`; // Position horizontale aléatoire
 
-    bubbleContainer.appendChild(bubble);
+                bubbleContainer.appendChild(bubble);
 
-    // Supprimer la bulle après l'animation
-    setTimeout(() => bubble.remove(), 5000); // Supprime après 5 secondes
-}
+                // Supprimer la bulle après l'animation
+                setTimeout(() => bubble.remove(), 5000); // Supprime après 5 secondes
+            }
 
-// Créer une bulle toutes les 500ms
-setInterval(createBubble, 300);
-
-
-
-
-
+            // Créer une bulle toutes les 500ms
+            setInterval(createBubble, 300);
         });
 
         // Nouvelle fonction pour charger les stats
@@ -278,7 +469,7 @@ setInterval(createBubble, 300);
             const response = await fetch('/api/stats');
             if (!response.ok) throw new Error('Erreur réseau');
             const stats = await response.json();
-            
+
             // Mise en cache pour le mode hors ligne
             localStorage.setItem('lastKnownStats', JSON.stringify(stats));
             return stats;
@@ -294,7 +485,7 @@ setInterval(createBubble, 300);
         function mettreAJourStats(stats) {
             const container = document.getElementById('stats-container');
             if (!container) return;
-            
+
             container.innerHTML = `
                 <div class="p-2">
                     <div class="text-primary-light text-2xl font-bold">${stats.plongeurs}</div>
@@ -312,4 +503,5 @@ setInterval(createBubble, 300);
         }
     </script>
 </body>
+
 </html>

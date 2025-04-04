@@ -8,18 +8,18 @@ const path = require("path");
 const app = express();
 const pdfDir = path.join(__dirname, "public", "pdf");
 const nodemailer = require("nodemailer");
+const cookieParser = require("cookie-parser");
 
 
 // Vérifier si le dossier existe, sinon le créer
 if (!fs.existsSync(pdfDir)) {
-    console.log("📂 Dossier 'public/pdf' inexistant, création...");
     fs.mkdirSync(pdfDir, { recursive: true });
 }
 
-// Configuration de Supabase
-const supabaseUrl = "https://xoiyziphxfkfxfawcafm.supabase.co";
-const supabaseKey =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvaXl6aXBoeGZrZnhmYXdjYWZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAwODQ3MTMsImV4cCI6MjA1NTY2MDcxM30.tY-3BgdAtSuv1ScGOgnimQEsLnk1mbnN9A2jYatsaNE";
+// Configuration Supabase
+const supabaseUrl = process.env.SUPABASE_URL || "https://xoiyziphxfkfxfawcafm.supabase.co";
+//const supabaseKey = process.env.SUPABASE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvaXl6aXBoeGZrZnhmYXdjYWZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAwODQ3MTMsImV4cCI6MjA1NTY2MDcxM30.tY-3BgdAtSuv1ScGOgnimQEsLnk1mbnN9A2jYatsaNE";
+const supabaseKey = process.env.SUPABASE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvaXl6aXBoeGZrZnhmYXdjYWZtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MDA4NDcxMywiZXhwIjoyMDU1NjYwNzEzfQ.17rw_NqaY6dJv5csuFuOBK9vLXZMcDSO1D2zeLUrh2U";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Charger les variables d'environnement en fonction de l'environnement
@@ -38,44 +38,223 @@ const options = {
 const host = '0.0.0.0'; // Utiliser '0.0.0.0' pour écouter sur toutes les interfaces
 const port = process.env.PORT || 3000;
 
-console.log('Variables d\'environnement au démarrage :', JSON.stringify(process.env, null, 2));
-// Vérifiez que les variables d'environnement sont bien chargées
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('SSL_KEY_PATH:', process.env.SSL_KEY_PATH);
-console.log('SSL_CERT_PATH:', process.env.SSL_CERT_PATH);
-console.log('HOST:', process.env.HOST);
-console.log('PORT:', process.env.PORT);
-
 // Middleware
 app.use(bodyParser.json({ limit: '10mb' })); // Pour JSON
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true })); // Pour les URL-encodées
 app.use((req, res, next) => {
-    //console.log("Requête reçue:", req.method, req.url);
-    //console.log("Headers:", req.headers);
-    //console.log("Body brut:", req.body); 
     next();
 });
-
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.static("public"));
 app.set("view engine", "ejs");
 app.set("views", __dirname + "/views");
+app.use(cookieParser());
+// Middleware pour injecter Supabase dans les routes
+app.locals.supabase = supabase;
 
+// Middleware d'authentification
+const requireAuth = async (req, res, next) => {
+    try {
+        // Version sécurisée avec vérification des cookies
+        const token = req.headers.authorization?.split(' ')[1] || req.cookies?.auth;
+
+        if (!token) {
+            return res.redirect('/');
+        }
+
+        // Vérification du token avec Supabase
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+
+        if (error) {
+            console.error("Erreur de vérification du token:", error.message);
+            return res.redirect('/?error=invalid_token');
+        }
+
+        // Récupération des infos supplémentaires
+        const { data: userData } = await supabase
+            .from('users')
+            .select('club_id, role, clubs(name)')
+            .eq('id', user.id)
+            .single();
+
+        if (!userData) {
+            return res.redirect('/?error=user_not_found');
+        }
+
+        // Ajout des infos utilisateur à la requête
+        req.user = {
+            ...user,
+            club_id: userData.club_id,
+            role: userData.role,
+            club_name: userData.clubs.name
+        };
+
+        next();
+    } catch (error) {
+        console.error("Erreur dans requireAuth:", error);
+        res.redirect('/?error=auth_failed');
+    }
+};
+
+// Middleware pour vérifier le rôle admin
+const requireAdmin = (req, res, next) => {
+    if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Accès réservé aux administrateurs' });
+    }
+    next();
+};
+// Middleware qui s'exécute avant chaque route
+app.use(async (req, res, next) => {
+    try {
+        // 1. Récupération de l'utilisateur
+        const token = req.cookies?.auth;
+        let user = null;
+        
+        if (token) {
+            const { data, error } = await supabase.auth.getUser(token);
+            if (!error && data?.user) {
+                const { data: userData } = await supabase
+                    .from('users')
+                    .select('role')
+                    .eq('id', data.user.id)
+                    .single();
+                
+                if (userData) user = { ...data.user, ...userData };
+            }
+        }
+
+        // 2. Injection automatique dans toutes les vues
+        res.locals.user = user;
+        res.locals.isAdmin = user?.role === 'admin';
+        res.locals.roleClasses = {
+            button: user?.role === 'admin' ? 'role-active' : 'role-inactive',
+            visibility: user?.role === 'admin' ? 'visible' : 'invisible'
+        };
+
+    } catch (error) {
+        console.error('Middleware auth error:', error);
+        // Valeurs par défaut si erreur
+        res.locals.roleClasses = {
+            button: 'role-inactive',
+            visibility: 'invisible'
+        };
+    } finally {
+        next(); // Poursuit l'exécution
+    }
+});
 // Routes
-app.get("/", (req, res) => {
-    res.render("index");
+// Vérifié
+app.get("/", async (req, res) => {
+    try {
+      // Récupération de l'utilisateur connecté
+      const token = req.cookies?.auth;
+      let user = null;
+  
+      if (token) {
+        const { data, error } = await supabase.auth.getUser(token);
+        if (!error && data.user) {
+          // Récupération des infos supplémentaires si besoin
+          const { data: userData } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+  
+          user = {
+            ...data.user,
+            ...userData
+          };
+        }
+      }
+  
+      res.render("index", { 
+        user: user // Passage explicite de la variable user
+      });
+      
+    } catch (error) {
+      console.error("Erreur:", error);
+      res.render("index", { user: null });
+    }
+  });
+
+// Route de connexion
+app.post('/api/login', async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        // 1. Authentification
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+
+        if (error) throw error;
+
+        // 2. Récupération infos supplémentaires
+        const { data: user } = await supabase
+            .from('users')
+            .select('*, clubs(name)')
+            .eq('id', data.user.id)
+            .single();
+
+        // 3. Réponse sécurisée
+        res.cookie('auth', data.session.access_token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production'
+        });
+
+        res.json({
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                club: user.clubs.name
+            }
+        });
+
+    } catch (error) {
+        console.error('Erreur connexion:', error);
+        res.status(401).json({ error: error.message });
+    }
+});
+
+// Route de déconnexion
+app.post('/logout', async (req, res) => {
+    try {
+        // 1. Suppression du cookie côté serveur
+        res.clearCookie('auth', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production'
+        });
+
+        // 2. Invalidation du token avec Supabase (optionnel mais recommandé)
+        const token = req.cookies.auth;
+        if (token) {
+            await supabase.auth.signOut(token);
+        }
+
+        // 3. Redirection vers la page d'accueil
+        res.redirect('/'); // Redirection immédiate
+
+    } catch (error) {
+        console.error("Erreur lors de la déconnexion:", error);
+        res.status(500).json({ error: "Erreur lors de la déconnexion" });
+    }
 });
 
 // PDF
+// Vérifié
 app.get("/generate-pdf", async (req, res) => {
     function formatHeurePDF(heure) {
         try {
             if (!heure) return "Non définie";
-            
+
             // Convertit en string et nettoie
             const heureStr = heure.toString().trim();
-            
+
             // Vérifie les formats connus
             if (/^\d{1,2}h\d{2}$/.test(heureStr)) {  // Si déjà formaté "XhXX"
                 return heureStr;
@@ -84,7 +263,7 @@ app.get("/generate-pdf", async (req, res) => {
                 const [h, m] = heureStr.split(':');
                 return `${parseInt(h, 10)}h${m.padStart(2, '0')}`;
             }
-            
+
             return "Format invalide";
         } catch (error) {
             console.error("Erreur formatage heure:", error);
@@ -98,7 +277,6 @@ app.get("/generate-pdf", async (req, res) => {
     }
 
     try {
-        //console.log("🔍 ID de la plongée reçu :", plongeeId);
 
         // Récupérer les infos de la plongée avec jointure pour obtenir le nom et niveau du DP
         const { data: plongee, error: plongeeError } = await supabase
@@ -112,8 +290,6 @@ app.get("/generate-pdf", async (req, res) => {
             throw new Error("Impossible de récupérer les données de la plongée.");
         }
 
-        //console.log("✅ Données plongée récupérées :", plongee);
-
         // Récupérer les palanquées associées à cette plongée
         const { data: palanquees, error: palanqueesError } = await supabase
             .from("palanquees")
@@ -124,8 +300,6 @@ app.get("/generate-pdf", async (req, res) => {
             console.error("❌ Erreur lors de la récupération des palanquées :", palanqueesError);
             throw new Error("Impossible de récupérer les palanquées.");
         }
-
-        //console.log("✅ Palanquées récupérées :", palanquees);
 
         // Formater la date en "jour mois année"
         const datePlongee = new Date(plongee.date);
@@ -145,12 +319,12 @@ app.get("/generate-pdf", async (req, res) => {
                 .from("palanquees_plongeurs")
                 .select("plongeur_id, niveau_plongeur_historique")  // Ajoute niveau_historique ici
                 .eq("palanquee_id", palanquee.id);
-        
+
             if (plongeursError) {
                 console.error("❌ Erreur lors de la récupération des plongeurs pour la palanquée :", plongeursError);
                 continue;
             }
-        
+
             // Récupérer les informations des plongeurs (noms seulement)
             const plongeurIds = palanqueesPlongeurs.map(p => p.plongeur_id);
             if (plongeurIds.length > 0) {
@@ -158,12 +332,12 @@ app.get("/generate-pdf", async (req, res) => {
                     .from("plongeurs")
                     .select("id, nom")  // On ne prend plus le niveau actuel ici
                     .in("id", plongeurIds);
-        
+
                 if (plongeursDataError) {
                     console.error("❌ Erreur lors de la récupération des détails des plongeurs :", plongeursDataError);
                     continue;
                 }
-        
+
                 // Fusionner les données: nom du plongeur + niveau historique
                 palanquee.plongeurs = plongeurs.map(plongeur => {
                     const correspondance = palanqueesPlongeurs.find(p => p.plongeur_id === plongeur.id);
@@ -183,7 +357,7 @@ app.get("/generate-pdf", async (req, res) => {
             date: dateEtHeure,
             palanquees: palanquees.map(palanquee => ({  // Notez le nom complet 'palanquee' au lieu de 'p'
                 ...palanquee,
-                heureFormatee: palanquee.heure_mise_a_leau 
+                heureFormatee: palanquee.heure_mise_a_leau
                     ? palanquee.heure_mise_a_leau.substring(0, 5).replace(':', 'h')
                     : "Non définie"
             })) || []
@@ -195,10 +369,10 @@ app.get("/generate-pdf", async (req, res) => {
         const now = new Date();
         datePlongeePDF.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
 
-        
+
         // 🔹 Création du document PDF
         const doc = new PDFDocument({ margin: 40 });
-                const formattedDate = datePlongeePDF.toLocaleString("fr-FR", {
+        const formattedDate = datePlongeePDF.toLocaleString("fr-FR", {
             year: "2-digit",
             month: "2-digit",
             day: "2-digit",
@@ -206,20 +380,15 @@ app.get("/generate-pdf", async (req, res) => {
             minute: "2-digit",
             second: "2-digit"
         }).replace(/\D/g, "-"); // Remplace les séparateurs par des tirets
-        const fileName = `parametres_plongee_${formattedDate}.pdf`; 
+        const fileName = `parametres_plongee_${formattedDate}.pdf`;
         const filePath = path.join(__dirname, "public", "pdf", fileName);
 
-       // const filePath = path.join(__dirname, "public", fileName); // ✅ filePath défini AVANT utilisation
-
         const stream = fs.createWriteStream(filePath); // ✅ Maintenant, filePath est bien défini
-
-
-        console.log("📄 Génération du PDF :", filePath); // Debug pour vérifier le chemin
         doc.pipe(stream);
 
 
         // Ajouter le logo (assure-toi que le chemin est correct)
-        const logoPath = __dirname + "/public/images/scc28.jpeg"; 
+        const logoPath = __dirname + "/public/images/scc28.jpeg";
 
         const logoWidth = 100;  // Largeur du logo
         const logoHeight = 40;  // Hauteur du logo
@@ -241,15 +410,15 @@ app.get("/generate-pdf", async (req, res) => {
         const text = "FICHE DE SECURITE";
 
         // Centrage vertical (ajuster selon la hauteur du texte)
-        const textY = rectY + (rectHeight / 3); 
+        const textY = rectY + (rectHeight / 3);
 
         // Ajouter le texte bien centré dans le rectangle
         doc.fillColor("white")
-        .fontSize(20) // Taille ajustée pour éviter de dépasser
-        .text(text, rectX, textY, { align: "center", width: rectWidth }); // Centrage parfait
+            .fontSize(20) // Taille ajustée pour éviter de dépasser
+            .text(text, rectX, textY, { align: "center", width: rectWidth }); // Centrage parfait
 
-        
-        
+
+
 
         // Réinitialiser la couleur du texte à noir pour le reste du document
         doc.fillColor("black");  // Texte noir pour le reste du document
@@ -344,7 +513,6 @@ app.get("/generate-pdf", async (req, res) => {
 
         // 📌 Définition des positions X des traits verticaux
         const columnLines = [120, 270, 320, 365, 410, 460, 520, 590]; // 🆕 Ajustement des traits
-        console.log("Debug - Données palanquées:", JSON.stringify(data.palanquees, null, 2));
         // 📌 Boucle pour remplir le tableau des palanquées
         data.palanquees.forEach((palanquee) => {
             let startY = doc.y; // Position initiale
@@ -353,49 +521,49 @@ app.get("/generate-pdf", async (req, res) => {
             //doc.text(palanquee.nom || "-", 20, startY, { width: columnWidths[0], align: "center" });
             // Nom de la palanquée (taille 10)
             doc.fontSize(10)
-            .text(palanquee.nom, 20, startY, {
-                width: columnWidths[0],
-                align: "center"
-            });
-            
+                .text(palanquee.nom, 20, startY, {
+                    width: columnWidths[0],
+                    align: "center"
+                });
+
             // Heure formatée (taille 8)
-            const heureFormatee = palanquee.heure_mise_a_leau 
+            const heureFormatee = palanquee.heure_mise_a_leau
                 ? palanquee.heure_mise_a_leau.substring(0, 5).replace(':', 'h')
                 : "Non définie";
-            
+
             doc.fontSize(8)
-            .text(`Départ : ${heureFormatee}`, 20, startY + 12, { // +12 pour l'espacement
-                width: columnWidths[0],
-                align: "center"
-            });
+                .text(`Départ : ${heureFormatee}`, 20, startY + 12, { // +12 pour l'espacement
+                    width: columnWidths[0],
+                    align: "center"
+                });
             // Réinitialise la taille pour le reste
             doc.fontSize(10);
             // 🟢 Colonne "Plongeurs" (avec les guides en premier)
-                let plongeurY = startY;
-                if (palanquee.plongeurs && palanquee.plongeurs.length > 0) {
-                    // Trier les plongeurs: d'abord les guides (GP, E2-E4), puis les autres
-                    const plongeursTries = [...palanquee.plongeurs].sort((a, b) => {
-                        const isGuideA = ['GP', 'E2', 'E3', 'E4'].includes(a.niveau);
-                        const isGuideB = ['GP', 'E2', 'E3', 'E4'].includes(b.niveau);
-                        
-                        if (isGuideA && !isGuideB) return -1; // a (guide) avant b
-                        if (!isGuideA && isGuideB) return 1;  // b (guide) avant a
-                        return 0; // ordre égal
-                    });
+            let plongeurY = startY;
+            if (palanquee.plongeurs && palanquee.plongeurs.length > 0) {
+                // Trier les plongeurs: d'abord les guides (GP, E2-E4), puis les autres
+                const plongeursTries = [...palanquee.plongeurs].sort((a, b) => {
+                    const isGuideA = ['GP', 'E2', 'E3', 'E4'].includes(a.niveau);
+                    const isGuideB = ['GP', 'E2', 'E3', 'E4'].includes(b.niveau);
 
-                    plongeursTries.forEach(plongeur => {
-                        // Ajoute un symbole (★) si c'est un guide
-                        const isGuide = ['GP', 'E2', 'E3', 'E4'].includes(plongeur.niveau);
-                        const prefix = isGuide ? '* ' : '';
-                        doc.text(`${prefix}${plongeur.nom || "-"} (${plongeur.niveau || "-"})`, 
-                                130, plongeurY, 
-                                { width: columnWidths[1], align: "left" });
-                        plongeurY += 14;
-                    });
-                } else {
-                    doc.text("Aucun plongeur", 130, plongeurY, { width: columnWidths[1], align: "left" });
+                    if (isGuideA && !isGuideB) return -1; // a (guide) avant b
+                    if (!isGuideA && isGuideB) return 1;  // b (guide) avant a
+                    return 0; // ordre égal
+                });
+
+                plongeursTries.forEach(plongeur => {
+                    // Ajoute un symbole (★) si c'est un guide
+                    const isGuide = ['GP', 'E2', 'E3', 'E4'].includes(plongeur.niveau);
+                    const prefix = isGuide ? '* ' : '';
+                    doc.text(`${prefix}${plongeur.nom || "-"} (${plongeur.niveau || "-"})`,
+                        130, plongeurY,
+                        { width: columnWidths[1], align: "left" });
                     plongeurY += 14;
-                }
+                });
+            } else {
+                doc.text("Aucun plongeur", 130, plongeurY, { width: columnWidths[1], align: "left" });
+                plongeurY += 14;
+            }
 
             // 📌 Ajustement de la hauteur de fin pour éviter les chevauchements
             let endY = Math.max(startY + 20, plongeurY);
@@ -424,7 +592,7 @@ app.get("/generate-pdf", async (req, res) => {
 
 
 
-         
+
 
         doc.end();
 
@@ -454,146 +622,126 @@ app.get("/generate-pdf", async (req, res) => {
     }
 });
 
-
-
-
-
-
-
-
-
-
-
 // Gestion des plongeurs
-app.get("/gestion-plongeurs", async (req, res) => {
+// Vérifié
+app.get("/gestion-plongeurs", requireAuth, async (req, res) => {
     try {
-        const { data, error } = await supabase.from("plongeurs").select("*");
+        // Accès au user authentifié via req.user
+        //console.log("Utilisateur connecté:", req.user.email + " " + req.user.club_name + " " + req.user.role);
 
-        if (error) {
-            console.error("Erreur lors de la récupération des plongeurs:", error);
-            return res.status(500).send("Erreur serveur");
-        }
+        // Seuls les plongeurs du club de l'utilisateur
+        const { data, error } = await supabase
+            .from("plongeurs")
+            .select("*")
+            .eq("club_id", req.user.club_id); // Filtrage par club
 
-        // Trier les plongeurs par ordre alphabétique sur le nom
+        if (error) throw error;
+
+        // Tri alphabétique
         data.sort((a, b) => a.nom.localeCompare(b.nom));
 
-        // Passer la liste triée ET le nombre de plongeurs à la vue
-        res.render("gestion_plongeurs", { 
+        res.render("gestion_plongeurs", {
             plongeurs: data,
-            nombrePlongeurs: data.length // Ajout du comptage
+            nombrePlongeurs: data.length,
+            user: req.user // Passage des infos utilisateur à la vue
         });
+
     } catch (error) {
-        console.error("Erreur lors de la récupération des plongeurs:", error);
-        res.status(500).send("Erreur serveur");
+        console.error("Erreur:", error);
+        res.status(500).render("error", {
+            message: "Accès refusé ou erreur serveur"
+        });
     }
 });
 
 // Route pour récupérer les plongeurs ayant un niveau E3 ou E4 pour une sortie spécifique
-app.get("/api/get-plongeurs", async (req, res) => {
-    const { sortieId, categorie } = req.query; // Récupère l'ID de la sortie et le niveau (categorie) depuis les paramètres de la requête
-
-    // Validation du niveau, il doit être "E3" ou "E4"
-    if (categorie && !["E3", "E4"].includes(categorie)) {
-        return res.status(400).json({ error: "Le niveau doit être E3 ou E4." });
-    }
+// Vérifié
+app.get("/api/get-plongeurs", requireAuth, async (req, res) => {
+    const { sortieId } = req.query;
+    const categorie = req.query.categorie?.split(','); // Convertit "E3,E4" en ["E3", "E4"]
 
     try {
-        // Récupérer les plongeurs associés à la sortie via plongeurs_sorties
-        let query = supabase
+        // 1. Récupérer les IDs des plongeurs associés à la sortie
+        const { data: plongeursSorties, error: sortieError } = await supabase
             .from("plongeurs_sorties")
-            .select("plongeur_id")  // Sélectionner uniquement les plongeur_id (avec le "s" enlevé)
-            .eq("sortie_id", sortieId);  // Filtrer par sortie_id
+            .select("plongeur_id")
+            .eq("sortie_id", sortieId)
+            .eq("club_id", req.user.club_id);
 
-        // Si une catégorie (niveau) est fournie, filtrer les plongeurs par niveau
-        let plongeursIdsQuery;
-        if (categorie) {
-            plongeursIdsQuery = await supabase
-                .from("plongeurs")
-                .select("id")
-                .eq("niveau", categorie);  // Filtrer les plongeurs par niveau
-        }
+        if (sortieError) throw sortieError;
+        if (!plongeursSorties?.length) return res.json([]);
 
-        // Si une catégorie a été spécifiée, on récupère les ids des plongeurs correspondant à cette catégorie
-        let plongeursIds = [];
-        if (plongeursIdsQuery && plongeursIdsQuery.data) {
-            plongeursIds = plongeursIdsQuery.data.map(plongeur => plongeur.id);
-        }
-
-        // Si des plongeurs de la catégorie sont trouvés, ajouter ce filtre
-        if (plongeursIds.length > 0) {
-            query = query.in("plongeur_id", plongeursIds);  // Utilise "plongeur_id" qui est la colonne correcte
-        }
-
-        const { data: plongeursSorties, error: plongéesError } = await query;
-
-        if (plongéesError) {
-            console.error("Erreur lors de la récupération des plongeurs associés à la sortie:", plongéesError);
-            return res.status(500).json({ error: "Erreur lors de la récupération des plongeurs associés." });
-        }
-
-        if (!plongeursSorties || plongeursSorties.length === 0) {
-            return res.status(404).json({ error: "Aucun plongeur associé à cette sortie." });
-        }
-
-        // Extraire les plongeur_ids uniquement une seule fois
-        const idsPlongeurs = plongeursSorties.map(ps => ps.plongeur_id);
-
-        // Récupérer les détails des plongeurs à partir de leurs ids
-        const { data: plongeurs, error: plongeursError } = await supabase
+        // 2. Récupérer les plongeurs avec filtre de niveau
+        const plongeurIds = plongeursSorties.map(p => p.plongeur_id);
+        
+        let query = supabase
             .from("plongeurs")
             .select("id, nom, niveau")
-            .in("id", idsPlongeurs); // Filtrer par les ids des plongeurs
+            .in("id", plongeurIds)
+            .eq("club_id", req.user.club_id);
 
-        if (plongeursError) {
-            console.error("Erreur lors de la récupération des plongeurs:", plongeursError);
-            return res.status(500).json({ error: "Erreur lors de la récupération des plongeurs." });
+        if (categorie) {
+            query = query.in("niveau", categorie);
         }
 
-        // Si tout va bien, on renvoie les plongeurs
-        res.json(plongeurs);
+        const { data: plongeurs, error } = await query;
+        if (error) throw error;
+
+        res.json(plongeurs || []);
+        
     } catch (error) {
-        console.error("Erreur serveur:", error);
-        res.status(500).json({ error: "Erreur serveur." });
+        console.error("Erreur:", error);
+        res.status(500).json({ error: "Erreur serveur" });
     }
 });
 
-app.post('/api/update-dp', async (req, res) => {
+// Vérifié
+app.post('/api/update-dp', requireAuth, async (req, res) => {
     const { plongeeId, nomDP } = req.body;
 
     try {
-        // Utilisation de Supabase pour mettre à jour l'entrée
+        // Mise à jour avec vérification du club_id
         const { data, error } = await supabase
-            .from('plongees')  // Table 'plongees'
-            .update({ nomdp: nomDP })  // Mettre à jour la colonne 'nomdp' (tout en minuscules)
-            .eq('id', plongeeId);  // Condition où l'id correspond à plongeeId
+            .from('plongees')
+            .update({ 
+                nomdp: nomDP 
+            })
+            .eq('id', plongeeId)
+            .eq('club_id', req.user.club_id);  // Filtre par club
 
-        if (error) {
-            throw error;  // Si une erreur survient
-        }
+        if (error) throw error;
 
-        res.status(200).json({ message: "Plongée mise à jour avec succès.", data });
+        res.status(200).json({ 
+            message: "Plongée mise à jour avec succès.", 
+            data 
+        });
+
     } catch (error) {
-        console.error("❌ Erreur lors de la mise à jour :", error);
-        res.status(500).json({ error: "Erreur lors de la mise à jour du DP." });
+        console.error("Erreur mise à jour DP:", error);
+        res.status(500).json({ 
+            error: "Erreur lors de la mise à jour du DP." 
+        });
     }
 });
 
-
-app.get('/api/plongeur/:id', async (req, res) => {
+// Vérifié
+app.get('/api/plongeur/:id', requireAuth, async (req, res) => {
     const { id } = req.params;
 
     try {
         const { data, error } = await supabase
             .from('plongeurs')
-            .select('nom, niveau') // ✅ On récupère aussi le niveau
+            .select('nom, niveau')
             .eq('id', id)
+            .eq('club_id', req.user.club_id)  // Filtre par club ajouté
             .single();
 
         if (error) throw error;
 
-        res.status(200).json(data);  // Retourner nom + niveau
+        res.status(200).json(data);  // Retourne nom + niveau
+
     } catch (error) {
-        console.error("❌ Erreur lors de la récupération du plongeur :", error);
+        console.error("Erreur récupération plongeur:", error);
         res.status(500).json({ error: "Erreur lors de la récupération du plongeur" });
     }
 });
@@ -601,59 +749,89 @@ app.get('/api/plongeur/:id', async (req, res) => {
 
 
 
-
-app.post("/ajouter-plongeur", async (req, res) => {
+// Vérifié
+app.post("/ajouter-plongeur", requireAuth, async (req, res) => {
     const { nom, niveau } = req.body;
-    const { error } = await supabase
-        .from("plongeurs")
-        .insert([{ nom, niveau, sortie_en_cours: false }]);
-    if (error) {
-        console.error(error);
-        return res.status(500).send("Erreur lors de l'ajout du plongeur");
+
+    try {
+        const { error } = await supabase
+            .from("plongeurs")
+            .insert([{ 
+                nom, 
+                niveau, 
+                sortie_en_cours: false,
+                club_id: req.user.club_id  // Ajout du club_id
+            }]);
+
+        if (error) throw error;
+
+        res.redirect("/gestion-plongeurs");
+
+    } catch (error) {
+        console.error("Erreur ajout plongeur:", error);
+        res.status(500).send("Erreur lors de l'ajout du plongeur");
     }
-    res.redirect("/gestion-plongeurs");
 });
 
-app.post("/modifier-plongeur/:id", async (req, res) => {
+// Vérifié
+app.post("/modifier-plongeur/:id", requireAuth, async (req, res) => {
     const { id } = req.params;
     const { niveau } = req.body;
+    
+    // Vérification que l'utilisateur a un club_id
+    if (!req.user.club_id) {
+        return res.status(403).send("Accès refusé - aucun club associé");
+    }
+
     const { error } = await supabase
         .from("plongeurs")
         .update({ niveau })
-        .eq("id", id);
+        .eq("id", id)
+        .eq("club_id", req.user.club_id); // On s'assure qu'on ne modifie que les plongeurs du même club
+
     if (error) {
         console.error("Erreur de modification :", error);
         return res.status(500).send("Erreur lors de la modification");
     }
+    
     res.send("Plongeur modifié");
 });
 
-app.delete("/supprimer-plongeur/:id", async (req, res) => {
+app.delete("/supprimer-plongeur/:id", requireAuth, async (req, res) => {
     const { id } = req.params;
-    const { error } = await supabase.from("plongeurs").delete().eq("id", id);
+    
+    const { error } = await supabase
+        .from("plongeurs")
+        .delete()
+        .eq("id", id)
+        .eq("club_id", req.user.club_id); // Protection par club_id
+
     if (error) {
         console.error("Erreur de suppression :", error);
         return res.status(500).send("Erreur lors de la suppression");
     }
+    
     res.send("Plongeur supprimé");
 });
 
-app.delete("/retirer-plongeur-de-palanquee/:palanqueeId/:plongeurId", async (req, res) => {
+app.delete("/retirer-plongeur-de-palanquee/:palanqueeId/:plongeurId", requireAuth, async (req, res) => {
     const { palanqueeId, plongeurId } = req.params;
-
-    console.log(`🛠️ Requête reçue pour retirer le plongeur ${plongeurId} de la palanquée ${palanqueeId}`);
-
+    
+    // Suppression conditionnée par l'appartenance au même club
     const { error } = await supabase
-        .from("palanquees_plongeurs")  // Vérifie bien le nom exact de la table
+        .from("palanquees_plongeurs")
         .delete()
-        .match({ palanquee_id: palanqueeId, plongeur_id: plongeurId });
+        .match({ 
+            palanquee_id: palanqueeId, 
+            plongeur_id: plongeurId,
+            club_id: req.user.club_id  // Protection par club_id
+        });
 
     if (error) {
         console.error("❌ Erreur suppression :", error);
         return res.status(500).send("Erreur lors du retrait du plongeur de la palanquée");
     }
-
-    console.log("✅ Plongeur retiré avec succès !");
+    
     res.send("Plongeur retiré de la palanquée");
 });
 
@@ -661,87 +839,110 @@ app.delete("/retirer-plongeur-de-palanquee/:palanqueeId/:plongeurId", async (req
 
 
 // Gestion des sorties
-app.get("/gestion-sorties", async (req, res) => {
+// Vérifié
+app.get("/gestion-sorties", requireAuth, async (req, res) => {  // <-- Ajout de requireAuth
     try {
-        // Récupérer les sorties avec les plongeurs associés
-        const { data: sorties, error: errorSorties } = await supabase.from(
-            "sorties",
-        ).select(`
+        // Récupérer l'ID du club de l'utilisateur connecté
+        const clubId = req.user.club_id;
+
+        // Récupérer les sorties du club uniquement
+        const { data: sorties, error: errorSorties } = await supabase
+            .from("sorties")
+            .select(`
                 id, 
                 lieu, 
                 date_debut, 
                 date_fin, 
                 plongeurs_sorties (plongeur_id)
-            `);
+            `)
+            .eq('club_id', clubId);  // <-- Filtrage par club
 
         if (errorSorties) throw errorSorties;
 
-        // Récupérer tous les plongeurs
+        // Récupérer les plongeurs du club uniquement
         const { data: plongeurs, error: errorPlongeurs } = await supabase
             .from("plongeurs")
-            .select("*");
+            .select("*")
+            .eq('club_id', clubId);  // <-- Filtrage par club
 
         if (errorPlongeurs) throw errorPlongeurs;
 
-        // Transformer les sorties pour inclure la liste des plongeurs associés
+        // Transformer les données
         const sortiesAvecPlongeurs = sorties.map((sortie) => ({
             ...sortie,
-            plongeurs_count: sortie.plongeurs_sorties
-                ? sortie.plongeurs_sorties.length
-                : 0,
-            plongeurs_associes: sortie.plongeurs_sorties
-                ? sortie.plongeurs_sorties.map((ps) => ps.plongeur_id)
-                : [],
+            plongeurs_count: sortie.plongeurs_sorties?.length || 0,
+            plongeurs_associes: sortie.plongeurs_sorties?.map(ps => ps.plongeur_id) || [],
         }));
 
         res.render("gestion_sorties", {
             sorties: sortiesAvecPlongeurs,
             plongeurs,
+            user: req.user  // <-- Passez les infos utilisateur à la vue
         });
+
     } catch (error) {
-        console.error("Erreur lors de la récupération des données:", error);
-        res.status(500).send("Erreur serveur");
+        console.error("Erreur:", error);
+        res.status(500).render("error", { 
+            message: "Accès refusé ou erreur serveur",
+            user: req.user  // <-- Conservez la navigation même en erreur
+        });
     }
 });
 
 // Route pour la page de sélection des sorties
-app.get("/selection-sorties", async (req, res) => {
+// Vérifié
+app.get("/selection-sorties", requireAuth, async (req, res) => {
     try {
-        // Récupérer les sorties disponibles
+        // 1. Vérifier que l'utilisateur a bien un club_id
+        if (!req.user.club_id) {
+            throw new Error("Accès refusé : utilisateur non affilié à un club");
+        }
+
+        // 2. Récupérer les sorties du club uniquement
         const { data: sorties, error: sortiesError } = await supabase
             .from("sorties")
-            .select("id, lieu, date_debut, date_fin"); // Sélectionner les colonnes que vous souhaitez afficher
+            .select("id, lieu, date_debut, date_fin")
+            .eq('club_id', req.user.club_id) // Filtrage par club
+            .order('date_debut', { ascending: true }); // Tri par date
 
         if (sortiesError) throw sortiesError;
 
-        // Récupérer les dates de plongées
+        // 3. Récupérer les plongées du club uniquement
         const { data: plongees, error: plongeesError } = await supabase
             .from("plongees")
-            .select("date");
+            .select("date")
+            .eq('club_id', req.user.club_id); // Filtrage par club
 
         if (plongeesError) throw plongeesError;
 
-        // Loguer les données récupérées pour débogage
-        //console.log("Sorties récupérées :", sorties);
-        //console.log("Plongées récupérées :", plongees);
+        // 4. Rendre la vue avec les données filtrées
+        res.render("selection_sorties", { 
+            sorties: sorties || [],
+            plongees: plongees || [],
+            user: req.user // Passage des infos utilisateur à la vue
+        });
 
-        // Rendre la vue de sélection des sorties avec les données récupérées
-        res.render("selection_sorties", { sorties, plongees });
     } catch (error) {
-        console.error("Erreur lors de la récupération des sorties ou des plongées :", error);
-        res.status(500).send("Erreur serveur");
+        console.error("Erreur:", error.message);
+        res.status(500).render("error", {
+            message: "Erreur lors de la récupération des données",
+            error: process.env.NODE_ENV === 'development' ? error : null,
+            user: req.user
+        });
     }
 });
 
-app.get("/get-plongeurs-sortie/:id", async (req, res) => {
+// Vérifié
+app.get("/get-plongeurs-sortie/:id", requireAuth, async (req, res) => {
     try {
         const sortieId = req.params.id;
 
-        // Requête pour récupérer les plongeurs associés à la sortie
+        // Requête pour récupérer les plongeurs associés à la sortie du même club
         const { data: plongeursAssocies, error } = await supabase
-            .from("plongeurs_sorties")  // Utilise le bon nom de la table
+            .from("plongeurs_sorties")
             .select("plongeur_id")
-            .eq("sortie_id", sortieId);
+            .eq("sortie_id", sortieId)
+            .eq("club_id", req.user.club_id);  // Protection par club_id
 
         if (error) throw error;
 
@@ -759,7 +960,8 @@ app.get("/get-plongeurs-sortie/:id", async (req, res) => {
 
 
 // Gérer la route pour la gestion des palanquées avec la sortie sélectionnée
-app.get("/gestion-palanquees", async (req, res) => {
+// Voir si utilisé ?
+/*app.get("/gestion-palanquees", async (req, res) => {
     const sortieId = req.query.sortie; // Récupérer l'ID de la sortie sélectionnée
     const date = req.query.date; // Récupérer la date sélectionnée
 
@@ -788,7 +990,7 @@ app.get("/gestion-palanquees", async (req, res) => {
 
         // Exécutez toutes les promesses et attendez les résultats
         const palanqueesResults = await Promise.all(palanqueesPromises);
-        
+
         // Aplatir le tableau des résultats pour avoir une liste de palanquées
         const palanquees = palanqueesResults.flatMap(result => result.data || []);
 
@@ -798,19 +1000,25 @@ app.get("/gestion-palanquees", async (req, res) => {
         console.error("Erreur lors de la récupération des plongées ou palanquées :", error);
         res.status(500).send("Erreur serveur");
     }
-});
+});*/
 
 
 
 
 
-
-app.post("/ajouter-sortie", async (req, res) => {
-    const { lieu, date_debut, date_fin } = req.body; // Ajout de date_fin
-
+// Vérifié
+app.post("/ajouter-sortie", requireAuth, async (req, res) => {
+    const { lieu, date_debut, date_fin } = req.body;
+    
+    // Ajout automatique du club_id de l'utilisateur
     const { error } = await supabase
         .from("sorties")
-        .insert([{ lieu, date_debut, date_fin }]); // Ajout de date_fin
+        .insert([{ 
+            lieu, 
+            date_debut, 
+            date_fin,
+            club_id: req.user.club_id  // Protection par club_id
+        }]);
 
     if (error) {
         console.error("Erreur d'ajout de sortie :", error);
@@ -819,18 +1027,25 @@ app.post("/ajouter-sortie", async (req, res) => {
     res.redirect("/gestion-sorties");
 });
 
-app.delete("/supprimer-sortie/:id", async (req, res) => {
+app.delete("/supprimer-sortie/:id", requireAuth, async (req, res) => {
     const { id } = req.params;
-    const { error } = await supabase.from("sorties").delete().eq("id", id);
+    
+    const { error } = await supabase
+        .from("sorties")
+        .delete()
+        .eq("id", id)
+        .eq("club_id", req.user.club_id);  // Protection par club_id
+
     if (error) {
         console.error("Erreur de suppression de sortie :", error);
         return res.status(500).send("Erreur lors de la suppression");
     }
+    
     res.send("Sortie supprimée");
 });
 
-app.post("/ajouter-plongeurs-a-sortie", async (req, res) => {
-    //console.log("Données reçues :", req.body);
+// Vérifié
+app.post("/ajouter-plongeurs-a-sortie", requireAuth, async (req, res) => {
     let { sortie_id, plongeurs } = req.body;
 
     if (!sortie_id || !plongeurs) {
@@ -849,7 +1064,39 @@ app.post("/ajouter-plongeurs-a-sortie", async (req, res) => {
         );
 
         if (plongeursIds.length === 0) {
-            return res.redirect("/gestion-sorties"); // Aucun plongeur valide à ajouter
+            return res.redirect("/gestion-sorties");
+        }
+
+        // Vérifier que la sortie appartient au club de l'utilisateur
+        const { data: sortie, error: sortieError } = await supabase
+            .from("sorties")
+            .select("id")
+            .eq("id", sortie_id)
+            .eq("club_id", req.user.club_id)
+            .single();
+
+        if (sortieError || !sortie) {
+            return res.redirect("/gestion-sorties");
+        }
+
+        // Vérifier que les plongeurs appartiennent au club de l'utilisateur
+        const { data: plongeursValides, error: plongeursError } = await supabase
+            .from("plongeurs")
+            .select("id")
+            .in("id", plongeursIds)
+            .eq("club_id", req.user.club_id);
+
+        if (plongeursError) {
+            return res.redirect("/gestion-sorties");
+        }
+
+        const plongeursValidesIds = plongeursValides.map(p => p.id);
+        const plongeursAAjouter = plongeursIds.filter(id => 
+            plongeursValidesIds.includes(id)
+        );
+
+        if (plongeursAAjouter.length === 0) {
+            return res.redirect("/gestion-sorties");
         }
 
         // Récupérer les plongeurs déjà associés à cette sortie
@@ -861,94 +1108,86 @@ app.post("/ajouter-plongeurs-a-sortie", async (req, res) => {
 
         if (errorPlongeursExistants) throw errorPlongeursExistants;
 
-        // Extraire les IDs des plongeurs déjà ajoutés
+        // Filtrer pour ne garder que les nouveaux plongeurs
         const plongeursDejaAjoutes = new Set(
-            plongeursExistants.map((ps) => ps.plongeur_id),
+            plongeursExistants?.map((ps) => ps.plongeur_id) || []
         );
 
-        // Filtrer pour ne garder que les nouveaux plongeurs qui ne sont pas déjà ajoutés
-        const nouveauxPlongeurs = plongeursIds.filter(
-            (id) => !plongeursDejaAjoutes.has(id),
+        const nouveauxPlongeurs = plongeursAAjouter.filter(
+            (id) => !plongeursDejaAjoutes.has(id)
         );
 
         if (nouveauxPlongeurs.length === 0) {
-            return res.redirect("/gestion-sorties"); // Rien à ajouter
+            return res.redirect("/gestion-sorties");
         }
 
-        // Préparer les nouvelles entrées
+        // Préparer les nouvelles entrées avec club_id
         const newEntries = nouveauxPlongeurs.map((plongeur_id) => ({
-            sortie_id: sortie_id, // doit être une chaîne UUID
-            plongeur_id: plongeur_id, // doit être une chaîne UUID
+            sortie_id,
+            plongeur_id,
+            club_id: req.user.club_id
         }));
 
-        //console.log("Nouvelle entrée à insérer :", newEntries); // Affiche les nouvelles entrées
-
-        // Insérer uniquement les nouveaux plongeurs
+        // Insérer les nouveaux plongeurs
         const { error } = await supabase
             .from("plongeurs_sorties")
             .insert(newEntries);
 
-        if (error) {
-            console.error(
-                "Erreur lors de l'ajout des plongeurs :",
-                error.message,
-            );
-            return res
-                .status(500)
-                .send(
-                    "Erreur lors de l'ajout des plongeurs : " + error.message,
-                );
-        }
-
-        //console.log("Plongeurs ajoutés :", newEntries); // Log des plongeurs ajoutés
+        if (error) throw error;
+        
         res.redirect("/gestion-sorties");
     } catch (error) {
         console.error("Erreur lors de l'ajout des plongeurs :", error);
-        res.status(500).send("Erreur interne du serveur.");
+        res.redirect("/gestion-sorties");
     }
 });
 
-app.get("/plongees/:sortieId/:date", async (req, res) => {
-    const { sortieId, date } = req.params; // Vous avez déjà fait cela
+// Vérifié
+app.get("/plongees/:sortieId/:date", requireAuth, async (req, res) => {
+    const { sortieId, date } = req.params;
     try {
-        // Récupérer les plongées pour la date et la sortie sélectionnées
+        // Récupérer les plongées pour la date et la sortie sélectionnées du même club
         const { data: plongees, error } = await supabase
             .from("plongees")
             .select("*")
             .eq("date", date)
-            .eq("sortie_id", sortieId);
+            .eq("sortie_id", sortieId)
+            .eq("club_id", req.user.club_id);  // Protection par club_id
 
         if (error) throw error;
 
         // Rendre la vue avec les plongées récupérées
-        res.render("gestion_plongees", { plongees, date, sortieId }); // Assurez-vous que date est passée ici
+        res.render("gestion_plongees", { plongees, date, sortieId });
     } catch (error) {
         console.error("Erreur lors de la récupération des plongées :", error);
         res.status(500).send("Erreur serveur");
     }
 });
-app.get("/api/plongees/:sortieId/:date", async (req, res) => {
+
+// Vérifié
+app.get("/api/plongees/:sortieId/:date", requireAuth, async (req, res) => {
     const { sortieId, date } = req.params;
     try {
-        // Récupérer les plongées pour la date et la sortie sélectionnées
+        // Récupération des plongées avec vérification du club_id
         const { data: plongees, error } = await supabase
             .from("plongees")
             .select("*")
             .eq("date", date)
-            .eq("sortie_id", sortieId);
+            .eq("sortie_id", sortieId)
+            .eq("club_id", req.user.club_id);  // Protection par club_id
 
         if (error) throw error;
-
-        //console.log("✅ Plongées envoyées en JSON :", plongees); // 🔥 Debug
-        res.json(plongees); // ✅ On envoie un JSON
+        
+        // Renvoie le JSON même si le tableau est vide (comportement original)
+        res.json(plongees);
     } catch (error) {
         console.error("❌ Erreur serveur :", error);
         res.status(500).json({ error: "Erreur serveur" });
     }
 });
 
-
-app.post("/api/ajouter-plongee", async (req, res) => {
+// Vérifié
+app.post("/api/ajouter-plongee", requireAuth, async (req, res) => {
     try {
         const { sortie_id, date } = req.body;
 
@@ -956,64 +1195,70 @@ app.post("/api/ajouter-plongee", async (req, res) => {
             return res.status(400).json({ error: "Données manquantes pour créer la plongée" });
         }
 
-        // 🔍 Récupérer le nombre actuel de plongées pour cette sortie
-        const { data: existingPlongees, error: countError } = await supabase
+        // Vérification que la sortie appartient au club de l'utilisateur
+        const { data: sortie, error: sortieError } = await supabase
+            .from("sorties")
+            .select("id")
+            .eq("id", sortie_id)
+            .eq("club_id", req.user.club_id)
+            .single();
+
+        if (sortieError || !sortie) {
+            return res.status(403).json({ error: "Sortie non trouvée ou accès non autorisé" });
+        }
+
+        // Comptage des plongées existantes pour cette sortie
+        const { count, error: countError } = await supabase
             .from("plongees")
-            .select("id", { count: "exact" }) // On compte le nombre de plongées
+            .select("*", { count: "exact", head: true })
             .eq("sortie_id", sortie_id);
 
-        if (countError) {
-            console.error("Erreur lors de la récupération des plongées :", countError);
-            return res.status(500).json({ error: "Erreur lors de la récupération des plongées" });
-        }
+        if (countError) throw countError;
 
-        const numero = (existingPlongees.length || 0) + 1; // Numéro = total existant + 1
+        const numero = (count || 0) + 1;
 
-        // 🔽 Insérer la nouvelle plongée avec le bon numéro
-        const plongeeData = { numero, sortie_id, date };
-
-        // Si nomdp n'est pas fourni, on le met explicitement à null (pas "null" en chaîne, mais un véritable null)
-        plongeeData.nomdp = null;
-
-        // Insérer la plongée dans la table 'plongees'
+        // Insertion de la nouvelle plongée avec le club_id
         const { data, error } = await supabase
             .from("plongees")
-            .insert([plongeeData])
+            .insert([{ 
+                numero, 
+                sortie_id, 
+                date,
+                club_id: req.user.club_id,  // Ajout du club_id
+                nomdp: null 
+            }])
             .select("*");
 
-        if (error) {
-            console.error("Erreur lors de l'insertion :", error);
-            return res.status(500).json({ error: "Erreur lors de l'insertion" });
-        }
+        if (error) throw error;
 
-        return res.json(data[0]); // Renvoi la plongée ajoutée
+        return res.json(data[0]);
     } catch (error) {
         console.error("🚨 Erreur serveur :", error);
         return res.status(500).json({ error: "Erreur serveur lors de l'ajout de la plongée" });
     }
 });
 
-app.get("/api/get-dp-name", async (req, res) => {
-    const { plongeeId } = req.query;  // Récupère l'ID de la plongée depuis les paramètres de la requête
+app.get("/api/get-dp-name", requireAuth, async (req, res) => {
+    const { plongeeId } = req.query;
 
     if (!plongeeId) {
         return res.status(400).json({ error: "Le paramètre plongeeId est requis." });
     }
 
     try {
-        // Requête pour récupérer le nom du DP pour une plongée donnée
+        // Requête pour récupérer le nom du DP avec vérification du club_id
         const { data, error } = await supabase
             .from("plongees")
             .select("nomdp")
             .eq("id", plongeeId)
-            .single();  // Récupérer un seul enregistrement
+            .eq("club_id", req.user.club_id)  // Protection par club_id
+            .single();
 
         if (error) {
             console.error("Erreur lors de la récupération du nom du DP:", error);
             return res.status(500).json({ error: "Erreur lors de la récupération du nom du DP." });
         }
 
-        // Si les données sont trouvées, on renvoie le nom du DP
         if (data && data.nomdp) {
             res.json({ nomdp: data.nomdp });
         } else {
@@ -1025,189 +1270,162 @@ app.get("/api/get-dp-name", async (req, res) => {
     }
 });
 
+// Voir si utilisé
+/*app.post("/api/mettre-a-jour-site", async (req, res) => {
+    try {
+        const { id, site } = req.body;
 
-app.post("/api/mettre-a-jour-site", async (req, res) => {
-try {
-    const { id, site } = req.body;
+        if (!id || !site) {
+            return res.status(400).json({ error: "ID et site requis" });
+        }
 
-    if (!id || !site) {
-        return res.status(400).json({ error: "ID et site requis" });
+        // Mise à jour dans Supabase
+        const { data, error } = await supabase
+            .from("plongees") // Remplace par le bon nom de la table
+            .update({ site: site }) // Vérifie que la colonne "site" existe bien
+            .eq("id", id);
+
+        if (error) {
+            throw error;
+        }
+        res.json({ success: true, data });
+    } catch (error) {
+        console.error("❌ Erreur mise à jour site:", error);
+        res.status(500).json({
+            error: "Erreur serveur lors de la mise à jour du site",
+        });
     }
-
-    // Mise à jour dans Supabase
-    const { data, error } = await supabase
-        .from("plongees") // Remplace par le bon nom de la table
-        .update({ site: site }) // Vérifie que la colonne "site" existe bien
-        .eq("id", id);
-
-    if (error) {
-        throw error;
-    }
-
-    console.log(`✅ Plongée ${id} mise à jour avec le site: ${site}`);
-    res.json({ success: true, data });
-} catch (error) {
-    console.error("❌ Erreur mise à jour site:", error);
-    res.status(500).json({
-        error: "Erreur serveur lors de la mise à jour du site",
-    });
-}
-});
-
-app.post("/api/update-site", async (req, res) => {
-const { plongeeId, site } = req.body;
-
-try {
-    const { data, error } = await supabase
-        .from("plongees")
-        .update({ site: site })
-        .eq("id", plongeeId);
-
-    if (error) {
-        throw error;
-    }
-
-    //console.log("✅ Mise à jour réussie !");
-    res.status(200).json({ success: true, data });
-} catch (err) {
-    console.error("❌ Erreur mise à jour site:", err);
-    res.status(500).json({ error: err.message });
-}
-});
-
-app.get("/gestion_palanquees", async (req, res) => {
-const plongeeId = req.query.id; // ID de la plongée
-
-if (!plongeeId) {
-    return res.status(400).send("ID de plongée manquant");
-}
-
-try {
-    // 1. Trouver l'ID de la sortie associée à cette plongée
-    const { data: plongee, error: plongeeError } = await supabase
-        .from("plongees")
-        .select("sortie_id")
-        .eq("id", plongeeId)
-        .single();
-
-    if (plongeeError || !plongee) {
-        return res.status(404).send("Plongée non trouvée.");
-    }
-
-    const sortieId = plongee.sortie_id;
-
-    // 2. Récupérer les informations de la sortie (lieu)
-    const { data: sortie, error: sortieError } = await supabase
-        .from("sorties")
-        .select("id, lieu")
-        .eq("id", sortieId)
-        .single();
-
-    if (sortieError || !sortie) {
-        return res.status(404).send("Sortie non trouvée.");
-    }
-
-    // 3. Récupérer les plongeurs de cette sortie
-    const { data: plongeursSortie, error: plongeursError } = await supabase
-        .from("plongeurs_sorties")
-        .select("plongeur_id")
-        .eq("sortie_id", sortieId);
-
-    if (plongeursError) {
-        return res
-            .status(500)
-            .send("Erreur lors de la récupération des plongeurs.");
-    }
-
-    if (!plongeursSortie.length) {
-        return res
-            .status(404)
-            .send("Aucun plongeur trouvé pour cette sortie.");
-    }
-
-    // 4. Récupérer les détails des plongeurs
-    const plongeurIds = plongeursSortie.map((p) => p.plongeur_id);
-
-    const { data: plongeurs, error: detailsError } = await supabase
-        .from("plongeurs")
-        .select("id, nom, niveau")
-        .in("id", plongeurIds);
-
-    if (detailsError) {
-        return res
-            .status(500)
-            .send(
-                "Erreur lors de la récupération des détails des plongeurs.",
-            );
-    }
-
-    // 5. Envoyer les données à la vue
-    res.render("gestion_palanquees", { plongee: sortie, plongeurs });
-} catch (error) {
-    console.error("Erreur serveur:", error);
-    res.status(500).send("Erreur interne du serveur.");
-}
-});
-
-/*// Route pour récupérer les palanquées associées à une plongée
-app.get("/get_palanquees", async (req, res) => {
-const plongeeId = req.query.plongee_id; // ID de la plongée
-
-if (!plongeeId) {
-    return res.status(400).send("ID de plongée manquant");
-}
-
-try {
-    // Récupérer les palanquées associées à la plongée
-    const { data: palanquees, error: palanqueesError } = await supabase
-        .from("palanquees") // Remplace par le nom de ta table de palanquées
-        .select("id, nom, plongeurs") // Assure-toi que les colonnes correspondent
-        .eq("plongee_id", plongeeId);
-
-    if (palanqueesError) {
-        return res.status(500).send("Erreur lors de la récupération des palanquées.");
-    }
-
-    // Renvoie les palanquées au client
-    res.json(palanquees);
-} catch (error) {
-    console.error("Erreur serveur:", error);
-    res.status(500).send("Erreur interne du serveur.");
-}
 });*/
 
-app.get("/get_palanquees/:plongee_id", async (req, res) => {
+// Vérifié
+app.post("/api/update-site", requireAuth, async (req, res) => {
+    const { plongeeId, site } = req.body;
+
+    try {
+        const { data, error } = await supabase
+            .from("plongees")
+            .update({ site: site })
+            .eq("id", plongeeId)
+            .eq("club_id", req.user.club_id);  // Protection par club_id
+
+        if (error) {
+            throw error;
+        }
+        res.status(200).json({ success: true, data });
+    } catch (err) {
+        console.error("❌ Erreur mise à jour site:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Vérifié
+app.get("/gestion_palanquees", requireAuth, async (req, res) => {
+    const plongeeId = req.query.id;
+
+    if (!plongeeId) {
+        return res.status(400).send("ID de plongée manquant");
+    }
+
+    try {
+        // 1. Récupérer la plongée avec vérification du club_id
+        const { data: plongee, error: plongeeError } = await supabase
+            .from("plongees")
+            .select("sortie_id")
+            .eq("id", plongeeId)
+            .eq("club_id", req.user.club_id)
+            .single();
+
+        if (plongeeError || !plongee) {
+            return res.status(404).send("Plongée non trouvée.");
+        }
+
+        const sortieId = plongee.sortie_id;
+
+        // 2. Récupérer la sortie avec vérification du club_id
+        const { data: sortie, error: sortieError } = await supabase
+            .from("sorties")
+            .select("id, lieu")
+            .eq("id", sortieId)
+            .eq("club_id", req.user.club_id)
+            .single();
+
+        if (sortieError || !sortie) {
+            return res.status(404).send("Sortie non trouvée.");
+        }
+
+        // 3. Récupérer les plongeurs de la sortie avec vérification du club_id
+        const { data: plongeursSortie, error: plongeursError } = await supabase
+            .from("plongeurs_sorties")
+            .select("plongeur_id")
+            .eq("sortie_id", sortieId)
+            .eq("club_id", req.user.club_id);
+
+        if (plongeursError) {
+            return res.status(500).send("Erreur lors de la récupération des plongeurs.");
+        }
+
+        if (!plongeursSortie.length) {
+            return res.status(404).send("Aucun plongeur trouvé pour cette sortie.");
+        }
+
+        // 4. Récupérer les détails des plongeurs du club
+        const plongeurIds = plongeursSortie.map((p) => p.plongeur_id);
+
+        const { data: plongeurs, error: detailsError } = await supabase
+            .from("plongeurs")
+            .select("id, nom, niveau")
+            .in("id", plongeurIds)
+            .eq("club_id", req.user.club_id);
+
+        if (detailsError) {
+            return res.status(500).send("Erreur lors de la récupération des détails des plongeurs.");
+        }
+
+        // 5. Envoyer les données à la vue
+        res.render("gestion_palanquees", { plongee: sortie, plongeurs });
+    } catch (error) {
+        console.error("Erreur serveur:", error);
+        res.status(500).send("Erreur interne du serveur.");
+    }
+});
+
+// Vérifié
+app.get("/get_palanquees/:plongee_id", requireAuth, async (req, res) => {
     const { plongee_id } = req.params;
 
     try {
-
-        // Récupérer les palanquées pour la plongée donnée
-        const { data: palanquees, error: palanqueesError } = await supabase
-        .from("palanquees")
-        .select(`
-            id, nom, profondeur, duree, paliers,
-            palanquees_plongeurs (plongeur_id, niveau_plongeur_historique, plongeurs (id, nom, niveau))
-        `)
-        .eq("plongee_id", plongee_id);
-
-        if (palanqueesError) throw new Error(palanqueesError.message);
-
-        // Récupérer l'ID de la sortie associée à la plongée
+        // Vérifier que la plongée appartient au club de l'utilisateur
         const { data: plongee, error: plongeeError } = await supabase
             .from("plongees")
             .select("sortie_id")
             .eq("id", plongee_id)
+            .eq("club_id", req.user.club_id)
             .single();
 
-        if (plongeeError) throw new Error(plongeeError.message);
+        if (plongeeError || !plongee) {
+            throw new Error("Plongée non trouvée ou accès non autorisé");
+        }
 
         const sortie_id = plongee.sortie_id;
 
-        // Récupérer les plongeurs de cette sortie
+        // Récupérer les palanquées avec vérification du club_id
+        const { data: palanquees, error: palanqueesError } = await supabase
+            .from("palanquees")
+            .select(`
+                id, nom, profondeur, duree, paliers,
+                palanquees_plongeurs (plongeur_id, niveau_plongeur_historique, plongeurs (id, nom, niveau))
+            `)
+            .eq("plongee_id", plongee_id)
+            .eq("club_id", req.user.club_id);
+
+        if (palanqueesError) throw new Error(palanqueesError.message);
+
+        // Récupérer les plongeurs de la sortie avec vérification du club_id
         const { data: plongeursSorties, error: plongeursSortiesError } = await supabase
             .from("plongeurs_sorties")
             .select("plongeur_id")
-            .eq("sortie_id", sortie_id);
+            .eq("sortie_id", sortie_id)
+            .eq("club_id", req.user.club_id);
 
         if (plongeursSortiesError) throw new Error(plongeursSortiesError.message);
 
@@ -1218,7 +1436,8 @@ app.get("/get_palanquees/:plongee_id", async (req, res) => {
             const { data, error } = await supabase
                 .from("plongeurs")
                 .select("*")
-                .in("id", plongeursIds);
+                .in("id", plongeursIds)
+                .eq("club_id", req.user.club_id);
 
             if (error) throw new Error(error.message);
             plongeurs = data;
@@ -1229,13 +1448,13 @@ app.get("/get_palanquees/:plongee_id", async (req, res) => {
             const { data, error } = await supabase
                 .from("palanquees_plongeurs")
                 .select("plongeur_id")
-                .in("palanquee_id", palanquees.map(p => p.id));
+                .in("palanquee_id", palanquees.map(p => p.id))
+                .eq("club_id", req.user.club_id);
 
             if (error) throw new Error(error.message);
             plongeursPalanquees = data;
         }
 
-        // Filtrer les plongeurs qui ne sont pas dans une palanquée
         const plongeursInPalanquees = plongeursPalanquees.map(pp => pp.plongeur_id);
         const plongeursDisponibles = plongeurs.filter(plongeur => !plongeursInPalanquees.includes(plongeur.id));
 
@@ -1247,10 +1466,9 @@ app.get("/get_palanquees/:plongee_id", async (req, res) => {
     }
 });
 
-app.post("/enregistrer_palanquee", async (req, res) => {
-    //console.log("On entre dans enregistrer_palanquee");
+// Vérifié
+app.post("/enregistrer_palanquee", requireAuth, async (req, res) => {
     const palanquees = req.body;
-    //console.log("Données reçues :", JSON.stringify(palanquees, null, 2));
 
     if (!Array.isArray(palanquees) || palanquees.length === 0) {
         return res.status(400).json({ error: "Données invalides ou incomplètes" });
@@ -1258,19 +1476,30 @@ app.post("/enregistrer_palanquee", async (req, res) => {
 
     const erreurs = [];
     const plongee_id = palanquees[0]?.plongee_id;
-    //console.log("ID reçu dans app.js : ", plongee_id);
 
     if (!plongee_id) {
         return res.status(400).json({ error: "Plongée ID manquant" });
     }
-    
 
     try {
-        // 🔍 Charger toutes les palanquées existantes pour cette plongée
+        // Vérifier que la plongée appartient au club
+        const { data: plongeeCheck, error: plongeeCheckError } = await supabase
+            .from("plongees")
+            .select("id")
+            .eq("id", plongee_id)
+            .eq("club_id", req.user.club_id)
+            .single();
+
+        if (plongeeCheckError || !plongeeCheck) {
+            return res.status(403).json({ error: "Accès non autorisé à cette plongée" });
+        }
+
+        // Récupération des palanquées existantes avec vérification du club_id
         const { data: existingPalanquees, error: fetchError } = await supabase
             .from("palanquees")
             .select("id, nom, profondeur, duree, paliers")
-            .eq("plongee_id", plongee_id);
+            .eq("plongee_id", plongee_id)
+            .eq("club_id", req.user.club_id);
 
         if (fetchError) {
             console.error("Erreur lors de la récupération des palanquées existantes : ", fetchError);
@@ -1278,31 +1507,24 @@ app.post("/enregistrer_palanquee", async (req, res) => {
         }
 
         const existingPalanqueesMap = new Map(existingPalanquees.map(p => [p.id, p]));
-        //console.log("Palanquées existantes pour cette plongée : ", existingPalanquees);
 
-        // 🔄 Traiter les palanquées reçues
+        // Traitement des palanquées
         const updatedPalanquees = [];
         for (const palanqueeData of palanquees) {
-            //console.log("Palanquée reçue : ", palanqueeData);
             let { id, nom, profondeur, duree, paliers, plongeurs } = palanqueeData;
-            //console.log("ID après palanqueeData", id);
 
-            // Vérification des données reçues pour chaque palanquée
             if (!nom || !plongeurs || plongeurs.length === 0) {
                 erreurs.push({ palanquee: nom, message: "Données invalides ou incomplètes" });
                 continue;
             }
 
             if (id) {
-                //console.log("ID reçu pour l'enregistrement : ", id);
-                // 🔍 Vérifier si l'ID existe bien en base
                 if (existingPalanqueesMap.has(id)) {
-                    //console.log("on identifie que l'id existe");
-                    // ✅ Mise à jour de la palanquée
                     const { error: updateError } = await supabase
                         .from("palanquees")
                         .update({ nom, profondeur, duree, paliers })
-                        .eq("id", id);
+                        .eq("id", id)
+                        .eq("club_id", req.user.club_id);
 
                     if (updateError) {
                         erreurs.push({ palanquee: nom, message: updateError.message });
@@ -1310,83 +1532,85 @@ app.post("/enregistrer_palanquee", async (req, res) => {
                     }
                     updatedPalanquees.push({ id, plongeurs });
                 } else {
-                    // ❌ L'ID envoyé ne correspond à rien → Problème, on ne fait rien
                     erreurs.push({ palanquee: nom, message: "ID invalide, palanquée inexistante" });
                     continue;
                 }
             } else {
-                //console.log("On ne reçoit pas un id", id);
-                // ✅ Insertion d'une nouvelle palanquée
                 const { data: newPalanquee, error: insertError } = await supabase
                     .from("palanquees")
-                    .insert([{ plongee_id, nom, profondeur, duree, paliers }])
+                    .insert([{ 
+                        plongee_id, 
+                        nom, 
+                        profondeur, 
+                        duree, 
+                        paliers,
+                        club_id: req.user.club_id 
+                    }])
                     .select()
                     .single();
 
                 if (insertError) {
                     erreurs.push({ palanquee: nom, message: insertError.message });
                 } else {
-                    //console.log("Nouvelle palanquée insérée avec ID : ", newPalanquee.id);
                     updatedPalanquees.push({ id: newPalanquee.id, plongeurs });
                 }
             }
         }
 
-        // Mise à jour des plongeurs pour les palanquées
+        // Mise à jour des plongeurs avec vérification du club_id
         for (const palanquee of updatedPalanquees) {
             const { id, plongeurs } = palanquee;
-            // ✅ Mise à jour des plongeurs (évite les doublons)
+            
             const { error: deleteError } = await supabase
                 .from("palanquees_plongeurs")
                 .delete()
-                .eq("palanquee_id", id);
-        
+                .eq("palanquee_id", id)
+                .eq("club_id", req.user.club_id);
+
             if (deleteError) {
                 erreurs.push({ palanquee: palanquee.nom, message: deleteError.message });
                 continue;
             }
-        
+
             if (plongeurs.length > 0) {
                 const plongeursData = await Promise.all(plongeurs.map(async (plongeur_id) => {
-                    // Récupérer les informations du plongeur (nom, niveau, et niveau historique)
                     const { data: plongeur, error: plongeurError } = await supabase
                         .from("plongeurs")
                         .select("nom, niveau")
                         .eq("id", plongeur_id)
+                        .eq("club_id", req.user.club_id)
                         .single();
-        
-                    if (plongeurError) {
-                        erreurs.push({ plongeur: plongeur_id, message: plongeurError.message });
-                        return null; // On saute ce plongeur si une erreur se produit
+
+                    if (plongeurError || !plongeur) {
+                        erreurs.push({ plongeur: plongeur_id, message: "Plongeur non trouvé ou accès non autorisé" });
+                        return null;
                     }
-        
-                    // Retourner les données pour l'insertion dans palanquees_plongeurs
+
                     return {
                         palanquee_id: id,
                         plongeur_id,
-                        nom_plongeur: plongeur.nom,   // Ajouter le nom du plongeur
-                        niveau_plongeur: plongeur.niveau, // Ajouter le niveau actuel du plongeur
-                        niveau_plongeur_historique: plongeur.niveau // Conserver l'historique du niveau
+                        nom_plongeur: plongeur.nom,
+                        niveau_plongeur: plongeur.niveau,
+                        niveau_plongeur_historique: plongeur.niveau,
+                        club_id: req.user.club_id
                     };
                 }));
-        
-                // Filtrer les valeurs nulles si une erreur s'est produite
+
                 const plongeursDataValid = plongeursData.filter(data => data !== null);
-        
-                // Insérer les plongeurs dans la table palanquees_plongeurs
-                const { error: plongeursError } = await supabase
-                    .from("palanquees_plongeurs")
-                    .insert(plongeursDataValid);
-        
-                if (plongeursError) {
-                    erreurs.push({ palanquee: palanquee.nom, message: plongeursError.message });
+
+                if (plongeursDataValid.length > 0) {
+                    const { error: plongeursError } = await supabase
+                        .from("palanquees_plongeurs")
+                        .insert(plongeursDataValid);
+
+                    if (plongeursError) {
+                        erreurs.push({ palanquee: palanquee.nom, message: plongeursError.message });
+                    }
                 }
             }
         }
-        
 
         if (erreurs.length > 0) {
-            console.log("Certaines palanquées ont rencontré des erreurs : ", erreurs);
             return res.status(207).json({ message: "Certaines palanquées ont rencontré des erreurs", erreurs });
         }
 
@@ -1397,14 +1621,8 @@ app.post("/enregistrer_palanquee", async (req, res) => {
     }
 });
 
-
-
-
-
-
-
-
-app.delete("/supprimer_palanquee/:id", async (req, res) => {
+// Vérifié
+app.delete("/supprimer_palanquee/:id", requireAuth, async (req, res) => {
     const { id } = req.params;
 
     if (!id) {
@@ -1412,11 +1630,19 @@ app.delete("/supprimer_palanquee/:id", async (req, res) => {
     }
 
     try {
-        // Supprimer d'abord les relations dans `palanquees_plongeurs`
-        await supabase.from("palanquees_plongeurs").delete().eq("palanquee_id", id);
+        // Suppression des relations dans palanquees_plongeurs avec vérification du club_id
+        await supabase
+            .from("palanquees_plongeurs")
+            .delete()
+            .eq("palanquee_id", id)
+            .eq("club_id", req.user.club_id);
 
-        // Ensuite, supprimer la palanquée elle-même
-        const { error } = await supabase.from("palanquees").delete().eq("id", id);
+        // Suppression de la palanquée avec vérification du club_id
+        const { error } = await supabase
+            .from("palanquees")
+            .delete()
+            .eq("id", id)
+            .eq("club_id", req.user.club_id);
 
         if (error) {
             return res.status(500).json({ error: error.message });
@@ -1430,41 +1656,41 @@ app.delete("/supprimer_palanquee/:id", async (req, res) => {
 
 
 // Récupérer les palanquées avec leurs plongeurs
-app.get("/palanquees", async (req, res) => {
-try {
-    let { data: palanquees, error } = await supabase
-        .from("palanquees")
-        .select("*");
+// Voir si utilisé
+/*app.get("/palanquees", async (req, res) => {
+    try {
+        let { data: palanquees, error } = await supabase
+            .from("palanquees")
+            .select("*");
 
-    if (error) throw error;
+        if (error) throw error;
 
-    for (let palanquee of palanquees) {
-        let { data: palanqueesPlongeurs } = await supabase
-            .from("palanquees_plongeurs")
-            .select("plongeur_id")
-            .eq("palanquee_id", palanquee.id);
+        for (let palanquee of palanquees) {
+            let { data: palanqueesPlongeurs } = await supabase
+                .from("palanquees_plongeurs")
+                .select("plongeur_id")
+                .eq("palanquee_id", palanquee.id);
 
-        let plongeurIds = palanqueesPlongeurs.map(p => p.plongeur_id);
+            let plongeurIds = palanqueesPlongeurs.map(p => p.plongeur_id);
 
-        let { data: plongeurs } = await supabase
-            .from("plongeurs")
-            .select("*")
-            .in("id", plongeurIds);
+            let { data: plongeurs } = await supabase
+                .from("plongeurs")
+                .select("*")
+                .in("id", plongeurIds);
 
-        palanquee.plongeurs = plongeurs;
+            palanquee.plongeurs = plongeurs;
+        }
+
+        res.render("palanquees", { palanquees });
+    } catch (error) {
+        console.error("Erreur:", error);
+        res.status(500).send("Erreur serveur");
     }
-
-    res.render("palanquees", { palanquees });
-} catch (error) {
-    console.error("Erreur:", error);
-    res.status(500).send("Erreur serveur");
-}
-});
+});*/
 
 // Récupérer les paramètres des palanquées
-app.get("/parametres_palanquees", async (req, res) => {
-    //console.log("📢 Route /parametres_palanquees appelée avec query:", req.query);
-
+// Vérifié
+app.get("/parametres_palanquees", requireAuth, async (req, res) => {
     const plongeeId = req.query.id;
 
     if (!plongeeId) {
@@ -1473,15 +1699,28 @@ app.get("/parametres_palanquees", async (req, res) => {
     }
 
     try {
+        // Vérifier que la plongée appartient au club
+        const { data: plongee, error: plongeeError } = await supabase
+            .from("plongees")
+            .select("id")
+            .eq("id", plongeeId)
+            .eq("club_id", req.user.club_id)
+            .single();
+
+        if (plongeeError || !plongee) {
+            return res.status(404).send("Plongée non trouvée.");
+        }
+
+        // Récupérer les palanquées avec vérification du club_id
         let { data: palanquees, error: errorPalanquees } = await supabase
             .from("palanquees")
             .select("*")
-            .eq("plongee_id", plongeeId); // On filtre par plongeeId
+            .eq("plongee_id", plongeeId)
+            .eq("club_id", req.user.club_id);
 
         if (errorPalanquees) throw errorPalanquees;
 
         if (!palanquees || palanquees.length === 0) {
-            console.log("⚠️ Aucune palanquée trouvée pour cette plongée !");
             return res.render("parametres_palanquees", { palanquees: [] });
         }
 
@@ -1491,41 +1730,37 @@ app.get("/parametres_palanquees", async (req, res) => {
                 continue;
             }
 
-            //console.log(`🔎 ID de la palanquée récupérée: ${palanquee.id}`);
-
+            // Récupérer les plongeurs de la palanquée avec vérification du club_id
             let { data: palanqueesPlongeurs, error: errorLien } = await supabase
                 .from("palanquees_plongeurs")
                 .select("plongeur_id, niveau_plongeur_historique")
-                .eq("palanquee_id", palanquee.id);
+                .eq("palanquee_id", palanquee.id)
+                .eq("club_id", req.user.club_id);
 
             if (errorLien) {
                 console.error(`❌ Erreur récupération plongeurs pour ${palanquee.id}:`, errorLien);
                 continue;
             }
 
-            //console.log(`📝 Liens palanquée-plongeurs:`, JSON.stringify(palanqueesPlongeurs, null, 2));
-
             const plongeurIds = palanqueesPlongeurs.map(p => p.plongeur_id);
 
             if (plongeurIds.length === 0) {
-                console.log(`⚠️ Aucun plongeur trouvé pour ${palanquee.id}`);
                 palanquee.plongeurs = [];
                 continue;
             }
 
+            // Récupérer les détails des plongeurs avec vérification du club_id
             let { data: plongeurs, error: errorPlongeurs } = await supabase
                 .from("plongeurs")
                 .select("*")
-                .in("id", plongeurIds);
+                .in("id", plongeurIds)
+                .eq("club_id", req.user.club_id);
 
             if (errorPlongeurs) {
                 console.error(`❌ Erreur récupération détails plongeurs pour ${palanquee.id}:`, errorPlongeurs);
                 continue;
             }
 
-            //console.log(`👨‍👩‍👧‍👦 Plongeurs trouvés pour ${palanquee.id}:`, JSON.stringify(plongeurs, null, 2));
-
-            // Ajouter le niveau historique pour chaque plongeur
             palanquee.plongeurs = plongeurs.map(plongeur => {
                 let palanqueesPlongeur = palanqueesPlongeurs.find(p => p.plongeur_id === plongeur.id);
                 if (palanqueesPlongeur) {
@@ -1542,10 +1777,8 @@ app.get("/parametres_palanquees", async (req, res) => {
     }
 });
 
-
-app.post("/sauvegarder_parametres", async (req, res) => {
-    //console.log("📩 Données reçues pour sauvegarde :", req.body);
-
+// Vérifié
+app.post("/sauvegarder_parametres", requireAuth, async (req, res) => {
     const { id, profondeur, duree, paliers, type } = req.body;
 
     if (!id || profondeur === undefined || duree === undefined || paliers === undefined || !type) {
@@ -1555,15 +1788,20 @@ app.post("/sauvegarder_parametres", async (req, res) => {
     try {
         let { error } = await supabase
             .from("palanquees")
-            .update({ profondeur, duree, paliers, type }) // 🆕 Ajout de `type` ici
-            .eq("id", id);
+            .update({ 
+                profondeur, 
+                duree, 
+                paliers, 
+                type 
+            })
+            .eq("id", id)
+            .eq("club_id", req.user.club_id);  // Protection par club_id
 
         if (error) {
             console.error(`❌ Erreur mise à jour palanquée ${id}:`, error);
             return res.status(500).json({ error: "Erreur serveur lors de la mise à jour." });
         }
-
-        //console.log(`✅ Paramètres de la palanquée ${id} mis à jour avec succès.`);
+        
         res.json({ success: true, message: "Paramètres enregistrés avec succès !" });
     } catch (error) {
         console.error("❌ Erreur serveur :", error);
@@ -1571,21 +1809,22 @@ app.post("/sauvegarder_parametres", async (req, res) => {
     }
 });
 
-
-app.get("/plongee_info", async (req, res) => {
-    const plongeeId = req.query.id; // Récupération de l'ID de plongée depuis la requête
+// Vérifié
+app.get("/plongee_info", requireAuth, async (req, res) => {
+    const plongeeId = req.query.id;
 
     if (!plongeeId) {
         return res.status(400).json({ error: "ID de plongée manquant." });
     }
 
     try {
-        // Récupérer les données de la plongée, y compris l'URL de l'image
+        // Récupérer les données de la plongée avec vérification du club_id
         let { data, error } = await supabase
             .from("plongees")
-            .select("date, site, nomdp, heure_debut, image_url") // Ajout de 'image_url' à la sélection
+            .select("date, site, nomdp, heure_debut, image_url, club_id")
             .eq("id", plongeeId)
-            .single(); // Récupérer une seule plongée
+            .eq("club_id", req.user.club_id)
+            .single();
 
         if (error) throw error;
 
@@ -1593,38 +1832,35 @@ app.get("/plongee_info", async (req, res) => {
             return res.status(404).json({ error: "Plongée non trouvée." });
         }
 
-        // Récupérer la date formatée et autres informations
         const dateFormattee = new Date(data.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
         const nomSitePlongee = data.site || "Site inconnu";
 
-        // Initialiser nomDuDP et niveauDP avec des valeurs par défaut
         let nomDuDP = "DP non trouvé";
         let niveauDP = "Niveau non trouvé";
 
-        // Si un ID de DP existe, récupérer le nom et le niveau du DP
         if (data.nomdp) {
             let { data: dpData, error: dpError } = await supabase
                 .from("plongeurs")
-                .select("nom, niveau") // Récupère le nom et le niveau du DP
+                .select("nom, niveau")
                 .eq("id", data.nomdp)
-                .single(); // On prend un seul résultat, car il doit être unique
+                .eq("club_id", req.user.club_id)
+                .single();
 
             if (dpError) {
                 console.error("Erreur lors de la récupération du DP:", dpError);
             } else if (dpData) {
-                nomDuDP = dpData.nom || "Nom du DP non trouvé"; // Si un nom est trouvé, on l'affiche
-                niveauDP = dpData.niveau || "Niveau du DP non trouvé"; // Récupère également le niveau
+                nomDuDP = dpData.nom || "Nom du DP non trouvé";
+                niveauDP = dpData.niveau || "Niveau du DP non trouvé";
             }
         }
 
-        // Renvoyer les informations avec le nom et le niveau du DP, et l'URL de l'image
         res.json({
             date: dateFormattee,
             site: nomSitePlongee,
-            nomdp: nomDuDP, // Inclure le nom du DP
-            niveaudp: niveauDP, // Inclure le niveau du DP
-            heure_debut: data.heure_debut, // Inclure l'heure de début
-            image_url: data.image_url // Ajouter l'URL de l'image
+            nomdp: nomDuDP,
+            niveaudp: niveauDP,
+            heure_debut: data.heure_debut,
+            image_url: data.image_url
         });
     } catch (err) {
         console.error("Erreur récupération plongée:", err);
@@ -1634,69 +1870,67 @@ app.get("/plongee_info", async (req, res) => {
 
 
 
+//Voir si utilisé
+/*app.get("/modif_palanquee/:id", async (req, res) => {
+    const palanqueeId = req.params.id;
 
-app.get("/modif_palanquee/:id", async (req, res) => {
-const palanqueeId = req.params.id;
-console.log("Chargement de la palanquée avec ID :", palanqueeId);
+    try {
+        let { data: palanquee, error: palanqueeError } = await supabase
+            .from("palanquees")
+            .select("*")
+            .eq("id", palanqueeId)
+            .single();
 
-try {
-    let { data: palanquee, error: palanqueeError } = await supabase
-        .from("palanquees")
-        .select("*")
-        .eq("id", palanqueeId)
-        .single();
+        if (palanqueeError) {
+            console.error("Erreur lors de la récupération de la palanquée:", palanqueeError);
+            throw palanqueeError;
+        }
 
-    if (palanqueeError) {
-        console.error("Erreur lors de la récupération de la palanquée:", palanqueeError);
-        throw palanqueeError;
+        // Récupérer la liste des plongeurs
+        let { data: plongeurs, error: plongeursError } = await supabase
+            .from("palanquees_plongeurs")
+            .select("plongeurs (id, nom, niveau)")
+            .eq("palanquee_id", palanqueeId);
+
+        if (plongeursError) {
+            console.error("Erreur lors de la récupération des plongeurs:", plongeursError);
+            throw plongeursError;
+        }
+
+        const plongeursListe = plongeurs.map(p => p.plongeurs);
+
+        res.render("modif_palanquee", { palanquee, plongeurs: plongeursListe });
+    } catch (error) {
+        console.error("Erreur lors du chargement de la palanquée:", error);
+        res.status(500).send("Erreur serveur.");
+    }
+});*/
+
+// Voir si utilisé
+/*app.post('/supprimer_palanquee', async (req, res) => {
+    const { palanqueeId } = req.body;
+
+    // Supprimer les plongeurs associés
+    await supabase
+        .from('palanquees_plongeurs')
+        .delete()
+        .eq('palanquee_id', palanqueeId);
+
+    // Supprimer la palanquée
+    const { error } = await supabase
+        .from('palanquees')
+        .delete()
+        .eq('id', palanqueeId);
+
+    if (error) {
+        return res.status(500).send("Erreur lors de la suppression de la palanquée.");
     }
 
-    console.log("Palanquée trouvée :", palanquee);
+    res.send("Palanquée et plongeurs supprimés avec succès.");
+});*/
 
-    // Récupérer la liste des plongeurs
-    let { data: plongeurs, error: plongeursError } = await supabase
-        .from("palanquees_plongeurs")
-        .select("plongeurs (id, nom, niveau)")
-        .eq("palanquee_id", palanqueeId);
-
-    if (plongeursError) {
-        console.error("Erreur lors de la récupération des plongeurs:", plongeursError);
-        throw plongeursError;
-    }
-
-    const plongeursListe = plongeurs.map(p => p.plongeurs);
-
-    res.render("modif_palanquee", { palanquee, plongeurs: plongeursListe });
-} catch (error) {
-    console.error("Erreur lors du chargement de la palanquée:", error);
-    res.status(500).send("Erreur serveur.");
-}
-});
-
-
-app.post('/supprimer_palanquee', async (req, res) => {
-const { palanqueeId } = req.body;
-
-// Supprimer les plongeurs associés
-await supabase
-    .from('palanquees_plongeurs')
-    .delete()
-    .eq('palanquee_id', palanqueeId);
-
-// Supprimer la palanquée
-const { error } = await supabase
-    .from('palanquees')
-    .delete()
-    .eq('id', palanqueeId);
-
-if (error) {
-    return res.status(500).send("Erreur lors de la suppression de la palanquée.");
-}
-
-res.send("Palanquée et plongeurs supprimés avec succès.");
-});
-
-app.post("/ajouter-plongee", async (req, res) => {
+// Voir si utilisé
+/*app.post("/ajouter-plongee", async (req, res) => {
     try {
         const { sortie_id, date } = req.body; // Ajoute sortie_id
 
@@ -1718,27 +1952,27 @@ app.post("/ajouter-plongee", async (req, res) => {
         console.error("Erreur serveur :", err);
         res.status(500).json({ error: "Erreur interne du serveur" });
     }
-});
+});*/
 
-app.post('/retirer-plongeur', async (req, res) => {
+// Vérifié
+app.post('/retirer-plongeur', requireAuth, async (req, res) => {
     const { plongeurId, sortieId } = req.body;
-
-    //console.log("Données reçues:", req.body);
 
     if (!plongeurId || !sortieId) {
         return res.status(400).json({ success: false, message: "Plongeur ou sortie manquant." });
     }
 
     try {
-        // Utiliser Supabase pour supprimer l'association dans la table plongeurs_sorties
+        // Suppression avec vérification du club_id
         const { error } = await supabase
             .from('plongeurs_sorties')
             .delete()
             .eq('plongeur_id', plongeurId)
-            .eq('sortie_id', sortieId);
+            .eq('sortie_id', sortieId)
+            .eq('club_id', req.user.club_id);  // Protection par club_id
 
         if (error) {
-            console.error("Erreur lors de la suppression de l'association dans la base de données :", error);
+            console.error("Erreur lors de la suppression de l'association :", error);
             return res.status(500).json({ success: false, message: "Erreur serveur" });
         }
 
@@ -1749,7 +1983,8 @@ app.post('/retirer-plongeur', async (req, res) => {
     }
 });
 
-app.post("/api/set-dp", async (req, res) => {
+// Voir si utilisé
+/*app.post("/api/set-dp", async (req, res) => {
     const { plongeeId, dpId } = req.body;
 
     if (!plongeeId || !dpId) {
@@ -1767,18 +2002,17 @@ app.post("/api/set-dp", async (req, res) => {
     }
 
     res.json({ success: true });
-});
+});*/
 
 // Route pour gérer le webhook
-app.post('/webhook', (req, res) => {
-    console.log("Webhook reçu, corps de la requête:", req.body); // Log pour debug
+// Voir si utilisé
+/*app.post('/webhook', (req, res) => {
 
     if (!req.body || typeof req.body !== 'object') {
         return res.status(400).send("Erreur: Le corps de la requête est invalide.");
     }
 
     if (req.body.ref === 'refs/heads/main') {
-        console.log('Mise à jour de la branche principale détectée.');
 
         const exec = require('child_process').exec;
         exec('/home/ludo/app/palanquee-app/deploy.sh', (error, stdout, stderr) => {
@@ -1786,15 +2020,15 @@ app.post('/webhook', (req, res) => {
                 console.error(`Erreur d'exécution: ${stderr}`);
                 return res.status(500).send("Erreur lors du déploiement.");
             }
-            console.log(stdout);
             res.send("Déploiement réussi !");
         });
     } else {
         res.status(200).send("Aucun déploiement nécessaire.");
     }
-});
+});*/
 
-app.delete("/delete-plongee/:id", async (req, res) => {
+// Vérifié
+app.delete("/delete-plongee/:id", requireAuth, async (req, res) => {
     const plongeeId = req.params.id;
 
     if (!plongeeId) {
@@ -1803,9 +2037,10 @@ app.delete("/delete-plongee/:id", async (req, res) => {
 
     try {
         const { error } = await supabase
-            .from("plongees") // Remplace par le nom exact de ta table
+            .from("plongees")
             .delete()
-            .eq("id", plongeeId);
+            .eq("id", plongeeId)
+            .eq("club_id", req.user.club_id);  // Protection par club_id
 
         if (error) {
             return res.status(500).json({ error: error.message });
@@ -1817,18 +2052,20 @@ app.delete("/delete-plongee/:id", async (req, res) => {
     }
 });
 
-app.post('/enregistrer-consignes', async (req, res) => {
+// Vérifié
+app.post('/enregistrer-consignes', requireAuth, async (req, res) => {
     const { palanquee_id, prof_max, duree_max } = req.body;
 
     if (!palanquee_id || !prof_max || !duree_max) {
         return res.status(400).json({ error: 'Tous les champs sont requis' });
     }
 
-    // 3️⃣ Mettre à jour Supabase
+    // Mise à jour avec vérification du club_id
     const { error } = await supabase
         .from('palanquees')
         .update({ prof_max, duree_max })
-        .eq('id', palanquee_id);
+        .eq('id', palanquee_id)
+        .eq('club_id', req.user.club_id);  // Protection par club_id
 
     if (error) {
         console.error("Erreur Supabase :", error);
@@ -1839,37 +2076,39 @@ app.post('/enregistrer-consignes', async (req, res) => {
 });
 
 // 🚀 Route API pour envoyer un email avec le PDF
-app.post("/send-email", async (req, res) => {
+// Vérifié
+app.post("/send-email", requireAuth, async (req, res) => {
     const { email, pdfUrl } = req.body;
 
     if (!email || !pdfUrl) {
         return res.status(400).json({ error: "Email et PDF requis" });
     }
 
+    // Important: Sécurité des informations sensibles
+    // En production, utilisez plutôt des variables d'environnement
     let transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
-            user: "ludosams@gmail.com",
-            pass: "vjqy kriu sgcu qtlz" // ⚠️ Utilise un mot de passe d’application sécurisé
+            user: process.env.EMAIL_USER || "ludosams@gmail.com",
+            pass: process.env.EMAIL_PASS || "vjqy kriu sgcu qtlz"
         }
     });
 
     let mailOptions = {
-        from: '"Club de Plongée" <tonemail@gmail.com>',
+        from: `"${req.user.club_name || 'Club de Plongée'}" <${process.env.EMAIL_FROM || 'tonemail@gmail.com'}>`,
         to: email,
         subject: "📄 Compte-rendu de plongée",
-        text: "Bonjour,\n\nVoici le compte-rendu de votre plongée en pièce jointe.\n\nCordialement,\nL'équipe de plongée.",
+        text: `Bonjour,\n\nVoici le compte-rendu de votre plongée.\n\nCordialement,\n${req.user.club_name || 'L\'équipe de plongée'}.`,
         attachments: [
             {
                 filename: "Compte-rendu-Plongée.pdf",
-                path: pdfUrl // Utilise l'URL complète du PDF
+                path: pdfUrl
             }
         ]
     };
 
     try {
         let info = await transporter.sendMail(mailOptions);
-        console.log("📧 Email envoyé :", info.response);
         res.json({ success: true, message: "Email envoyé avec succès !" });
     } catch (error) {
         console.error("❌ Erreur lors de l'envoi de l'email :", error);
@@ -1877,7 +2116,8 @@ app.post("/send-email", async (req, res) => {
     }
 });
 
-app.post("/api/lancer-plongee", async (req, res) => {
+// Voir si utilisé
+/*app.post("/api/lancer-plongee", async (req, res) => {
     const { plongeeId, startTime } = req.body; // Récupérez startTime depuis le corps de la requête
 
     if (!plongeeId) {
@@ -1902,25 +2142,26 @@ app.post("/api/lancer-plongee", async (req, res) => {
         console.error("Erreur lors de la mise à jour de l'heure de début :", error);
         res.status(500).json({ error: "Erreur serveur" });
     }
-});
+});*/
 
-// Ajoutez cette nouvelle route dans votre fichier de routes (server.js ou app.js)
-app.get('/api/stats', async (req, res) => {
+// Vérifié
+app.get('/api/stats', requireAuth, async (req, res) => {
     try {
-        // Récupération du nombre réel de plongeurs
+        // Récupération des statistiques filtrées par club_id
         const { count: plongeursCount } = await supabase
             .from('plongeurs')
-            .select('*', { count: 'exact', head: true });
+            .select('*', { count: 'exact', head: true })
+            .eq('club_id', req.user.club_id);
 
-        // Récupération du nombre réel de sorties (adaptez selon votre table)
         const { count: sortiesCount } = await supabase
             .from('sorties')
-            .select('*', { count: 'exact', head: true });
+            .select('*', { count: 'exact', head: true })
+            .eq('club_id', req.user.club_id);
 
-        // Récupération du nombre réel de palanquées (adaptez selon votre table)
         const { count: palanqueesCount } = await supabase
             .from('palanquees')
-            .select('*', { count: 'exact', head: true });
+            .select('*', { count: 'exact', head: true })
+            .eq('club_id', req.user.club_id);
 
         res.json({
             plongeurs: plongeursCount || 0,
@@ -1933,30 +2174,33 @@ app.get('/api/stats', async (req, res) => {
     }
 });
 
-app.post('/api/palanquees/mise-a-leau', async (req, res) => {
+// Vérifié
+app.post('/api/palanquees/mise-a-leau', requireAuth, async (req, res) => {
     try {
         const { palanquee_id, heure_mise_a_leau } = req.body;
-        
-        // Vérifie d'abord si l'heure existe déjà (optionnel)
+
+        // Vérification existante avec club_id
         const { data: existing, error: fetchError } = await supabase
             .from('palanquees')
             .select('heure_mise_a_leau')
             .eq('id', palanquee_id)
+            .eq('club_id', req.user.club_id)
             .single();
 
         if (fetchError) throw fetchError;
-        if (existing.heure_mise_a_leau) {
+        if (existing?.heure_mise_a_leau) {
             return res.status(400).json({ error: 'Heure déjà enregistrée' });
         }
 
-        // Sinon, met à jour
+        // Mise à jour avec vérification du club_id
         const { data, error } = await supabase
             .from('palanquees')
             .update({ heure_mise_a_leau })
-            .eq('id', palanquee_id);
-            
+            .eq('id', palanquee_id)
+            .eq('club_id', req.user.club_id);
+
         if (error) throw error;
-        
+
         res.json({ success: true });
     } catch (error) {
         console.error('Erreur Supabase:', error);
@@ -1965,48 +2209,348 @@ app.post('/api/palanquees/mise-a-leau', async (req, res) => {
 });
 
 // Route POST pour gérer l'upload d'une image
-app.post('/upload-image', async (req, res) => {
+// Vérifié
+app.post('/upload-image', requireAuth, async (req, res) => {
     try {
-        //console.log("Requête reçue pour l'upload d'image");
-        //console.log("Données reçues :", req.body);
-      const { imageData, plongeeId } = req.body;  // On reçoit l'image en base64 et l'ID de la plongée
-  
-      // Convertir l'image en fichier Blob
-      const buffer = Buffer.from(imageData.split(',')[1], 'base64');
-      const file = new Blob([buffer], { type: 'image/png' });
-  
-      // Nom du fichier unique
-      const filePath = `plongees-images/${Date.now()}_carte_plongee.png`;
-  
-      // Téléchargement du fichier dans Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('plongees-images')
-        .upload(filePath, file);
-  
-      if (error) {
-        return res.status(500).json({ error: 'Erreur lors de l\'upload de l\'image' });
-      }
-  
-      // Récupérer l'URL de l'image
-      const imageUrl = `${supabase.storageUrl}/plongees-images/${data.path}`;
-  
-      // Mettre à jour la table `plongees` avec l'URL de l'image
-      const { error: updateError } = await supabase
-        .from('plongees')
-        .update({ image_url: imageUrl })
-        .match({ id: plongeeId });
-  
-      if (updateError) {
-        return res.status(500).json({ error: 'Erreur lors de l\'enregistrement de l\'URL' });
-      }
-  
-      return res.json({ success: true, imageUrl });
+        const { imageData, plongeeId } = req.body;
+
+        // Vérifier que la plongée appartient au club avant tout traitement
+        const { data: plongee, error: checkError } = await supabase
+            .from('plongees')
+            .select('id')
+            .eq('id', plongeeId)
+            .eq('club_id', req.user.club_id)
+            .single();
+
+        if (checkError || !plongee) {
+            return res.status(403).json({ error: 'Plongée non trouvée ou accès non autorisé' });
+        }
+
+        // Convertir et uploader l'image
+        const buffer = Buffer.from(imageData.split(',')[1], 'base64');
+        const file = new Blob([buffer], { type: 'image/png' });
+        const filePath = `plongees-images/${req.user.club_id}/${Date.now()}_carte_plongee.png`;
+
+        const { data, error } = await supabase.storage
+            .from('plongees-images')
+            .upload(filePath, file);
+
+        if (error) {
+            return res.status(500).json({ error: 'Erreur lors de l\'upload de l\'image' });
+        }
+
+        // Mise à jour avec vérification du club_id
+        const { error: updateError } = await supabase
+            .from('plongees')
+            .update({ image_url: `${supabase.storageUrl}/plongees-images/${data.path}` })
+            .eq('id', plongeeId)
+            .eq('club_id', req.user.club_id);
+
+        if (updateError) {
+            return res.status(500).json({ error: 'Erreur lors de l\'enregistrement de l\'URL' });
+        }
+
+        return res.json({ 
+            success: true, 
+            imageUrl: `${supabase.storageUrl}/plongees-images/${data.path}`
+        });
     } catch (error) {
-      console.error(error);
-      return res.status(500).json({ error: 'Une erreur est survenue lors de l\'upload de l\'image' });
+        console.error(error);
+        return res.status(500).json({ error: 'Une erreur est survenue lors de l\'upload de l\'image' });
+    }
+});
+
+app.get('/inscription', (req, res) => {
+    res.render('inscription', { error: null }); // Assure que error est toujours défini
+});
+
+// Route pour traiter l'inscription
+app.post('/inscription', async (req, res) => {
+    console.log('Corps de la requête reçu:', req.body);
+    const {
+      club_name,
+      affiliation_number,
+      postal_code,
+      city,
+      address,
+      first_name,
+      last_name,
+      email,
+      password
+    } = req.body;
+  
+    console.log('Début inscription - Données reçues:', req.body);
+  
+    try {
+      // 1. Validation
+      if (!club_name || !affiliation_number || !email || !password) {
+        console.log('Validation failed - missing fields');
+        return res.status(400).json({ error: 'Tous les champs obligatoires doivent être remplis' });
+      }
+  
+      // 2. Création du club
+      console.log('Tentative création club...');
+      const { data: newClub, error: clubError } = await supabase
+        .from('clubs')
+        .insert([{
+          name: club_name,
+          affiliation_number: parseInt(affiliation_number),
+          postal_code: postal_code, // Pas de parseInt si text dans votre table
+          city,
+          address,
+          created_at: new Date()
+        }])
+        .select()
+        .single();
+  
+      if (clubError) {
+        console.error('ERREUR CLUB:', clubError);
+        return res.status(500).json({ error: 'Erreur création club: ' + clubError.message });
+      }
+      console.log('Club créé:', newClub.id);
+  
+      // 3. Création Auth
+      console.log('Tentative création auth user...');
+      const { data: authUser, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name,
+            last_name,
+            club_id: newClub.id,
+            role: 'admin'
+          }
+        }
+      });
+  
+      if (authError || !authUser.user) {
+        console.error('ERREUR AUTH:', authError);
+        await supabase.from('clubs').delete().eq('id', newClub.id);
+        return res.status(500).json({ error: 'Erreur auth: ' + (authError?.message || 'No user returned') });
+      }
+      console.log('Auth user créé:', authUser.user.id);
+  
+      // 4. Création public.Users
+      console.log('Tentative création public.users...');
+      const { data: publicUser, error: userError } = await supabase
+        .from('users') // Exactement comme dans votre table (sensibilité à la casse)
+        .insert([{
+          id: authUser.user.id,
+          email,
+          first_name,
+          last_name,
+          club_id: newClub.id,
+          role: 'admin',
+          created_at: new Date()
+        }])
+        .select()
+        .single();
+  
+      if (userError) {
+        console.error('ERREUR PUBLIC.USERS:', userError);
+        console.log('Rollback: suppression auth user et club...');
+        await supabase.auth.admin.deleteUser(authUser.user.id);
+        await supabase.from('clubs').delete().eq('id', newClub.id);
+        return res.status(500).json({ 
+          error: 'Erreur création utilisateur: ' + userError.message,
+          details: userError 
+        });
+      }
+  
+      console.log('Inscription complète réussie !');
+      res.status(201).json({ 
+        success: true,
+        message: 'Inscription réussie'
+      });
+  
+    } catch (error) {
+      console.error('ERREUR GLOBALE:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Message d\'erreur clair'
+      });
     }
   });
 
+  // Route pour afficher la page d'administration
+app.get('/administration', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        // Récupère les membres du club
+        const { data: members, error } = await supabase
+            .from('users')
+            .select('id, first_name, last_name, email, role, created_at')
+            .eq('club_id', req.user.club_id)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        res.render('administration', { 
+            members,
+            currentUser: req.user 
+        });
+
+    } catch (error) {
+        console.error('Erreur:', error);
+        res.status(500).render('error', { message: 'Erreur serveur' });
+    }
+});
+
+// API - Ajouter un membre
+app.post('/api/members', requireAuth, async (req, res) => {
+    try {
+        const { first_name, last_name, email, role } = req.body;
+        
+        // Mot de passe par défaut
+        const DEFAULT_PASSWORD = "clubplongee123";
+
+        // 1. Créer l'utilisateur dans l'authentification
+        const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+            email: email,
+            password: DEFAULT_PASSWORD,
+            email_confirm: true, // Auto-confirmer l'email
+            user_metadata: {
+                first_name,
+                last_name
+            }
+        });
+
+        if (authError) throw authError;
+
+        // 2. Ajouter dans la table users
+        const { data: dbUser, error: dbError } = await supabase
+            .from('users')
+            .insert({
+                id: authUser.user.id,
+                first_name,
+                last_name,
+                email,
+                role: role || 'member',
+                club_id: req.user.club_id,
+            })
+            .select();
+
+        if (dbError) throw dbError;
+
+        res.json(dbUser);
+
+    } catch (error) {
+        console.error('Erreur création membre:', error);
+        res.status(500).json({ 
+            error: "Erreur lors de la création du membre",
+            details: error.message 
+        });
+    }
+});
+
+// API - Lister les membres
+app.get('/api/members', requireAuth, async (req, res) => {
+    try {
+        console.log("Tentative de récupération des membres pour club_id:", req.user.club_id);
+        
+        if (!req.user?.club_id) {
+            console.error("Erreur: club_id manquant dans l'utilisateur");
+            return res.status(400).json({ error: "club_id manquant" });
+        }
+
+        const { data, error } = await supabase
+            .from('users')
+            .select('id, first_name, last_name, email, role, created_at')
+            .eq('club_id', req.user.club_id)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error("Erreur Supabase:", error);
+            throw error;
+        }
+
+        console.log("Membres récupérés:", data.length);
+        res.json(data);
+
+    } catch (error) {
+        console.error("Erreur complète:", error);
+        res.status(500).json({ 
+            error: "Erreur serveur",
+            details: error.message 
+        });
+    }
+});
+
+// Route pour supprimer un membre (avec requireAuth)
+// Route DELETE avec paramètre ID
+app.delete('/api/members/:id', requireAuth, async (req, res) => {
+    const memberId = req.params.id;
+
+    try {
+        // Étape 1: Supprimer de la table publique (ce que vous faites déjà)
+        const { error: publicError } = await supabase
+            .from('users')
+            .delete()
+            .eq('id', memberId);
+
+        if (publicError) throw publicError;
+
+        // Étape 2: Supprimer de auth.users via l'API Auth
+        const { error: authError } = await supabase.auth.admin.deleteUser(
+            memberId
+        );
+
+        if (authError) throw authError;
+
+        res.json({ success: true, message: "Utilisateur supprimé complètement" });
+    } catch (error) {
+        console.error('Erreur suppression:', error);
+        res.status(500).json({ 
+            error: error.message || 'Erreur lors de la suppression complète' 
+        });
+    }
+});
+
+// API - Modifier un membre
+app.delete('/api/members/:id', requireAuth, async (req, res) => {
+    try {
+        // 1. Vérification que le membre existe
+        const { data: member, error: fetchError } = await supabase
+            .from('users')
+            .select('id, club_id, role')
+            .eq('id', req.params.id)
+            .single();
+
+        if (fetchError || !member) {
+            return res.status(404).json({ error: 'Membre non trouvé' });
+        }
+
+        // 2. Vérification des permissions
+        if (member.club_id !== req.user.club_id) {
+            return res.status(403).json({ error: 'Action non autorisée' });
+        }
+
+        // 3. Désactivation du membre
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ is_active: false })
+            .eq('id', req.params.id);
+
+        if (updateError) throw updateError;
+
+        // 4. Réponse JSON valide même quand vide
+        res.set('Content-Type', 'application/json');
+        res.status(204).send();
+
+    } catch (error) {
+        console.error('Erreur:', {
+            userId: req.user.id,
+            memberId: req.params.id,
+            error: error.message
+        });
+        
+        // 5. Garantir une réponse JSON en cas d'erreur
+        res.status(500).json({ 
+            error: 'Erreur lors de la suppression',
+            details: process.env.NODE_ENV === 'development' ? error.message : null
+        });
+    }
+});
 
 // Démarrer le serveur HTTPS
 const server = https.createServer(options, app);

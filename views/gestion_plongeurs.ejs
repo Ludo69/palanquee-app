@@ -96,7 +96,8 @@
                     <input type="hidden" id="niveau-create" name="niveau" value="">
                 </div>
                 
-                <button type="submit" class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 rounded-lg font-medium transition-all">
+                <button type="submit" 
+                    class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 rounded-lg font-medium transition-all <%= roleClasses.button %>">
                     <i class="fas fa-plus mr-2"></i> Ajouter Plongeur
                 </button>
             </form>
@@ -119,11 +120,11 @@
                         </div>
                         <div class="flex space-x-3">
                             <button onclick="openEditPopup('<%= plongeur.id %>', '<%= plongeur.niveau %>')" 
-                                    class="text-yellow-400 hover:text-yellow-300 transition-colors">
+                                    class="text-yellow-400 hover:text-yellow-300 transition-colors <%= roleClasses.visibility %>">
                                 <i class="fas fa-edit"></i>
                             </button>
                             <button onclick="deletePlongeur('<%= plongeur.id %>')" 
-                                    class="text-red-500 hover:text-red-400 transition-colors">
+                                    class="text-red-500 hover:text-red-400 transition-colors <%= roleClasses.visibility %>">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         </div>

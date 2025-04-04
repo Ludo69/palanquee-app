@@ -88,7 +88,7 @@
                 </div>
             </div>
             
-            <button type="submit" class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-2 rounded-lg font-medium transition-all">
+            <button type="submit" class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-2 rounded-lg font-medium transition-all <%= roleClasses.button %>">
                 Ajouter Sortie
             </button>
         </form>
@@ -114,11 +114,11 @@
                             </p>
                         </div>
                         <div class="flex space-x-2">
-                            <button class="btn-ajout-plongeur text-primary-light hover:text-primary-dark text-lg ajouter-plongeur" 
+                            <button class="btn-ajout-plongeur text-primary-light hover:text-primary-dark text-lg ajouter-plongeur <%= roleClasses.visibility %>" 
                                     data-id="<%= sortie.id %>" title="Ajouter des plongeurs">
                                 <i class="fas fa-user-plus"></i>
                             </button>
-                            <button class="btn-ajout-plongeur text-red-500 hover:text-red-400 text-lg supprimer-sortie" 
+                            <button class="btn-ajout-plongeur text-red-500 hover:text-red-400 text-lg supprimer-sortie <%= roleClasses.visibility %>" 
                                     data-id="<%= sortie.id %>" title="Supprimer">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
@@ -175,13 +175,11 @@
     <script>
         let currentSortieId = null;
         const plongeurs = <%- JSON.stringify(plongeurs) %>;
-        console.log("Plongeurs chargés :", plongeurs);
     
         document.querySelectorAll(".ajouter-plongeur").forEach((button) => {
             button.addEventListener("click", async function (event) {
                 event.preventDefault();
                 const sortieId = this.dataset.id;
-                console.log(`Bouton "+" cliqué pour la sortie ID: ${sortieId}`);
 
                 let sortieDiv = this.closest(".sortie");
                 if (!sortieDiv) {
