@@ -513,3 +513,14 @@ input, select, button {
         font-size: 0.875rem;
     }
 }
+
+@media (max-width: 320px) {
+    .bubble-container .absolute {
+        bottom: 0.5rem;
+        left: 0.5rem;
+        right: 0.5rem;
+    }
+    .bubble-container .text-xs {
+        font-size: 0.65rem;
+    }
+}

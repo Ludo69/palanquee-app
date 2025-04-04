@@ -78,68 +78,68 @@
         </header>
         
         <!-- Hero section avec image et slogan -->
-        <div class="relative rounded-2xl overflow-hidden shadow-xl mb-8 h-48 bubble-container">
-            <img src="/images/plongeur.avif" alt="Plongée sous-marine" class="w-full h-full object-cover">
-            <div class="absolute inset-0 bg-gradient-to-t from-dark-dark to-transparent flex items-end p-6 pb-14">
-                <h2 class="text-xl font-semibold">Gérez vos plongées avec simplicité et professionnalisme</h2>
+<div class="relative rounded-2xl overflow-hidden shadow-xl mb-8 h-48 bubble-container">
+    <img src="/images/plongeur.avif" alt="Plongée sous-marine" class="w-full h-full object-cover">
+    <div class="absolute inset-0 bg-gradient-to-t from-dark-dark to-transparent flex items-end p-4 sm:p-6 pb-12 sm:pb-14">
+        <h2 class="text-lg sm:text-xl font-semibold">Gérez vos plongées avec simplicité et professionnalisme</h2>
+    </div>
+
+    <!-- Boutons conditionnels - Version responsive -->
+    <div class="absolute bottom-2 left-2 right-2 flex flex-wrap gap-1 sm:gap-2 items-center justify-between">
+        <% if (typeof user==='undefined' || user===null) { %>
+            <!-- Bouton Connexion -->
+            <a href="/connexion" class="relative group flex-shrink-0">
+                <div class="flex items-center gap-1 sm:gap-2 px-3 py-1 sm:px-4 sm:py-2 text-blue-600 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 hover:bg-blue-50 border border-blue-200 hover:border-blue-300">
+                    <i class="fas fa-sign-in-alt text-xs sm:text-sm opacity-80"></i>
+                    <span>Connexion</span>
+                </div>
+                <div class="absolute bottom-0 left-1/2 h-px bg-blue-400 transform -translate-x-1/2 scale-x-0 group-hover:scale-x-75 transition-transform duration-300 w-3/4"></div>
+            </a>
+        <% } else { %>
+            <!-- Message de bienvenue (toujours visible) -->
+            <div class="text-white font-medium flex items-center gap-1 sm:gap-2 text-xs sm:text-base flex-shrink-0">
+                <i class="fas fa-user-circle text-sm sm:text-lg"></i>
+                <% if (user.first_name) { %>
+                    <span>Bonjour <%= user.first_name %> !</span>
+                <% } else { %>
+                    <span>Bonjour !</span>
+                <% } %>
             </div>
 
-            <!-- Boutons conditionnels -->
-            <div class="absolute bottom-4 left-4 flex gap-2 items-center">
-                <% if (typeof user==='undefined' || user===null) { %>
-                    <!-- Bouton Connexion -->
-                    <a href="/connexion" class="relative group">
-                        <div class="flex items-center gap-2 px-4 py-2 text-blue-600 font-medium rounded-md transition-all duration-200 hover:bg-blue-50 border border-blue-200 hover:border-blue-300">
-                            <i class="fas fa-sign-in-alt text-sm opacity-80"></i>
-                            <span class="text-sm">Connectez-vous</span>
+            <!-- Boutons groupés (administration/déconnexion) -->
+            <div class="flex flex-wrap gap-1 sm:gap-2 justify-end">
+                <% if (user && user.role === 'admin') { %>
+                    <!-- Bouton Admin -->
+                    <a href="/administration" class="relative group flex-shrink-0">
+                        <div class="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 text-blue-600 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 hover:bg-blue-50 border border-blue-200 hover:border-blue-300">
+                            <i class="fas fa-user-shield text-xs sm:text-sm opacity-80"></i>
+                            <span class="hidden xs:inline">Admin</span>
                         </div>
                         <div class="absolute bottom-0 left-1/2 h-px bg-blue-400 transform -translate-x-1/2 scale-x-0 group-hover:scale-x-75 transition-transform duration-300 w-3/4"></div>
                     </a>
-                    <% } else { %>
-                        <!-- Message de bienvenue -->
-                        <div class="text-white font-medium flex items-center gap-2">
-                            <i class="fas fa-user-circle text-lg"></i>
-                            <% if (user.first_name) { %>
-                                <span>Bonjour <%= user.first_name %> !</span>
-                                <% } else { %>
-                                    <span>Bonjour !</span>
-                                    <% } %>
-                        </div>
-
-                        <!-- Bouton Déconnexion -->
-                        <div class="flex items-center gap-3">
-                            <% if (user && user.role === 'admin') { %>
-                                <!-- Bouton Administration - Seulement pour les admins -->
-                                <a href="/administration" class="relative group">
-                                    <div class="flex items-center gap-2 px-3 py-1.5 text-blue-600 font-medium rounded-md transition-all duration-200 hover:bg-blue-50 border border-blue-200 hover:border-blue-300">
-                                        <i class="fas fa-user-shield text-sm opacity-80"></i>
-                                        <span class="text-sm">Admin</span>
-                                    </div>
-                                    <div class="absolute bottom-0 left-1/2 h-px bg-blue-400 transform -translate-x-1/2 scale-x-0 group-hover:scale-x-75 transition-transform duration-300 w-3/4"></div>
-                                </a>
-                            <% } %>
-                            
-                            <!-- Bouton Déconnexion - Toujours visible si connecté -->
-                            <% if (user) { %>
-                                <form action="/logout" method="POST" class="relative group">
-                                    <button type="submit" class="flex items-center gap-2 px-3 py-1.5 text-red-600 font-medium rounded-md transition-all duration-200 hover:bg-red-50 border border-red-200 hover:border-red-300">
-                                        <i class="fas fa-sign-out-alt text-sm opacity-80"></i>
-                                        <span class="text-sm">Déco</span>
-                                    </button>
-                                    <div class="absolute bottom-0 left-1/2 h-px bg-red-400 transform -translate-x-1/2 scale-x-0 group-hover:scale-x-75 transition-transform duration-300 w-3/4"></div>
-                                </form>
-                                <button onclick="showPasswordModal()" class="relative group">
-                                    <div class="flex items-center gap-2 px-3 py-1.5 text-purple-600 font-medium rounded-md transition-all duration-200 hover:bg-purple-50 border border-purple-200 hover:border-purple-300">
-                                        <i class="fas fa-key text-sm opacity-80"></i>
-                                        <span class="text-sm">Modifier MDP</span>
-                                    </div>
-                                    <div class="absolute bottom-0 left-1/2 h-px bg-purple-400 transform -translate-x-1/2 scale-x-0 group-hover:scale-x-75 transition-transform duration-300 w-3/4"></div>
-                                </button>
-                            <% } %>
-                        </div>
-                        <% } %>
+                <% } %>
+                
+                <!-- Bouton Modifier MDP -->
+                <button onclick="showPasswordModal()" class="relative group flex-shrink-0">
+                    <div class="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 text-purple-600 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 hover:bg-purple-50 border border-purple-200 hover:border-purple-300">
+                        <i class="fas fa-key text-xs sm:text-sm opacity-80"></i>
+                        <span class="hidden xs:inline">MDP</span>
+                    </div>
+                    <div class="absolute bottom-0 left-1/2 h-px bg-purple-400 transform -translate-x-1/2 scale-x-0 group-hover:scale-x-75 transition-transform duration-300 w-3/4"></div>
+                </button>
+                
+                <!-- Bouton Déconnexion -->
+                <form action="/logout" method="POST" class="relative group flex-shrink-0">
+                    <button type="submit" class="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 text-red-600 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 hover:bg-red-50 border border-red-200 hover:border-red-300">
+                        <i class="fas fa-sign-out-alt text-xs sm:text-sm opacity-80"></i>
+                        <span class="hidden xs:inline">Déco</span>
+                    </button>
+                    <div class="absolute bottom-0 left-1/2 h-px bg-red-400 transform -translate-x-1/2 scale-x-0 group-hover:scale-x-75 transition-transform duration-300 w-3/4"></div>
+                </form>
             </div>
-        </div>
+        <% } %>
+    </div>
+</div>
 
 
         <!-- Grille de fonctionnalités -->
