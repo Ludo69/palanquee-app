@@ -128,6 +128,13 @@
                                     </button>
                                     <div class="absolute bottom-0 left-1/2 h-px bg-red-400 transform -translate-x-1/2 scale-x-0 group-hover:scale-x-75 transition-transform duration-300 w-3/4"></div>
                                 </form>
+                                <button onclick="showPasswordModal()" class="relative group">
+                                    <div class="flex items-center gap-2 px-3 py-1.5 text-purple-600 font-medium rounded-md transition-all duration-200 hover:bg-purple-50 border border-purple-200 hover:border-purple-300">
+                                        <i class="fas fa-key text-sm opacity-80"></i>
+                                        <span class="text-sm">Modifier MDP</span>
+                                    </div>
+                                    <div class="absolute bottom-0 left-1/2 h-px bg-purple-400 transform -translate-x-1/2 scale-x-0 group-hover:scale-x-75 transition-transform duration-300 w-3/4"></div>
+                                </button>
                             <% } %>
                         </div>
                         <% } %>
@@ -284,6 +291,56 @@
             </div>
         </div>
     </div>
+
+<!-- Modale de modification de mot de passe -->
+<div id="passwordModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-dark-light border border-gray-700 rounded-2xl shadow-xl max-w-md w-full p-6 animate-fade-in">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-purple-400">Modifier le mot de passe</h3>
+            <button onclick="hidePasswordModal()"
+                class="text-gray-400 hover:text-purple-400 text-2xl transition-colors">
+                &times;
+            </button>
+        </div>
+
+        <!-- Message d'erreur -->
+        <div id="passwordError" class="hidden bg-red-900/50 text-red-300 text-sm p-3 rounded-lg mb-4"></div>
+
+        <form id="passwordForm" class="space-y-4">
+            <div>
+                <label class="block text-gray-400 mb-1 text-sm">Mot de passe actuel</label>
+                <input type="password" id="currentPassword" required
+                    class="w-full px-3 py-2 bg-dark-dark border border-gray-700 rounded-lg focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50 placeholder-gray-500 transition-all">
+            </div>
+            
+            <div>
+                <label class="block text-gray-400 mb-1 text-sm">Nouveau mot de passe</label>
+                <input type="password" id="newPassword" required
+                    class="w-full px-3 py-2 bg-dark-dark border border-gray-700 rounded-lg focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50 placeholder-gray-500 transition-all">
+                <p class="text-xs text-gray-500 mt-1">Minimum 8 caractères, avec majuscule et chiffre</p>
+            </div>
+            
+            <div>
+                <label class="block text-gray-400 mb-1 text-sm">Confirmer le nouveau mot de passe</label>
+                <input type="password" id="confirmPassword" required
+                    class="w-full px-3 py-2 bg-dark-dark border border-gray-700 rounded-lg focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50 placeholder-gray-500 transition-all">
+            </div>
+
+            <button type="submit" id="passwordSubmit"
+                class="w-full bg-purple-600 hover:bg-purple-500 text-white py-2 px-4 rounded-lg transition-colors shadow-md mt-2 font-medium flex items-center justify-center gap-2">
+                <span>Mettre à jour</span>
+                <i id="passwordSpinner" class="fas fa-spinner hidden animate-spin"></i>
+            </button>
+        </form>
+
+        <div class="mt-4 text-center">
+            <button onclick="hidePasswordModal()"
+                class="text-gray-400 hover:text-purple-400 text-sm underline underline-offset-2 transition-colors">
+                Annuler
+            </button>
+        </div>
+    </div>
+</div>
     
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
@@ -375,6 +432,72 @@
                 if (submitBtn) submitBtn.disabled = false;
             }
         }
+
+        // Gestion de la modale
+function showPasswordModal() {
+    const modal = document.getElementById('passwordModal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function hidePasswordModal() {
+    const modal = document.getElementById('passwordModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Gestion du formulaire
+document.getElementById('passwordForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    // Validation simple
+    if (newPassword !== confirmPassword) {
+        alert('Les mots de passe ne correspondent pas');
+        return;
+    }
+    
+    if (newPassword.length < 8) {
+        alert('Le mot de passe doit contenir au moins 8 caractères');
+        return;
+    }
+    
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> En cours...';
+    
+    try {
+        const response = await fetch('/api/change-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                currentPassword,
+                newPassword
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Mot de passe mis à jour avec succès');
+            hidePasswordModal();
+            this.reset();
+        } else {
+            throw new Error(data.message || 'Erreur lors de la mise à jour');
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        alert(error.message);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Mettre à jour';
+    }
+});
 
     </script>
 

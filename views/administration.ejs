@@ -41,7 +41,7 @@
     <!-- Header avec logo et titre -->
     <header class="relative flex items-center justify-center mb-8 py-4">
         <!-- Logo + Titre (maintenant centré) -->
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center space-x-3 order-1 sm:order-none">
             <div class="bg-primary-dark p-3 rounded-xl shadow-lg">
                 <i class="fas fa-water text-2xl text-primary-light"></i>
             </div>
@@ -58,7 +58,7 @@
         </div>
 
         <!-- Bouton Déconnexion (position absolue à droite) -->
-        <nav class="absolute right-0">
+        <nav class="order-2 sm:order-none sm:absolute sm:right-0">
             <form action="/logout" method="POST" class="relative group">
                 <button type="submit"
                     class="flex items-center gap-2 px-3 py-1.5 text-red-600 font-medium rounded-md transition-all duration-200 hover:bg-red-50 border border-red-200 hover:border-red-300">
@@ -81,7 +81,7 @@
             <div class="mb-8 p-6 border border-gray-700 rounded-xl bg-dark">
                 <h3 class="font-semibold text-lg mb-4 text-secondary">Ajouter un nouveau membre</h3>
 
-                <form id="addMemberForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <form id="addMemberForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div>
                         <label class="block text-gray-400 mb-2">Prénom</label>
                         <input type="text" id="firstName" required
@@ -119,23 +119,20 @@
             </div>
 
             <!-- Liste des membres -->
-            <div>
-                <h3 class="font-semibold text-lg mb-4 text-secondary">Membres du club</h3>
-                <div class="overflow-x-auto rounded-xl border border-gray-700">
-                    <table class="min-w-full bg-dark-light">
-                        <thead class="bg-dark">
-                            <tr>
-                                <th class="py-3 px-4 border-b border-gray-700 text-left text-gray-300">Nom</th>
-                                <th class="py-3 px-4 border-b border-gray-700 text-left text-gray-300">Email</th>
-                                <th class="py-3 px-4 border-b border-gray-700 text-left text-gray-300">Rôle</th>
-                                <th class="py-3 px-4 border-b border-gray-700 text-center text-gray-300">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="membersList" class="divide-y divide-gray-700">
-                            <!-- Les membres seront chargés ici via JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
+            <div class="overflow-x-auto rounded-xl border border-gray-700" style="max-width: 100vw; margin-left: -1rem; margin-right: -1rem;">
+                <table class="min-w-full bg-dark-light">
+                    <thead class="bg-dark">
+                        <tr>
+                            <th class="py-3 px-2 sm:px-4 border-b border-gray-700 text-left text-gray-300">Nom</th>
+                            <th class="py-3 px-2 sm:px-4 border-b border-gray-700 text-left text-gray-300 hidden sm:table-cell">Email</th>
+                            <th class="py-3 px-2 sm:px-4 border-b border-gray-700 text-left text-gray-300">Rôle</th>
+                            <th class="py-3 px-2 sm:px-4 border-b border-gray-700 text-center text-gray-300">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="membersList" class="divide-y divide-gray-700">
+                        <!-- JS générera le contenu -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </main>
@@ -240,9 +237,12 @@
                 }
 
                 tableBody.innerHTML = members.map(member => `
-            <tr class="hover:bg-dark transition" id="member-${member.id}">
-                <td class="py-3 px-4 text-gray-200">${member.first_name} ${member.last_name}</td>
-                <td class="py-3 px-4 text-gray-400">${member.email}</td>
+    <tr class="hover:bg-dark transition" id="member-${member.id}">
+        <td class="py-3 px-2 sm:px-4 text-gray-200">
+            <div class="font-medium">${member.first_name} ${member.last_name}</div>
+            <div class="text-xs text-gray-400 sm:hidden">${member.email}</div>
+        </td>
+        <td class="py-3 px-4 text-gray-400 hidden sm:table-cell">${member.email}</td>
                 <td class="py-3 px-4">
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${member.role === 'admin' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
                     }">

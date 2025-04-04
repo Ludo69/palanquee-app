@@ -76,7 +76,7 @@ const requireAuth = async (req, res, next) => {
         // Récupération des infos supplémentaires
         const { data: userData } = await supabase
             .from('users')
-            .select('club_id, role, clubs(name)')
+            .select('club_id, role, clubs(name), email')
             .eq('id', user.id)
             .single();
 
@@ -89,7 +89,8 @@ const requireAuth = async (req, res, next) => {
             ...user,
             club_id: userData.club_id,
             role: userData.role,
-            club_name: userData.clubs.name
+            club_name: userData.clubs.name,
+            email: userData.email
         };
 
         next();
@@ -2551,6 +2552,61 @@ app.delete('/api/members/:id', requireAuth, async (req, res) => {
         });
     }
 });
+
+// Route pour changer le mot de passe
+app.post('/api/change-password', requireAuth, async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const userId = req.user.id; // ID de l'utilisateur connecté
+
+        // 1. Authentifier d'abord avec le mot de passe actuel
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+            email: req.user.email, // Vous devez avoir l'email dans req.user
+            password: currentPassword
+        });
+
+        if (authError) {
+            return res.status(401).json({ 
+                error: 'Mot de passe actuel incorrect',
+                details: authError.message
+            });
+        }
+
+        // 2. Validation du nouveau mot de passe
+        if (newPassword.length < 8) {
+            return res.status(400).json({ 
+                error: 'Le mot de passe doit contenir au moins 8 caractères'
+            });
+        }
+
+        // 3. Mise à jour du mot de passe via l'API d'authentification
+        const { data: updateData, error: updateError } = await supabase.auth.updateUser({
+            password: newPassword
+        });
+
+        if (updateError) {
+            throw updateError;
+        }
+
+        // 5. Réponse de succès
+        res.json({ 
+            success: true, 
+            message: 'Mot de passe mis à jour avec succès'
+        });
+
+    } catch (error) {
+        console.error('Erreur changement mot de passe:', {
+            userId: req.user?.id,
+            error: error.message
+        });
+        
+        res.status(500).json({ 
+            error: 'Erreur lors du changement de mot de passe',
+            details: process.env.NODE_ENV === 'development' ? error.message : null
+        });
+    }
+});
+
 
 // Démarrer le serveur HTTPS
 const server = https.createServer(options, app);

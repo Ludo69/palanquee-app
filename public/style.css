@@ -473,3 +473,43 @@ animation: spin 1s linear infinite;
 .invisible {
     display: none;
 }
+
+@media (max-width: 640px) {
+    body {
+        padding: 1rem;
+    }
+    
+    .bg-gradient-dark {
+        background: #1A202C; /* Couleur unie sur mobile pour meilleures performances */
+    }
+    
+    main {
+        width: 100%;
+        padding: 0;
+    }
+}
+
+input, select, button {
+    transition: all 0.2s ease;
+}
+
+@media (hover: hover) {
+    button:hover {
+        transform: translateY(-1px);
+    }
+}
+
+@media (max-width: 640px) {
+    .bg-gradient-dark {
+        background: #1A202C;
+    }
+    
+    #signupForm {
+        gap: 0.75rem;
+    }
+    
+    input, select {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+}
