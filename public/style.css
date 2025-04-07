@@ -524,3 +524,13 @@ input, select, button {
         font-size: 0.65rem;
     }
 }
+
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+  }
+  
+  .blinking-text {
+    animation: blink 1.5s infinite;
+  }

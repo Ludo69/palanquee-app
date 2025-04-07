@@ -2607,6 +2607,27 @@ app.post('/api/change-password', requireAuth, async (req, res) => {
     }
 });
 
+app.get('/check-sortie-en-cours', requireAuth, async (req, res) => {
+    try {
+        const { data: currentSorties, error } = await supabase
+            .from('sorties')
+            .select('id, lieu, date_debut, date_fin')
+            .eq('club_id', req.user.club_id) // Assurez-vous que la sortie appartient au club de l'utilisateur
+            .lte('date_debut', new Date().toISOString().split('T')[0])
+            .gte('date_fin', new Date().toISOString().split('T')[0]);
+
+        if (error) throw error;
+
+        const sortieEnCours = currentSorties.length > 0;
+        const sortie = sortieEnCours ? currentSorties[0] : null;
+
+        res.json({ sortieEnCours, sortie });
+    } catch (error) {
+        console.error('Erreur:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
 
 // Démarrer le serveur HTTPS
 const server = https.createServer(options, app);
