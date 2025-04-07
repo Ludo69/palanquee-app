@@ -112,18 +112,18 @@
                 if (data.pdfFiles && data.pdfFiles.length > 0) {
                     data.pdfFiles.forEach(pdf => {
                         const li = document.createElement('li');
-                        li.classList.add('bg-dark-light', 'p-4', 'rounded-2xl', 'shadow-lg', 'border', 'border-gray-700', 'flex', 'items-center', 'justify-between', 'space-x-4');
+                        li.classList.add('bg-dark-light', 'p-4', 'rounded-2xl', 'shadow-lg', 'border', 'border-gray-700', 'flex', 'items-center', 'justify-between', 'space-x-4', 'sm:flex-row', 'sm:space-x-6', 'flex-col');
 
                         // Lien vers le fichier PDF
                         const pdfLink = document.createElement('a');
                         pdfLink.href = `/pdf/${pdf}`;
                         pdfLink.textContent = pdf;
-                        pdfLink.classList.add('text-primary-light', 'hover:text-primary-dark', 'font-medium', 'text-lg');
-                        
+                        pdfLink.classList.add('text-primary-light', 'hover:text-primary-dark', 'font-medium', 'text-lg', 'truncate', 'w-full', 'sm:w-auto', 'overflow-hidden', 'whitespace-nowrap', 'text-ellipsis');  // Ajout des classes pour éviter le débordement
+
                         // Bouton de suppression
                         const deleteBtn = document.createElement('button');
                         deleteBtn.textContent = 'Supprimer';
-                        deleteBtn.classList.add('bg-red-500', 'hover:bg-red-600', 'text-white', 'py-2', 'px-4', 'rounded-lg', 'transition-all', 'focus:outline-none');
+                        deleteBtn.classList.add('bg-red-500', 'hover:bg-red-600', 'text-white', 'py-2', 'px-4', 'rounded-lg', 'transition-all', 'focus:outline-none', 'w-full', 'sm:w-auto', 'mt-4', 'sm:mt-0');
                         
                         deleteBtn.addEventListener('click', async () => {
                             if (confirm(`Voulez-vous vraiment supprimer ${pdf} ?`)) {
