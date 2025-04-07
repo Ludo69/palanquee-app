@@ -347,6 +347,24 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
     <script>
+const params = new URLSearchParams(window.location.search);
+const redirected = params.get("redirected");
+
+if (redirected === "true") {
+    // Ouvrir la modale de connexion
+    openLoginModal();
+}
+function openLoginModal() {
+    const modal = document.getElementById("loginModal");
+    if (modal) {
+        modal.classList.remove("hidden"); // Affiche la modale
+    }
+
+    // Retirer le paramètre "redirected" de l'URL après l'affichage de la modale
+    const newUrl = window.location.href.split("?")[0];
+    window.history.replaceState({}, "", newUrl);
+}
+
         if (typeof supabase === 'undefined') {
             console.error('Erreur: Supabase non initialisé!')
             document.getElementById('loginError').textContent = 'Erreur technique - rechargez la page'

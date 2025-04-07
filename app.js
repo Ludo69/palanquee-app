@@ -62,7 +62,7 @@ const requireAuth = async (req, res, next) => {
         const token = req.headers.authorization?.split(' ')[1] || req.cookies?.auth;
 
         if (!token) {
-            return res.redirect('/');
+            return res.redirect('/?redirected=true');
         }
 
         // Vérification du token avec Supabase
