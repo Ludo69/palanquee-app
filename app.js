@@ -9,6 +9,7 @@ const app = express();
 const pdfDir = path.join(__dirname, "public", "pdf");
 const nodemailer = require("nodemailer");
 const cookieParser = require("cookie-parser");
+const pdfDirectory = path.join(__dirname, 'public', 'pdf');
 
 
 // Vérifier si le dossier existe, sinon le créer
@@ -52,6 +53,9 @@ app.use(express.static("public"));
 app.set("view engine", "ejs");
 app.set("views", __dirname + "/views");
 app.use(cookieParser());
+// Servir les fichiers PDF directement
+app.use('/pdf', express.static(path.join(__dirname, 'public', 'pdf')));
+
 // Middleware pour injecter Supabase dans les routes
 app.locals.supabase = supabase;
 
@@ -2626,6 +2630,39 @@ app.get('/check-sortie-en-cours', requireAuth, async (req, res) => {
         console.error('Erreur:', error);
         res.status(500).json({ error: 'Erreur serveur' });
     }
+});
+
+app.get('/historique-pdfs', (req, res) => {
+    // Lire les fichiers dans le dossier public/pdf
+    fs.readdir(pdfDirectory, (err, files) => {
+        if (err) {
+            return res.status(500).json({ error: "Erreur lors de la lecture des fichiers." });
+        }
+        // Filtrer les fichiers pour ne garder que les PDF
+        const pdfFiles = files.filter(file => file.endsWith('.pdf'));
+
+        // Retourner la liste des fichiers PDF
+        res.json({ pdfFiles });
+    });
+});
+
+// Route pour supprimer un PDF
+app.delete('/delete-pdf/:filename', (req, res) => {
+    const { filename } = req.params;
+    const filePath = path.join(pdfDirectory, filename);
+
+    fs.unlink(filePath, (err) => {
+        if (err) {
+            return res.status(500).json({ error: "Erreur lors de la suppression du fichier." });
+        }
+        res.json({ success: `Fichier ${filename} supprimé avec succès.` });
+    });
+});
+
+
+// Route pour afficher l'historique des PDFs
+app.get('/histopdf', (req, res) => {
+    res.render('histopdf');  // Assure-toi que le fichier histopdf.ejs existe dans ton dossier views
 });
 
 

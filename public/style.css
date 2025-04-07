@@ -544,3 +544,22 @@ input, select, button {
     animation: fade-in 0.2s ease-out forwards;
   }
   
+  /* Style du toast */
+.toast {
+    transition: opacity 0.3s ease;
+    opacity: 0;
+ }
+ 
+ .toast.hidden {
+    opacity: 0;
+ }
+ 
+ .toast.visible {
+    opacity: 1;
+ }
+ 
+ /* Style pour le spinner */
+ .fa-spinner {
+    font-size: 1.5rem;
+ }
+ 

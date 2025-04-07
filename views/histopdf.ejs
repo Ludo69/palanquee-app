@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historique des Feuilles de Palanquée | Palanquee Pro</title>
+
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            light: '#5E9DFF',
+                            DEFAULT: '#2A70E0',
+                            dark: '#1A4A9C',
+                        },
+                        secondary: {
+                            light: '#4FD1C5',
+                            DEFAULT: '#38B2AC',
+                            dark: '#2C7A7B',
+                        },
+                        accent: {
+                            light: '#F6AD55',
+                            DEFAULT: '#ED8936',
+                            dark: '#DD6B20',
+                        },
+                        dark: {
+                            light: '#2D3748',
+                            DEFAULT: '#1A202C',
+                            dark: '#171923',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-b from-dark-dark to-dark-light text-white font-sans min-h-screen pb-16">
+
+    <div class="w-full max-w-3xl mx-auto p-6">
+        <!-- Bouton de retour -->
+        <button onclick="window.history.back()" class="text-gray-300 hover:text-white transition-colors p-2 rounded-lg">
+            <i class="fas fa-arrow-left text-xl"></i>
+        </button>
+
+        <!-- Titre -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold">
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary-light to-secondary-light">Historique</span>
+                <span class="text-gray-300">des Feuilles de Palanquée</span>
+            </h1>
+            <p class="text-gray-400 mt-2">Liste des fichiers PDF disponibles</p>
+        </div>
+
+        <!-- Liste des PDF -->
+        <div class="bg-dark-light rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
+            <div class="p-4 border-b border-gray-700">
+                <h2 class="text-lg font-semibold text-gray-300">
+                    <i class="fas fa-file-pdf mr-2"></i> Fichiers PDF
+                </h2>
+            </div>
+
+            <div class="overflow-y-auto max-h-96 no-scrollbar">
+                <!-- Liste dynamique des PDFs -->
+                <ul id="pdfList" class="space-y-4 p-4">
+                    <!-- Les fichiers PDF seront ajoutés ici par le script -->
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 left-0 w-full bg-dark-light bg-opacity-90 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl border-t border-gray-700 z-40">
+        <a href="/" class="nav-item text-gray-400 flex flex-col items-center">
+            <i class="fas fa-home text-lg"></i>
+            <span class="text-xs mt-1">Accueil</span>
+        </a>
+        <a href="/gestion-plongeurs" class="nav-item active text-primary-light flex flex-col items-center">
+            <i class="fas fa-user-group text-lg"></i>
+            <span class="text-xs mt-1">Plongeurs</span>
+        </a>
+        <a href="/gestion-sorties" class="nav-item text-gray-400 flex flex-col items-center">
+            <i class="far fa-calendar-alt text-lg"></i>
+            <span class="text-xs mt-1">Sorties</span>
+        </a>
+        <a href="/selection-sorties" class="nav-item text-gray-400 flex flex-col items-center">
+            <i class="fas fa-layer-group text-lg"></i>
+            <span class="text-xs mt-1">Palanquées</span>
+        </a>
+    </nav>
+
+    <!-- Font Awesome -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+
+    <script>
+        // Fonction pour récupérer et afficher les fichiers PDF
+        async function loadPdfHistory() {
+            try {
+                const response = await fetch('/historique-pdfs');
+                const data = await response.json();
+
+                const pdfList = document.getElementById('pdfList');
+                
+                // Vider la liste avant de la remplir à nouveau
+                pdfList.innerHTML = "";
+
+                if (data.pdfFiles && data.pdfFiles.length > 0) {
+                    data.pdfFiles.forEach(pdf => {
+                        const li = document.createElement('li');
+                        li.classList.add('bg-dark-light', 'p-4', 'rounded-2xl', 'shadow-lg', 'border', 'border-gray-700', 'flex', 'items-center', 'justify-between', 'space-x-4');
+
+                        // Lien vers le fichier PDF
+                        const pdfLink = document.createElement('a');
+                        pdfLink.href = `/pdf/${pdf}`;
+                        pdfLink.textContent = pdf;
+                        pdfLink.classList.add('text-primary-light', 'hover:text-primary-dark', 'font-medium', 'text-lg');
+                        
+                        // Bouton de suppression
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = 'Supprimer';
+                        deleteBtn.classList.add('bg-red-500', 'hover:bg-red-600', 'text-white', 'py-2', 'px-4', 'rounded-lg', 'transition-all', 'focus:outline-none');
+                        
+                        deleteBtn.addEventListener('click', async () => {
+                            if (confirm(`Voulez-vous vraiment supprimer ${pdf} ?`)) {
+                                try {
+                                    const deleteResponse = await fetch(`/delete-pdf/${pdf}`, {
+                                        method: 'DELETE'
+                                    });
+                                    if (deleteResponse.ok) {
+                                        alert(`${pdf} a été supprimé.`);
+                                        loadPdfHistory();  // Recharger la liste après la suppression
+                                    } else {
+                                        alert("Erreur lors de la suppression.");
+                                    }
+                                } catch (error) {
+                                    alert("Erreur lors de la suppression du fichier.");
+                                }
+                            }
+                        });
+
+                        // Ajouter le lien et le bouton de suppression à l'élément li
+                        li.appendChild(pdfLink);
+                        li.appendChild(deleteBtn);
+                        pdfList.appendChild(li);
+                    });
+                } else {
+                    const li = document.createElement('li');
+                    li.textContent = "Aucun fichier PDF disponible.";
+                    li.classList.add('text-center', 'text-gray-400');
+                    pdfList.appendChild(li);
+                }
+            } catch (error) {
+                alert("Erreur lors du chargement des PDFs.");
+            }
+        }
+
+        // Charger les PDF au démarrage
+        loadPdfHistory();
+    </script>
+</body>
+</html>
