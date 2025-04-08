@@ -76,73 +76,88 @@
                 </h1>
             </div>
         </header>
-        
+
         <!-- Hero section avec image et slogan -->
-<div class="relative rounded-2xl overflow-hidden shadow-xl mb-8 h-48 bubble-container">
-    <img src="/images/plongeur.avif" alt="Plongée sous-marine" class="w-full h-full object-cover">
-    <div class="absolute inset-0 bg-gradient-to-t from-dark-dark to-transparent flex items-end p-4 sm:p-6 pb-12 sm:pb-14">
-        <h2 class="text-lg sm:text-xl font-semibold">Gérez vos plongées avec simplicité et professionnalisme</h2>
-    </div>
-
-    <!-- Boutons conditionnels - Version responsive -->
-    <div class="absolute bottom-2 left-2 right-2 flex flex-wrap gap-1 sm:gap-2 items-center justify-between">
-        <% if (typeof user==='undefined' || user===null) { %>
-            <!-- Bouton Connexion -->
-            <a href="/connexion" class="relative group flex-shrink-0">
-                <div class="flex items-center gap-1 sm:gap-2 px-3 py-1 sm:px-4 sm:py-2 text-blue-600 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 hover:bg-blue-50 border border-blue-200 hover:border-blue-300">
-                    <i class="fas fa-sign-in-alt text-xs sm:text-sm opacity-80"></i>
-                    <span>Connexion</span>
-                </div>
-                <div class="absolute bottom-0 left-1/2 h-px bg-blue-400 transform -translate-x-1/2 scale-x-0 group-hover:scale-x-75 transition-transform duration-300 w-3/4"></div>
-            </a>
-        <% } else { %>
-            <!-- Message de bienvenue (toujours visible) -->
-            <div class="text-white font-medium flex items-center gap-1 sm:gap-2 text-xs sm:text-base flex-shrink-0">
-                <i class="fas fa-user-circle text-sm sm:text-lg"></i>
-                <% if (user.first_name) { %>
-                    <span>Bonjour <%= user.first_name %> !</span>
-                <% } else { %>
-                    <span>Bonjour !</span>
-                <% } %>
+        <div class="relative rounded-2xl overflow-hidden shadow-xl mb-8 h-48 bubble-container">
+            <img src="/images/plongeur.avif" alt="Plongée sous-marine" class="w-full h-full object-cover">
+            <div
+                class="absolute inset-0 bg-gradient-to-t from-dark-dark to-transparent flex items-end p-4 sm:p-6 pb-12 sm:pb-14">
+                <h2 class="text-lg sm:text-xl font-semibold">Gérez vos plongées avec simplicité et professionnalisme
+                </h2>
             </div>
 
-            <!-- Boutons groupés (administration/déconnexion) -->
-            <div class="flex flex-wrap gap-1 sm:gap-2 justify-end">
-                <% if (user && user.role === 'admin') { %>
-                    <!-- Bouton Admin -->
-                    <a href="/administration" class="relative group flex-shrink-0">
-                        <div class="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 text-blue-600 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 hover:bg-blue-50 border border-blue-200 hover:border-blue-300">
-                            <i class="fas fa-user-shield text-xs sm:text-sm opacity-80"></i>
-                            <span class="hidden xs:inline">Admin</span>
+            <!-- Boutons conditionnels - Version responsive -->
+            <div class="absolute bottom-2 left-2 right-2 flex flex-wrap gap-1 sm:gap-2 items-center justify-between">
+                <% if (typeof user==='undefined' || user===null) { %>
+                    <!-- Bouton Connexion -->
+                    <a href="/connexion" class="relative group flex-shrink-0">
+                        <div
+                            class="flex items-center gap-1 sm:gap-2 px-3 py-1 sm:px-4 sm:py-2 text-blue-600 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 hover:bg-blue-50 border border-blue-200 hover:border-blue-300">
+                            <i class="fas fa-sign-in-alt text-xs sm:text-sm opacity-80"></i>
+                            <span>Connexion</span>
                         </div>
-                        <div class="absolute bottom-0 left-1/2 h-px bg-blue-400 transform -translate-x-1/2 scale-x-0 group-hover:scale-x-75 transition-transform duration-300 w-3/4"></div>
+                        <div
+                            class="absolute bottom-0 left-1/2 h-px bg-blue-400 transform -translate-x-1/2 scale-x-0 group-hover:scale-x-75 transition-transform duration-300 w-3/4">
+                        </div>
                     </a>
-                <% } %>
-                
-                <!-- Bouton Modifier MDP -->
-                <button onclick="showPasswordModal()" class="relative group flex-shrink-0">
-                    <div class="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 text-purple-600 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 hover:bg-purple-50 border border-purple-200 hover:border-purple-300">
-                        <i class="fas fa-key text-xs sm:text-sm opacity-80"></i>
-                        <span class="hidden xs:inline">MDP</span>
-                    </div>
-                    <div class="absolute bottom-0 left-1/2 h-px bg-purple-400 transform -translate-x-1/2 scale-x-0 group-hover:scale-x-75 transition-transform duration-300 w-3/4"></div>
-                </button>
-                
-                <!-- Bouton Déconnexion -->
-                <form action="/logout" method="POST" class="relative group flex-shrink-0">
-                    <button type="submit" class="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 text-red-600 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 hover:bg-red-50 border border-red-200 hover:border-red-300">
-                        <i class="fas fa-sign-out-alt text-xs sm:text-sm opacity-80"></i>
-                        <span class="hidden xs:inline">Déco</span>
-                    </button>
-                    <div class="absolute bottom-0 left-1/2 h-px bg-red-400 transform -translate-x-1/2 scale-x-0 group-hover:scale-x-75 transition-transform duration-300 w-3/4"></div>
-                </form>
-            </div>
-        <% } %>
-    </div>
-</div>
+                    <% } else { %>
+                        <!-- Message de bienvenue (toujours visible) -->
+                        <div
+                            class="text-white font-medium flex items-center gap-1 sm:gap-2 text-xs sm:text-base flex-shrink-0">
+                            <i class="fas fa-user-circle text-sm sm:text-lg"></i>
+                            <% if (user.first_name) { %>
+                                <span>Bonjour <%= user.first_name %> !</span>
+                                <% } else { %>
+                                    <span>Bonjour !</span>
+                                    <% } %>
+                        </div>
 
-<!-- Bouton de sortie en cours -->
-<div id="sortie-en-cours-container" class="mb-8"></div>
+                        <!-- Boutons groupés (administration/déconnexion) -->
+                        <div class="flex flex-wrap gap-1 sm:gap-2 justify-end">
+                            <% if (user && user.role==='admin' ) { %>
+                                <!-- Bouton Admin -->
+                                <a href="/administration" class="relative group flex-shrink-0">
+                                    <div
+                                        class="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 text-blue-600 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 hover:bg-blue-50 border border-blue-200 hover:border-blue-300">
+                                        <i class="fas fa-user-shield text-xs sm:text-sm opacity-80"></i>
+                                        <span class="hidden xs:inline">Admin</span>
+                                    </div>
+                                    <div
+                                        class="absolute bottom-0 left-1/2 h-px bg-blue-400 transform -translate-x-1/2 scale-x-0 group-hover:scale-x-75 transition-transform duration-300 w-3/4">
+                                    </div>
+                                </a>
+                                <% } %>
+
+                                    <!-- Bouton Modifier MDP -->
+                                    <button onclick="showPasswordModal()" class="relative group flex-shrink-0">
+                                        <div
+                                            class="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 text-purple-600 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 hover:bg-purple-50 border border-purple-200 hover:border-purple-300">
+                                            <i class="fas fa-key text-xs sm:text-sm opacity-80"></i>
+                                            <span class="hidden xs:inline">MDP</span>
+                                        </div>
+                                        <div
+                                            class="absolute bottom-0 left-1/2 h-px bg-purple-400 transform -translate-x-1/2 scale-x-0 group-hover:scale-x-75 transition-transform duration-300 w-3/4">
+                                        </div>
+                                    </button>
+
+                                    <!-- Bouton Déconnexion -->
+                                    <form action="/logout" method="POST" class="relative group flex-shrink-0">
+                                        <button type="submit"
+                                            class="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 text-red-600 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 hover:bg-red-50 border border-red-200 hover:border-red-300">
+                                            <i class="fas fa-sign-out-alt text-xs sm:text-sm opacity-80"></i>
+                                            <span class="hidden xs:inline">Déco</span>
+                                        </button>
+                                        <div
+                                            class="absolute bottom-0 left-1/2 h-px bg-red-400 transform -translate-x-1/2 scale-x-0 group-hover:scale-x-75 transition-transform duration-300 w-3/4">
+                                        </div>
+                                    </form>
+                        </div>
+                        <% } %>
+            </div>
+        </div>
+
+        <!-- Bouton de sortie en cours -->
+        <div id="sortie-en-cours-container" class="mb-8"></div>
 
         <!-- Grille de fonctionnalités -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
@@ -294,76 +309,77 @@
         </div>
     </div>
 
-<!-- Modale de modification de mot de passe -->
-<div id="passwordModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-    <div class="bg-dark-light border border-gray-700 rounded-2xl shadow-xl max-w-md w-full p-6 animate-fade-in">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-semibold text-purple-400">Modifier le mot de passe</h3>
-            <button onclick="hidePasswordModal()"
-                class="text-gray-400 hover:text-purple-400 text-2xl transition-colors">
-                &times;
-            </button>
-        </div>
-
-        <!-- Message d'erreur -->
-        <div id="passwordError" class="hidden bg-red-900/50 text-red-300 text-sm p-3 rounded-lg mb-4"></div>
-
-        <form id="passwordForm" class="space-y-4">
-            <div>
-                <label class="block text-gray-400 mb-1 text-sm">Mot de passe actuel</label>
-                <input type="password" id="currentPassword" required
-                    class="w-full px-3 py-2 bg-dark-dark border border-gray-700 rounded-lg focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50 placeholder-gray-500 transition-all">
-            </div>
-            
-            <div>
-                <label class="block text-gray-400 mb-1 text-sm">Nouveau mot de passe</label>
-                <input type="password" id="newPassword" required
-                    class="w-full px-3 py-2 bg-dark-dark border border-gray-700 rounded-lg focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50 placeholder-gray-500 transition-all">
-                <p class="text-xs text-gray-500 mt-1">Minimum 8 caractères, avec majuscule et chiffre</p>
-            </div>
-            
-            <div>
-                <label class="block text-gray-400 mb-1 text-sm">Confirmer le nouveau mot de passe</label>
-                <input type="password" id="confirmPassword" required
-                    class="w-full px-3 py-2 bg-dark-dark border border-gray-700 rounded-lg focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50 placeholder-gray-500 transition-all">
+    <!-- Modale de modification de mot de passe -->
+    <div id="passwordModal"
+        class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-dark-light border border-gray-700 rounded-2xl shadow-xl max-w-md w-full p-6 animate-fade-in">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-purple-400">Modifier le mot de passe</h3>
+                <button onclick="hidePasswordModal()"
+                    class="text-gray-400 hover:text-purple-400 text-2xl transition-colors">
+                    &times;
+                </button>
             </div>
 
-            <button type="submit" id="passwordSubmit"
-                class="w-full bg-purple-600 hover:bg-purple-500 text-white py-2 px-4 rounded-lg transition-colors shadow-md mt-2 font-medium flex items-center justify-center gap-2">
-                <span>Mettre à jour</span>
-                <i id="passwordSpinner" class="fas fa-spinner hidden animate-spin"></i>
-            </button>
-        </form>
+            <!-- Message d'erreur -->
+            <div id="passwordError" class="hidden bg-red-900/50 text-red-300 text-sm p-3 rounded-lg mb-4"></div>
 
-        <div class="mt-4 text-center">
-            <button onclick="hidePasswordModal()"
-                class="text-gray-400 hover:text-purple-400 text-sm underline underline-offset-2 transition-colors">
-                Annuler
-            </button>
+            <form id="passwordForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-400 mb-1 text-sm">Mot de passe actuel</label>
+                    <input type="password" id="currentPassword" required
+                        class="w-full px-3 py-2 bg-dark-dark border border-gray-700 rounded-lg focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50 placeholder-gray-500 transition-all">
+                </div>
+
+                <div>
+                    <label class="block text-gray-400 mb-1 text-sm">Nouveau mot de passe</label>
+                    <input type="password" id="newPassword" required
+                        class="w-full px-3 py-2 bg-dark-dark border border-gray-700 rounded-lg focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50 placeholder-gray-500 transition-all">
+                    <p class="text-xs text-gray-500 mt-1">Minimum 8 caractères, avec majuscule et chiffre</p>
+                </div>
+
+                <div>
+                    <label class="block text-gray-400 mb-1 text-sm">Confirmer le nouveau mot de passe</label>
+                    <input type="password" id="confirmPassword" required
+                        class="w-full px-3 py-2 bg-dark-dark border border-gray-700 rounded-lg focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50 placeholder-gray-500 transition-all">
+                </div>
+
+                <button type="submit" id="passwordSubmit"
+                    class="w-full bg-purple-600 hover:bg-purple-500 text-white py-2 px-4 rounded-lg transition-colors shadow-md mt-2 font-medium flex items-center justify-center gap-2">
+                    <span>Mettre à jour</span>
+                    <i id="passwordSpinner" class="fas fa-spinner hidden animate-spin"></i>
+                </button>
+            </form>
+
+            <div class="mt-4 text-center">
+                <button onclick="hidePasswordModal()"
+                    class="text-gray-400 hover:text-purple-400 text-sm underline underline-offset-2 transition-colors">
+                    Annuler
+                </button>
+            </div>
         </div>
     </div>
-</div>
-    
+
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
     <script>
-const params = new URLSearchParams(window.location.search);
-const redirected = params.get("redirected");
+        const params = new URLSearchParams(window.location.search);
+        const redirected = params.get("redirected");
 
-if (redirected === "true") {
-    // Ouvrir la modale de connexion
-    openLoginModal();
-}
-function openLoginModal() {
-    const modal = document.getElementById("loginModal");
-    if (modal) {
-        modal.classList.remove("hidden"); // Affiche la modale
-    }
+        if (redirected === "true") {
+            // Ouvrir la modale de connexion
+            openLoginModal();
+        }
+        function openLoginModal() {
+            const modal = document.getElementById("loginModal");
+            if (modal) {
+                modal.classList.remove("hidden"); // Affiche la modale
+            }
 
-    // Retirer le paramètre "redirected" de l'URL après l'affichage de la modale
-    const newUrl = window.location.href.split("?")[0];
-    window.history.replaceState({}, "", newUrl);
-}
+            // Retirer le paramètre "redirected" de l'URL après l'affichage de la modale
+            const newUrl = window.location.href.split("?")[0];
+            window.history.replaceState({}, "", newUrl);
+        }
 
         if (typeof supabase === 'undefined') {
             console.error('Erreur: Supabase non initialisé!')
@@ -454,70 +470,70 @@ function openLoginModal() {
         }
 
         // Gestion de la modale
-function showPasswordModal() {
-    const modal = document.getElementById('passwordModal');
-    modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-}
-
-function hidePasswordModal() {
-    const modal = document.getElementById('passwordModal');
-    modal.classList.add('hidden');
-    document.body.style.overflow = 'auto';
-}
-
-// Gestion du formulaire
-document.getElementById('passwordForm')?.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const currentPassword = document.getElementById('currentPassword').value;
-    const newPassword = document.getElementById('newPassword').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
-    
-    // Validation simple
-    if (newPassword !== confirmPassword) {
-        alert('Les mots de passe ne correspondent pas');
-        return;
-    }
-    
-    if (newPassword.length < 8) {
-        alert('Le mot de passe doit contenir au moins 8 caractères');
-        return;
-    }
-    
-    const submitBtn = this.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> En cours...';
-    
-    try {
-        const response = await fetch('/api/change-password', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                currentPassword,
-                newPassword
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            alert('Mot de passe mis à jour avec succès');
-            hidePasswordModal();
-            this.reset();
-        } else {
-            throw new Error(data.message || 'Erreur lors de la mise à jour');
+        function showPasswordModal() {
+            const modal = document.getElementById('passwordModal');
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
         }
-    } catch (error) {
-        console.error('Erreur:', error);
-        alert(error.message);
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Mettre à jour';
-    }
-});
+
+        function hidePasswordModal() {
+            const modal = document.getElementById('passwordModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Gestion du formulaire
+        document.getElementById('passwordForm')?.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // Validation simple
+            if (newPassword !== confirmPassword) {
+                alert('Les mots de passe ne correspondent pas');
+                return;
+            }
+
+            if (newPassword.length < 8) {
+                alert('Le mot de passe doit contenir au moins 8 caractères');
+                return;
+            }
+
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> En cours...';
+
+            try {
+                const response = await fetch('/api/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        currentPassword,
+                        newPassword
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('Mot de passe mis à jour avec succès');
+                    hidePasswordModal();
+                    this.reset();
+                } else {
+                    throw new Error(data.message || 'Erreur lors de la mise à jour');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert(error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Mettre à jour';
+            }
+        });
 
     </script>
 
@@ -645,27 +661,27 @@ document.getElementById('passwordForm')?.addEventListener('submit', async functi
             `;
         }
     </script>
-     <script>
-        document.addEventListener('DOMContentLoaded', async function() {
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
             const container = document.getElementById('sortie-en-cours-container');
             if (!container) return;
-    
+
             try {
                 const response = await fetch('/check-sortie-en-cours');
-                
+
                 // Si non autorisé (401), c'est que l'utilisateur n'est pas connecté
                 if (response.status === 401) return;
-                
+
                 if (!response.ok) throw new Error('Erreur de chargement');
-                
+
                 const data = await response.json();
-                
+
                 // Debug: Affiche les données reçues dans la console
                 console.log("Données reçues:", data);
-    
+
                 // Vider le conteneur
                 container.innerHTML = '';
-    
+
                 if (data.sortieEnCours && data.sortie) {
                     const button = document.createElement('a');
                     button.href = `/plongees/${data.sortie.id}/${new Date().toISOString().split('T')[0]}`;
@@ -682,24 +698,32 @@ document.getElementById('passwordForm')?.addEventListener('submit', async functi
                         </div>
                     `;
                     container.appendChild(button);
-                } 
+                }
                 else if (data.prochaineSortie) {
                     const dateProchaine = new Date(data.prochaineSortie.date_debut);
                     const diffDays = Math.ceil((dateProchaine - new Date()) / (1000 * 60 * 60 * 24));
-                    
+
                     const infoBox = document.createElement('div');
-                    infoBox.className = 'card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex items-center border border-gray-700 animate-fade-in';
+                    infoBox.className = 'card-hover bg-dark-light p-6 rounded-2xl shadow-lg border border-gray-700 animate-fade-in';
                     infoBox.innerHTML = `
                         <div class="flex items-center">
                             <div class="bg-primary-dark p-3 rounded-full mr-3">
-                                <i class="fas fa-calendar-day text-xl text-primary-light"></i>
+                            <i class="fas fa-calendar-day text-xl text-primary-light"></i>
                             </div>
-                            <div class="flex items-center space-x-2">
-                                <h3 class="text-lg font-semibold">Prochaine sortie :</h3>
-                                <p class="text-blue-400 text-lg">${data.prochaineSortie.lieu} dans ${diffDays} jour(s) (${dateProchaine.toLocaleDateString()})</p>
+                            <div>
+                            <h3 class="text-lg font-semibold">Prochaine sortie vers ${data.prochaineSortie.lieu}</h3>
+                            <div class="flex items-center mt-2">
+                                <span class="bg-blue-500/20 text-blue-400 text-sm font-medium px-3 py-1 rounded-full flex items-center">
+                                <i class="far fa-clock mr-1"></i>
+                                ${diffDays} ${diffDays > 1 ? 'jours' : 'jour'}
+                                </span>
+                                <span class="ml-3 text-gray-300">
+                                ${new Date(data.prochaineSortie.date_debut).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                </span>
+                            </div>
                             </div>
                         </div>
-                    `;
+                        `;
                     container.appendChild(infoBox);
                 }
                 else {
