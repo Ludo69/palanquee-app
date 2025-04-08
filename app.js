@@ -261,10 +261,10 @@ app.get("/generate-pdf", async (req, res) => {
             const heureStr = heure.toString().trim();
 
             // Vérifie les formats connus
-            if (/^\d{1,2}h\d{2}$/.test(heureStr)) {  // Si déjà formaté "XhXX"
+            if (/^\d{1,2}h\d{2}$/.test(heureStr)) {  
                 return heureStr;
             }
-            if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(heureStr)) {  // Format "XX:XX" ou "XX:XX:XX"
+            if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(heureStr)) {  
                 const [h, m] = heureStr.split(':');
                 return `${parseInt(h, 10)}h${m.padStart(2, '0')}`;
             }
@@ -316,13 +316,14 @@ app.get("/generate-pdf", async (req, res) => {
             const [heures, minutes] = plongee.heure_debut.split(":");
             heureFormattee = `${heures}h${minutes}`;
         }
-        const dateEtHeure = `${dateFormatee} - ${heureFormattee}`;
+        //const dateEtHeure = `${dateFormatee} - ${heureFormattee}`;
+        const dateEtHeure = `${dateFormatee}`;
 
         // Récupérer les plongeurs pour chaque palanquée
         for (let palanquee of palanquees) {
             const { data: palanqueesPlongeurs, error: plongeursError } = await supabase
                 .from("palanquees_plongeurs")
-                .select("plongeur_id, niveau_plongeur_historique")  // Ajoute niveau_historique ici
+                .select("plongeur_id, niveau_plongeur_historique, gaz_type")  // Ajoute niveau_historique ici
                 .eq("palanquee_id", palanquee.id);
 
             if (plongeursError) {
@@ -347,10 +348,16 @@ app.get("/generate-pdf", async (req, res) => {
                 palanquee.plongeurs = plongeurs.map(plongeur => {
                     const correspondance = palanqueesPlongeurs.find(p => p.plongeur_id === plongeur.id);
                     return {
-                        ...plongeur,
-                        niveau: correspondance.niveau_plongeur_historique  // Utilise le niveau historique
+                        id: plongeur.id,
+                        nom: plongeur.nom,
+                        niveau: correspondance.niveau_plongeur_historique,
+                        gaz: correspondance.gaz_type,
+                        display: `${plongeur.nom} (${correspondance.niveau_plongeur_historique}) (${correspondance.gaz_type})`
                     };
                 });
+                
+                // ✅ Ajoutez ICI le console.log pour vérifier
+                console.log("Plongeurs formatés:", palanquee.plongeurs.map(p => p.display));
             }
         }
 
@@ -499,14 +506,14 @@ app.get("/generate-pdf", async (req, res) => {
         doc.moveDown(1);
 
         // 📌 Nouvelles largeurs des colonnes
-        const columnWidths = [110, 140, 45, 45, 45, 45, 50, 60]; // 🆕 Réduction des colonnes "Prof." et "Durée"
+        const columnWidths = [110, 150, 35, 35, 45, 45, 50, 60]; // 🆕 Réduction des colonnes "Prof." et "Durée"
 
         // 📌 Positionner correctement les en-têtes des colonnes
         const tableTop = doc.y;
         doc.text("Nom", 10, tableTop, { width: columnWidths[0], align: "center" });
         doc.text("Plongeurs", 125, tableTop, { width: columnWidths[1], align: "center" });
-        doc.text("Prof.", 275, tableTop, { width: columnWidths[2], align: "center" });
-        doc.text("Durée", 320, tableTop, { width: columnWidths[3], align: "center" });
+        doc.text("Prof.", 290, tableTop, { width: columnWidths[2], align: "center" });
+        doc.text("Durée", 330, tableTop, { width: columnWidths[3], align: "center" });
         doc.text("Prof.", 365, tableTop, { width: columnWidths[4], align: "center" });
         doc.text("Durée", 410, tableTop, { width: columnWidths[5], align: "center" });
         doc.text("Paliers", 465, tableTop, { width: columnWidths[6], align: "center" });
@@ -517,7 +524,7 @@ app.get("/generate-pdf", async (req, res) => {
         doc.moveDown(1);
 
         // 📌 Définition des positions X des traits verticaux
-        const columnLines = [120, 270, 320, 365, 410, 460, 520, 590]; // 🆕 Ajustement des traits
+        const columnLines = [120, 285, 330, 365, 410, 460, 520, 590]; // 🆕 Ajustement des traits
         // 📌 Boucle pour remplir le tableau des palanquées
         data.palanquees.forEach((palanquee) => {
             let startY = doc.y; // Position initiale
@@ -557,12 +564,16 @@ app.get("/generate-pdf", async (req, res) => {
                 });
 
                 plongeursTries.forEach(plongeur => {
-                    // Ajoute un symbole (★) si c'est un guide
                     const isGuide = ['GP', 'E2', 'E3', 'E4'].includes(plongeur.niveau);
                     const prefix = isGuide ? '* ' : '';
-                    doc.text(`${prefix}${plongeur.nom || "-"} (${plongeur.niveau || "-"})`,
-                        130, plongeurY,
-                        { width: columnWidths[1], align: "left" });
+                    const textePlongeur = plongeur.display 
+                        ? `${prefix}${plongeur.display}`
+                        : `${prefix}${plongeur.nom} (${plongeur.niveau}) (${plongeur.gaz})`;
+                    
+                    doc.text(textePlongeur, 130, plongeurY, { 
+                        width: columnWidths[1], 
+                        align: "left" 
+                    });
                     plongeurY += 14;
                 });
             } else {
@@ -574,8 +585,8 @@ app.get("/generate-pdf", async (req, res) => {
             let endY = Math.max(startY + 20, plongeurY);
 
             // 🟢 Colonnes suivantes (avec alignement centré)
-            doc.text((palanquee.prof_max ?? "-").toString(), 270, startY, { width: columnWidths[2], align: "center" });
-            doc.text((palanquee.duree_max ?? "-").toString(), 320, startY, { width: columnWidths[3], align: "center" });
+            doc.text((palanquee.prof_max ?? "-").toString(), 290, startY, { width: columnWidths[2], align: "center" });
+            doc.text((palanquee.duree_max ?? "-").toString(), 330, startY, { width: columnWidths[3], align: "center" });
             doc.text((palanquee.profondeur ?? "-").toString(), 365, startY, { width: columnWidths[4], align: "center" });
             doc.text((palanquee.duree ?? "-").toString(), 410, startY, { width: columnWidths[5], align: "center" });
             doc.text(palanquee.paliers || "Aucun", 465, startY, { width: columnWidths[6], align: "center" });
@@ -1418,7 +1429,16 @@ app.get("/get_palanquees/:plongee_id", requireAuth, async (req, res) => {
             .from("palanquees")
             .select(`
                 id, nom, profondeur, duree, paliers,
-                palanquees_plongeurs (plongeur_id, niveau_plongeur_historique, plongeurs (id, nom, niveau))
+                palanquees_plongeurs (
+                    plongeur_id,
+                    niveau_plongeur_historique,
+                    gaz_type,
+                    plongeurs (
+                        id,
+                        nom,
+                        niveau
+                    )
+                )
             `)
             .eq("plongee_id", plongee_id)
             .eq("club_id", req.user.club_id);
@@ -1516,13 +1536,14 @@ app.post("/enregistrer_palanquee", requireAuth, async (req, res) => {
         // Traitement des palanquées
         const updatedPalanquees = [];
         for (const palanqueeData of palanquees) {
-            let { id, nom, profondeur, duree, paliers, plongeurs } = palanqueeData;
+            let { id, nom, profondeur, duree, paliers, plongeurs, gazType } = palanqueeData;
 
             if (!nom || !plongeurs || plongeurs.length === 0) {
                 erreurs.push({ palanquee: nom, message: "Données invalides ou incomplètes" });
                 continue;
             }
 
+            // Vérification ou insertion de la palanquée
             if (id) {
                 if (existingPalanqueesMap.has(id)) {
                     const { error: updateError } = await supabase
@@ -1535,7 +1556,7 @@ app.post("/enregistrer_palanquee", requireAuth, async (req, res) => {
                         erreurs.push({ palanquee: nom, message: updateError.message });
                         continue;
                     }
-                    updatedPalanquees.push({ id, plongeurs });
+                    updatedPalanquees.push({ id, plongeurs, gazType });
                 } else {
                     erreurs.push({ palanquee: nom, message: "ID invalide, palanquée inexistante" });
                     continue;
@@ -1557,15 +1578,18 @@ app.post("/enregistrer_palanquee", requireAuth, async (req, res) => {
                 if (insertError) {
                     erreurs.push({ palanquee: nom, message: insertError.message });
                 } else {
-                    updatedPalanquees.push({ id: newPalanquee.id, plongeurs });
+                    updatedPalanquees.push({ id: newPalanquee.id, plongeurs, gazType });
                 }
             }
         }
 
-        // Mise à jour des plongeurs avec vérification du club_id
+        // Mise à jour des plongeurs avec gazType
+        console.log("🔎 Données reçues (updatedPalanquees):", JSON.stringify(updatedPalanquees, null, 2));
+
         for (const palanquee of updatedPalanquees) {
-            const { id, plongeurs } = palanquee;
-            
+            const { id, plongeurs, gazType } = palanquee;
+
+            // Supprimer d'abord les plongeurs existants pour cette palanquée
             const { error: deleteError } = await supabase
                 .from("palanquees_plongeurs")
                 .delete()
@@ -1578,30 +1602,36 @@ app.post("/enregistrer_palanquee", requireAuth, async (req, res) => {
             }
 
             if (plongeurs.length > 0) {
-                const plongeursData = await Promise.all(plongeurs.map(async (plongeur_id) => {
+                const plongeursData = await Promise.all(plongeurs.map(async (plongeurItem) => {
+                    const { plongeur_id, gaz_type = "Air" } = plongeurItem;
+                
                     const { data: plongeur, error: plongeurError } = await supabase
                         .from("plongeurs")
                         .select("nom, niveau")
                         .eq("id", plongeur_id)
                         .eq("club_id", req.user.club_id)
                         .single();
-
+                
                     if (plongeurError || !plongeur) {
                         erreurs.push({ plongeur: plongeur_id, message: "Plongeur non trouvé ou accès non autorisé" });
                         return null;
                     }
-
+                
                     return {
                         palanquee_id: id,
                         plongeur_id,
                         nom_plongeur: plongeur.nom,
                         niveau_plongeur: plongeur.niveau,
                         niveau_plongeur_historique: plongeur.niveau,
-                        club_id: req.user.club_id
+                        club_id: req.user.club_id,
+                        gaz_type: gaz_type
                     };
                 }));
+                
 
                 const plongeursDataValid = plongeursData.filter(data => data !== null);
+                console.log("👀 Tentative insertion des plongeurs pour palanquée:", id);
+                console.log("📦 Données à insérer:", plongeursDataValid);
 
                 if (plongeursDataValid.length > 0) {
                     const { error: plongeursError } = await supabase
@@ -1609,7 +1639,10 @@ app.post("/enregistrer_palanquee", requireAuth, async (req, res) => {
                         .insert(plongeursDataValid);
 
                     if (plongeursError) {
+                        console.error("❌ Erreur insertion plongeurs:", plongeursError);
                         erreurs.push({ palanquee: palanquee.nom, message: plongeursError.message });
+                    } else {
+                        console.log("✅ Insertion plongeurs OK pour palanquée:", id);
                     }
                 }
             }
@@ -1625,6 +1658,8 @@ app.post("/enregistrer_palanquee", requireAuth, async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+
 
 // Vérifié
 app.delete("/supprimer_palanquee/:id", requireAuth, async (req, res) => {
