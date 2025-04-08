@@ -2648,19 +2648,45 @@ app.post('/api/change-password', requireAuth, async (req, res) => {
 
 app.get('/check-sortie-en-cours', requireAuth, async (req, res) => {
     try {
-        const { data: currentSorties, error } = await supabase
+        // Vérifiez que l'utilisateur est bien connecté et a un club_id
+        if (!req.user?.club_id) {
+            return res.status(401).json({ error: "Non autorisé" });
+        }
+
+        const clubId = req.user.club_id;
+
+        // Sortie en cours
+        const { data: currentSorties, error: currentError } = await supabase
             .from('sorties')
             .select('id, lieu, date_debut, date_fin')
-            .eq('club_id', req.user.club_id) // Assurez-vous que la sortie appartient au club de l'utilisateur
+            .eq('club_id', clubId)
             .lte('date_debut', new Date().toISOString().split('T')[0])
             .gte('date_fin', new Date().toISOString().split('T')[0]);
 
-        if (error) throw error;
+        if (currentError) throw currentError;
 
-        const sortieEnCours = currentSorties.length > 0;
+        const sortieEnCours = currentSorties?.length > 0;
         const sortie = sortieEnCours ? currentSorties[0] : null;
 
-        res.json({ sortieEnCours, sortie });
+        // Prochaine sortie
+        const { data: nextSorties, error: nextError } = await supabase
+            .from('sorties')
+            .select('id, lieu, date_debut, date_fin')
+            .eq('club_id', clubId)
+            .gt('date_debut', new Date().toISOString().split('T')[0])
+            .order('date_debut', { ascending: true })
+            .limit(1);
+
+        if (nextError) throw nextError;
+
+        const prochaineSortie = nextSorties?.length > 0 ? nextSorties[0] : null;
+
+        res.json({ 
+            sortieEnCours, 
+            sortie,
+            prochaineSortie 
+        });
+
     } catch (error) {
         console.error('Erreur:', error);
         res.status(500).json({ error: 'Erreur serveur' });

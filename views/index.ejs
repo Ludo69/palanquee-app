@@ -646,18 +646,30 @@ document.getElementById('passwordForm')?.addEventListener('submit', async functi
         }
     </script>
      <script>
-        // Vérification et affichage du bouton de sortie en cours
-        document.addEventListener('DOMContentLoaded', async function () {
+        document.addEventListener('DOMContentLoaded', async function() {
+            const container = document.getElementById('sortie-en-cours-container');
+            if (!container) return;
+    
             try {
                 const response = await fetch('/check-sortie-en-cours');
-                const { sortieEnCours, sortie } = await response.json();
-
-                if (sortieEnCours && sortie) {
-                    const container = document.getElementById('sortie-en-cours-container');
+                
+                // Si non autorisé (401), c'est que l'utilisateur n'est pas connecté
+                if (response.status === 401) return;
+                
+                if (!response.ok) throw new Error('Erreur de chargement');
+                
+                const data = await response.json();
+                
+                // Debug: Affiche les données reçues dans la console
+                console.log("Données reçues:", data);
+    
+                // Vider le conteneur
+                container.innerHTML = '';
+    
+                if (data.sortieEnCours && data.sortie) {
                     const button = document.createElement('a');
-                    button.href = `/plongees/${sortie.id}/${new Date().toISOString().split('T')[0]}`;
+                    button.href = `/plongees/${data.sortie.id}/${new Date().toISOString().split('T')[0]}`;
                     button.className = 'card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex items-center border border-gray-700 hover:border-primary-light animate-fade-in';
-                    button.style.animationDelay = '0.1s';
                     button.innerHTML = `
                         <div class="flex items-center">
                             <div class="bg-primary-dark p-3 rounded-full mr-3">
@@ -665,14 +677,42 @@ document.getElementById('passwordForm')?.addEventListener('submit', async functi
                             </div>
                             <div class="flex items-center space-x-2">
                                 <h3 class="text-lg font-semibold blinking-text">Sortie en cours :</h3>
-                                <p class="text-blue-400 text-lg">${sortie.lieu} - ${new Date(sortie.date_debut).toLocaleDateString()}</p>
+                                <p class="text-blue-400 text-lg">${data.sortie.lieu} - ${new Date(data.sortie.date_debut).toLocaleDateString()}</p>
                             </div>
                         </div>
                     `;
                     container.appendChild(button);
+                } 
+                else if (data.prochaineSortie) {
+                    const dateProchaine = new Date(data.prochaineSortie.date_debut);
+                    const diffDays = Math.ceil((dateProchaine - new Date()) / (1000 * 60 * 60 * 24));
+                    
+                    const infoBox = document.createElement('div');
+                    infoBox.className = 'card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex items-center border border-gray-700 animate-fade-in';
+                    infoBox.innerHTML = `
+                        <div class="flex items-center">
+                            <div class="bg-primary-dark p-3 rounded-full mr-3">
+                                <i class="fas fa-calendar-day text-xl text-primary-light"></i>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <h3 class="text-lg font-semibold">Prochaine sortie :</h3>
+                                <p class="text-blue-400 text-lg">${data.prochaineSortie.lieu} dans ${diffDays} jour(s) (${dateProchaine.toLocaleDateString()})</p>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(infoBox);
+                }
+                else {
+                    // Afficher seulement si connecté mais aucune sortie
+                    container.innerHTML = `
+                        <div class="bg-dark-light p-6 rounded-2xl shadow-lg text-center">
+                            <p class="text-gray-400">Aucune sortie prévue pour le moment</p>
+                        </div>
+                    `;
                 }
             } catch (error) {
-                console.error('Erreur lors de la vérification de la sortie en cours :', error);
+                console.error('Erreur:', error);
+                // Ne rien afficher en cas d'erreur
             }
         });
     </script>
