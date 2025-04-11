@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des compétences</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            light: '#5E9DFF',
+                            DEFAULT: '#2A70E0',
+                            dark: '#1A4A9C',
+                        },
+                        secondary: {
+                            light: '#4FD1C5',
+                            DEFAULT: '#38B2AC',
+                            dark: '#2C7A7B',
+                        },
+                        accent: {
+                            light: '#F6AD55',
+                            DEFAULT: '#ED8936',
+                            dark: '#DD6B20',
+                        },
+                        dark: {
+                            light: '#2D3748',
+                            DEFAULT: '#1A202C',
+                            dark: '#171923',
+                        },
+                        orange: '#FFA500', // Couleur orange pour 50%
+                        red: '#FF6347',    // Couleur rouge pour 100%
+                    },
+                }
+            }
+        }
+
+        // Déplacer la fonction progressPercent avant son utilisation
+        const progressPercent = (progress) => {
+            if (progress === 1) return 50;
+            if (progress === 2) return 100;
+            return 0; // Si aucune progression n'a été enregistrée
+        };
+
+        // Fonction pour obtenir la couleur en fonction du pourcentage
+        const getProgressColor = (progress) => {
+            if (progress === 50) return 'text-orange';  // Couleur orange pour 50%
+            if (progress === 100) return 'text-green-500';  // Couleur verte pour 100%
+            return 'text-white';  // Par défaut, couleur blanche pour 0%
+        };
+
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body class="bg-dark-light text-white font-sans min-h-screen pb-16">
+
+    <div class="w-full max-w-3xl mx-auto p-4 sm:p-6 relative">
+        <h1 class="text-2xl sm:text-3xl font-bold text-center mb-8">Gestion des compétences</h1>
+
+        <!-- Premier tableau des compétences (sans la colonne de progression) -->
+        <div class="overflow-x-auto bg-dark-light rounded-lg shadow-lg border border-gray-700 mb-6">
+            <table class="w-full table-auto">
+                <thead>
+                    <tr>
+                        <th class="p-2">Nom</th>
+                        <th class="p-2">Sécu</th>
+                        <th class="p-2">Brief</th>
+                        <th class="p-2">Désaturation</th>
+                        <th class="p-2">Remontée assistée</th>
+                        <th class="p-2">Relai</th>
+                        <th class="p-2">Masque</th>
+                    </tr>
+                </thead>
+                <tbody id="competence-table-body">
+                    <!-- Les plongeurs et leurs compétences seront ajoutés ici dynamiquement -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Second tableau pour la progression par compétence -->
+        <div class="overflow-x-auto bg-dark-light rounded-lg shadow-lg border border-gray-700">
+            <table class="w-full table-auto">
+                <thead>
+                    <tr>
+                        <th class="p-2">Nom</th>
+                        <th class="p-2">Sécu</th>
+                        <th class="p-2">Brief</th>
+                        <th class="p-2">Désaturation</th>
+                        <th class="p-2">Remontée assistée</th>
+                        <th class="p-2">Relai</th>
+                        <th class="p-2">Masque</th>
+                        <th class="p-2">Progression Globale</th>
+                    </tr>
+                </thead>
+                <tbody id="progression-table-body">
+                    <!-- La progression par compétence pour chaque plongeur sera ajoutée ici -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Bouton pour enregistrer les compétences -->
+        <div class="text-center mt-6">
+            <button id="save-competences-btn" class="bg-primary-light text-white py-2 px-6 rounded-lg hover:bg-primary-dark">
+                Enregistrer les compétences
+            </button>
+        </div>
+    </div>
+    <!-- Bottom Navigation -->
+    <nav
+        class="fixed bottom-0 left-0 w-full bg-dark-light bg-opacity-90 backdrop-blur-md shadow-lg flex justify-around py-3 rounded-t-2xl border-t border-gray-700 z-40">
+        <a href="/" class="nav-item text-primary-light flex flex-col items-center">
+            <i class="fas fa-home text-lg"></i>
+            <span class="text-xs mt-1">Accueil</span>
+        </a>
+        <a href="/gestion-plongeurs" class="nav-item text-gray-400 flex flex-col items-center">
+            <i class="fas fa-user-group text-lg"></i>
+            <span class="text-xs mt-1">Plongeurs</span>
+        </a>
+        <a href="/gestion-sorties" class="nav-item text-gray-400 flex flex-col items-center">
+            <i class="far fa-calendar-alt text-lg"></i>
+            <span class="text-xs mt-1">Sorties</span>
+        </a>
+        <a href="/selection-sorties" class="nav-item text-gray-400 flex flex-col items-center">
+            <i class="fas fa-layer-group text-lg"></i>
+            <span class="text-xs mt-1">Palanquées</span>
+        </a>
+    </nav>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const saveBtn = document.getElementById('save-competences-btn');
+            const tableBody = document.getElementById('competence-table-body');
+            const progressionTableBody = document.getElementById('progression-table-body');
+    
+            // Récupérer les plongeurs et leurs compétences depuis le serveur
+            const res = await fetch('/suivi-plongeurs');
+            const plongeurs = await res.json();
+    
+            // Insérer chaque plongeur dans le premier tableau sans la progression
+            for (const plongeur of plongeurs.data) {
+                const row = document.createElement('tr');
+                row.classList.add('border-b', 'border-gray-700');
+                
+                row.innerHTML = `
+                    <td class="py-2 px-4">${plongeur.nom}</td>
+                    <td class="py-2 px-4"><input type="checkbox" data-plongeur-id="${plongeur.id}" data-competence="secu"></td>
+                    <td class="py-2 px-4"><input type="checkbox" data-plongeur-id="${plongeur.id}" data-competence="brief"></td>
+                    <td class="py-2 px-4"><input type="checkbox" data-plongeur-id="${plongeur.id}" data-competence="desaturation"></td>
+                    <td class="py-2 px-4"><input type="checkbox" data-plongeur-id="${plongeur.id}" data-competence="remontee_assistee"></td>
+                    <td class="py-2 px-4"><input type="checkbox" data-plongeur-id="${plongeur.id}" data-competence="relai"></td>
+                    <td class="py-2 px-4"><input type="checkbox" data-plongeur-id="${plongeur.id}" data-competence="masque"></td>  <!-- Nouvelle compétence "masque" -->
+                `;
+                tableBody.appendChild(row);
+    
+                // Récupérer et afficher la progression de chaque compétence
+                const competences = ['secu', 'brief', 'desaturation', 'remontee_assistee', 'relai', 'masque'];  // Ajouter "masque" ici
+                const progressionData = {};
+                let totalProgress = 0;
+    
+                for (const competence of competences) {
+                    const response = await fetch(`/competence-plongeur-progression?plongeur_id=${plongeur.id}&competence=${competence}`);
+                    const data = await response.json();
+                    progressionData[competence] = data.count;
+                    totalProgress += progressPercent(data.count); // Ajouter la progression pour chaque compétence
+                }
+    
+                // Calculer la progression globale
+                const globalProgress = totalProgress / competences.length;
+    
+                // Créer une ligne dans le tableau de progression
+                const rowProgression = document.createElement('tr');
+                rowProgression.classList.add('border-b', 'border-gray-700');
+                
+                rowProgression.innerHTML = `
+                    <td class="py-2 px-4">${plongeur.nom}</td>
+                    <td class="py-2 px-4 ${getProgressColor(progressPercent(progressionData.secu))}">${progressPercent(progressionData.secu)}%</td>
+                    <td class="py-2 px-4 ${getProgressColor(progressPercent(progressionData.brief))}">${progressPercent(progressionData.brief)}%</td>
+                    <td class="py-2 px-4 ${getProgressColor(progressPercent(progressionData.desaturation))}">${progressPercent(progressionData.desaturation)}%</td>
+                    <td class="py-2 px-4 ${getProgressColor(progressPercent(progressionData.remontee_assistee))}">${progressPercent(progressionData.remontee_assistee)}%</td>
+                    <td class="py-2 px-4 ${getProgressColor(progressPercent(progressionData.relai))}">${progressPercent(progressionData.relai)}%</td>
+                    <td class="py-2 px-4 ${getProgressColor(progressPercent(progressionData.masque))}">${progressPercent(progressionData.masque)}%</td>  <!-- Nouvelle compétence "masque" -->
+                    <td class="py-2 px-4">
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="h-2 rounded-full ${globalProgress === 100 ? 'bg-green-500' : (globalProgress >= 50 ? 'bg-orange' : 'bg-white')}" style="width: ${globalProgress}%"></div>
+                        </div>
+                    </td>
+                `;
+                progressionTableBody.appendChild(rowProgression);
+            }
+    
+            // Enregistrer les compétences sélectionnées
+            saveBtn.addEventListener('click', async () => {
+                const competencesData = [];
+                const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+    
+                checkboxes.forEach(checkbox => {
+                    competencesData.push({
+                        plongeur_id: checkbox.dataset.plongeurId,
+                        competence: checkbox.dataset.competence
+                    });
+                });
+    
+                if (competencesData.length > 0) {
+                    const response = await fetch('/enregistrer-competences', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ competences: competencesData }),
+                    });
+    
+                    const data = await response.json();
+    
+                    if (data.success) {
+                        //alert('Compétences enregistrées avec succès!');
+                        // Rafraîchir les données après l'enregistrement
+                        await reloadData();
+                    } else {
+                        alert('Erreur lors de l\'enregistrement des compétences.');
+                    }
+                } else {
+                    alert('Aucune compétence sélectionnée.');
+                }
+            });
+        });
+    
+        // Fonction pour recharger les données des plongeurs et de leurs compétences
+        async function reloadData() {
+            const tableBody = document.getElementById('competence-table-body');
+            const progressionTableBody = document.getElementById('progression-table-body');
+    
+            // Vider les tableaux avant de les remplir à nouveau
+            tableBody.innerHTML = '';
+            progressionTableBody.innerHTML = '';
+    
+            // Récupérer les plongeurs et leurs compétences depuis le serveur
+            const res = await fetch('/suivi-plongeurs');
+            const plongeurs = await res.json();
+    
+            // Insérer chaque plongeur dans le premier tableau sans la progression
+            for (const plongeur of plongeurs.data) {
+                const row = document.createElement('tr');
+                row.classList.add('border-b', 'border-gray-700');
+                
+                row.innerHTML = `
+                    <td class="py-2 px-4">${plongeur.nom}</td>
+                    <td class="py-2 px-4"><input type="checkbox" data-plongeur-id="${plongeur.id}" data-competence="secu"></td>
+                    <td class="py-2 px-4"><input type="checkbox" data-plongeur-id="${plongeur.id}" data-competence="brief"></td>
+                    <td class="py-2 px-4"><input type="checkbox" data-plongeur-id="${plongeur.id}" data-competence="desaturation"></td>
+                    <td class="py-2 px-4"><input type="checkbox" data-plongeur-id="${plongeur.id}" data-competence="remontee_assistee"></td>
+                    <td class="py-2 px-4"><input type="checkbox" data-plongeur-id="${plongeur.id}" data-competence="relai"></td>
+                    <td class="py-2 px-4"><input type="checkbox" data-plongeur-id="${plongeur.id}" data-competence="masque"></td>  <!-- Nouvelle compétence "masque" -->
+                `;
+                tableBody.appendChild(row);
+    
+                // Récupérer et afficher la progression de chaque compétence
+                const competences = ['secu', 'brief', 'desaturation', 'remontee_assistee', 'relai', 'masque'];  // Ajouter "masque" ici
+                const progressionData = {};
+                let totalProgress = 0;
+    
+                for (const competence of competences) {
+                    const response = await fetch(`/competence-plongeur-progression?plongeur_id=${plongeur.id}&competence=${competence}`);
+                    const data = await response.json();
+                    progressionData[competence] = data.count;
+                    totalProgress += progressPercent(data.count); // Ajouter la progression pour chaque compétence
+                }
+    
+                // Calculer la progression globale
+                const globalProgress = totalProgress / competences.length;
+    
+                // Créer une ligne dans le tableau de progression
+                const rowProgression = document.createElement('tr');
+                rowProgression.classList.add('border-b', 'border-gray-700');
+                
+                rowProgression.innerHTML = `
+                    <td class="py-2 px-4">${plongeur.nom}</td>
+                    <td class="py-2 px-4 ${getProgressColor(progressPercent(progressionData.secu))}">${progressPercent(progressionData.secu)}%</td>
+                    <td class="py-2 px-4 ${getProgressColor(progressPercent(progressionData.brief))}">${progressPercent(progressionData.brief)}%</td>
+                    <td class="py-2 px-4 ${getProgressColor(progressPercent(progressionData.desaturation))}">${progressPercent(progressionData.desaturation)}%</td>
+                    <td class="py-2 px-4 ${getProgressColor(progressPercent(progressionData.remontee_assistee))}">${progressPercent(progressionData.remontee_assistee)}%</td>
+                    <td class="py-2 px-4 ${getProgressColor(progressPercent(progressionData.relai))}">${progressPercent(progressionData.relai)}%</td>
+                    <td class="py-2 px-4 ${getProgressColor(progressPercent(progressionData.masque))}">${progressPercent(progressionData.masque)}%</td>  <!-- Nouvelle compétence "masque" -->
+                    <td class="py-2 px-4">
+                    <div class="w-full bg-gray-700 rounded-full h-2 relative">
+                        <div class="h-2 rounded-full ${globalProgress === 100 ? 'bg-green-500' : (globalProgress >= 50 ? 'bg-orange' : 'bg-white')}" style="width: ${globalProgress}%"></div>
+                        <span class="absolute right-0 top-0 text-white text-xs mr-2 mt-0.5">${Math.round(globalProgress)}%</span>  <!-- Pourcentage affiché à la fin -->
+                    </div>
+                </td>
+            `;
+                progressionTableBody.appendChild(rowProgression);
+            }
+        }
+    </script>
+    
+    
+</body>
+</html>
