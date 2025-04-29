@@ -209,17 +209,7 @@
             <div class="grid grid-cols-3 gap-2 text-center" id="stats-container">
                 <!-- Le contenu sera dynamiquement rempli par JavaScript -->
             </div>
-        </div>   
-
-        <a href="#" id="competence-btn"
-    class="card-hover bg-dark-light p-6 rounded-2xl shadow-lg text-center flex flex-col items-center border border-gray-700 hover:border-purple-400 animate-fade-in"
-    style="animation-delay: 0.5s">
-    <div class="bg-purple-800 p-3 rounded-full mb-3">
-        <i class="fas fa-cogs text-xl text-purple-400"></i>
-    </div>
-    <h3 class="text-lg font-semibold mb-1">Gestion des compétences</h3>
-    <p class="text-gray-400 text-sm">Ajoutez ou modifiez les compétences</p>
-</a>
+        </div> 
 
     </div>
     </div>
@@ -434,52 +424,81 @@
         });
 
         async function handleLogin(event) {
-            event.preventDefault();
+    event.preventDefault();
 
-            // Récupération des éléments avec vérification
-            console.log("handleLogin");
-            const form = event.currentTarget;
-            const submitBtn = form.querySelector('button[type="submit"]');
-            const errorDiv = document.getElementById('loginError');
+    console.log("handleLogin");
 
-            if (!submitBtn || !errorDiv) {
-                console.error('Éléments du formulaire non trouvés');
-                return;
-            }
+    const form = event.currentTarget;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const errorDiv = document.getElementById('loginError');
 
-            try {
-                // Activation du loading
-                submitBtn.disabled = true;
-                errorDiv.classList.add('hidden');
+    if (!submitBtn || !errorDiv) {
+        console.error('Éléments du formulaire non trouvés');
+        return;
+    }
 
-                const email = form.querySelector('#loginEmail').value;
-                const password = form.querySelector('#loginPassword').value;
+    try {
+        submitBtn.disabled = true;
+        errorDiv.classList.add('hidden');
 
-                // Appel à l'API de connexion
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
+        const email = form.querySelector('#loginEmail').value;
+        const password = form.querySelector('#loginPassword').value;
 
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.message || 'Erreur de connexion');
-                }
+        // Appel API de connexion
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
 
-                const data = await response.json();
-
-                // Redirection après connexion réussie
-                window.location.href = '/';
-
-            } catch (error) {
-                console.error('Erreur:', error);
-                errorDiv.textContent = error.message;
-                errorDiv.classList.remove('hidden');
-            } finally {
-                if (submitBtn) submitBtn.disabled = false;
-            }
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Erreur de connexion');
         }
+
+        const data = await response.json();
+
+        // ✅ Si login OK, stocker les infos utilisateur pour usage offline
+        localStorage.setItem('user', JSON.stringify({
+            email: data.email,
+            id: data.id,
+            nom: data.nom
+            // ajoute d'autres infos si besoin
+        }));
+
+        // Redirection après connexion réussie
+        window.location.href = '/';
+
+    } catch (error) {
+        console.error('Erreur:', error);
+
+        // 🔥 Ajout : Essayer de charger un utilisateur local si pas de réseau
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) {
+            console.log('🛜 Mode hors-ligne : utilisateur local détecté');
+            const user = JSON.parse(savedUser);
+
+            // Ici tu peux faire une validation basique si besoin
+            // (par exemple vérifier si l'email saisi correspond)
+
+            if (user.email === form.querySelector('#loginEmail').value) {
+                console.log('✅ Email correspond, connexion offline validée.');
+                window.location.href = '/'; // Simuler une connexion réussie
+                return;
+            } else {
+                console.warn('❌ Email ne correspond pas à l\'utilisateur local.');
+                errorDiv.textContent = "Pas de connexion réseau et utilisateur inconnu.";
+                errorDiv.classList.remove('hidden');
+            }
+        } else {
+            errorDiv.textContent = error.message || "Erreur de connexion.";
+            errorDiv.classList.remove('hidden');
+        }
+    } finally {
+        if (submitBtn) submitBtn.disabled = false;
+    }
+}
+
 
         // Gestion de la modale
         function showPasswordModal() {
@@ -832,118 +851,6 @@
     }
 });
 });
-</script>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const btn = document.getElementById('competence-btn');
-        const modal = document.getElementById('modal-selection-plongeurs');
-        const closeBtn = document.getElementById('close-selection-modal');
-        const container = document.getElementById('liste-plongeurs');
-        const form = document.getElementById('form-selection-plongeurs');
-    
-        // Lorsque le bouton "Gestion des compétences" est cliqué
-        btn.addEventListener('click', async (e) => {
-            e.preventDefault();
-    
-            // Vérifier si des enregistrements existent dans la table suivi_plongeurs
-            const res = await fetch('/suivi-plongeurs');
-            const result = await res.json();
-    
-            if (result.status === 'empty') {
-                // Si aucun enregistrement, charger les plongeurs et ouvrir la modale
-                const plongeursRes = await fetch('/plongeurs');
-                const plongeurs = await plongeursRes.json();
-    
-                // Ajouter les plongeurs dynamiquement dans la modale
-                container.innerHTML = ''; // Réinitialiser la liste
-                plongeurs.forEach(p => {
-                    const item = document.createElement('label');
-                    item.className = "flex items-center gap-2 text-gray-300";
-    
-                    item.innerHTML = `
-                        <input type="checkbox" name="plongeurs" value="${p.id}" class="accent-purple-600">
-                        <span>${p.nom}</span>  <!-- Affichage du nom complet -->
-                    `;
-                    container.appendChild(item);
-                });
-    
-                // Ouvrir la modale
-                modal.classList.remove('hidden');
-            } else {
-                // Si des enregistrements existent, rediriger vers la page gestion_competence
-                window.location.href = '/gestion-competences'; // Redirection vers la page gestion des compétences
-            }
-        });
-    
-        // Fermer la modale quand on clique sur la croix
-        closeBtn.addEventListener('click', () => {
-            modal.classList.add('hidden');
-        });
-    
-        // Lorsque le formulaire est soumis (pour ajouter les plongeurs)
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-    
-            // Récupérer les plongeurs sélectionnés
-            const selectedPlongeurs = [];
-            const checkboxes = form.querySelectorAll('input[name="plongeurs"]:checked');
-            checkboxes.forEach((checkbox) => {
-                selectedPlongeurs.push(checkbox.value);
-            });
-    
-            if (selectedPlongeurs.length > 0) {
-                // Envoyer les plongeurs sélectionnés au serveur
-                const response = await fetch('/suivi-plongeurs', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ plongeurs: selectedPlongeurs }),
-                });
-    
-                const data = await response.json();
-    
-                if (data.success) {
-                    // Fermer la modale après l'ajout
-                    modal.classList.add('hidden');
-                    alert('Les plongeurs ont été ajoutés avec succès!');
-                } else {
-                    alert('Erreur lors de l\'ajout des plongeurs.');
-                }
-            } else {
-                alert('Veuillez sélectionner au moins un plongeur.');
-            }
-        });
-    });
-    </script>
-    
-  
-  
-    
-        
-<!-- Modale -->
-<div id="modal-selection-plongeurs" class="fixed inset-0 z-50 hidden bg-black bg-opacity-60 flex items-center justify-center">
-    <div class="bg-dark-light p-6 rounded-2xl shadow-xl w-full max-w-2xl border border-gray-700">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-semibold text-white">Sélectionner des plongeurs</h2>
-        <!-- Bouton de fermeture -->
-        <button id="close-selection-modal" class="text-gray-400 hover:text-white text-2xl">&times;</button>
-      </div>
-  
-      <form id="form-selection-plongeurs" method="POST" action="/suivi-plongeurs">
-        <div id="liste-plongeurs" class="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto mb-4">
-          <!-- Les plongeurs seront ajoutés ici via JS -->
-        </div>
-        <div class="text-right">
-          <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg">
-            Ajouter les plongeurs sélectionnés
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-  
-      
+</script>      
 </body>
-
 </html>
