@@ -106,9 +106,9 @@
                         <div>
                             <h3 class="font-bold"><%= sortie.lieu %></h3>
                             <p class="text-sm text-gray-400">
-                                <%= new Date(sortie.date_debut).toLocaleDateString('fr-FR', { month: '2-digit', year: 'numeric' }) %>
+                                <%= new Date(sortie.date_debut).toLocaleDateString('fr-FR') %>
                                 <% if (sortie.date_fin && sortie.date_fin !== sortie.date_debut) { %>
-                                    → <%= new Date(sortie.date_fin).toLocaleDateString('fr-FR', { month: '2-digit', year: 'numeric' }) %>
+                                  → <%= new Date(sortie.date_fin).toLocaleDateString('fr-FR') %>
                                 <% } %>
                                 <span class="text-gray-500 text-xs">(<%= sortie.plongeurs_count || 0 %> plongeurs)</span>
                             </p>
